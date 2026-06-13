@@ -1,2 +1,2 @@
-# docpuncti
-Collectio mea documentorum a puncto incipientium necnon scriptorum ad ea instituenda.
+# docpunct
+Collectio mea documentorum punctatorum et scriptorum ad eorum institutionem.
