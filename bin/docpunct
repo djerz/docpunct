@@ -1,0 +1,272 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+FEATURES_DIR="${DOCPUNCT_FEATURES_DIR:-$ROOT_DIR/features}"
+CACHE_DIR="${DOCPUNCT_CACHE_DIR:-$HOME/.cache/docpunct}"
+STATE_DIR="$CACHE_DIR/state"
+INSTALLED_DIR="$STATE_DIR/installed"
+LOG_DIR="$CACHE_DIR/log"
+SRC_DIR="$CACHE_DIR/src"
+BACKUP_DIR="$CACHE_DIR/backups/dotfiles"
+
+export DOCPUNCT_ROOT="$ROOT_DIR"
+export DOCPUNCT_FEATURES_DIR="$FEATURES_DIR"
+export DOCPUNCT_CACHE_DIR="$CACHE_DIR"
+export DOCPUNCT_STATE_DIR="$STATE_DIR"
+export DOCPUNCT_INSTALLED_DIR="$INSTALLED_DIR"
+export DOCPUNCT_LOG_DIR="$LOG_DIR"
+export DOCPUNCT_SRC_DIR="$SRC_DIR"
+export DOCPUNCT_DOTFILES_BACKUP_DIR="$BACKUP_DIR"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  docpunct install FEATURE...
+  docpunct update FEATURE...
+  docpunct remove FEATURE...
+  docpunct status
+  docpunct list
+  docpunct relink
+EOF
+}
+
+die() {
+  printf 'docpunct: %s\n' "$*" >&2
+  exit 1
+}
+
+ensure_dirs() {
+  mkdir -p "$INSTALLED_DIR" "$LOG_DIR" "$SRC_DIR" "$BACKUP_DIR"
+}
+
+feature_dir() {
+  printf '%s/%s\n' "$FEATURES_DIR" "$1"
+}
+
+manifest_path() {
+  printf '%s/feature.yml\n' "$(feature_dir "$1")"
+}
+
+require_feature() {
+  local feature="$1"
+  [[ "$feature" =~ ^[A-Za-z0-9._-]+$ ]] || die "invalid feature name: $feature"
+  [[ -d "$(feature_dir "$feature")" ]] || die "unknown feature: $feature"
+  [[ -f "$(manifest_path "$feature")" ]] || die "missing feature.yml for: $feature"
+  if grep -Eq '^[[:space:]]*name[[:space:]]*:' "$(manifest_path "$feature")"; then
+    die "feature.yml must not contain a name field: $feature"
+  fi
+}
+
+is_installed() {
+  [[ -f "$INSTALLED_DIR/$1" ]]
+}
+
+mark_installed() {
+  mkdir -p "$INSTALLED_DIR"
+  {
+    printf 'feature=%s\n' "$1"
+    printf 'installed_at=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    printf 'root=%s\n' "$ROOT_DIR"
+  } >"$INSTALLED_DIR/$1"
+}
+
+unmark_installed() {
+  rm -f -- "$INSTALLED_DIR/$1"
+}
+
+feature_description() {
+  local manifest
+  manifest="$(manifest_path "$1")"
+  awk '
+    /^[[:space:]]*description[[:space:]]*:/ {
+      sub(/^[[:space:]]*description[[:space:]]*:[[:space:]]*/, "")
+      gsub(/^"|"$/, "")
+      gsub(/^'\''|'\''$/, "")
+      print
+      exit
+    }
+  ' "$manifest"
+}
+
+feature_deps() {
+  local manifest in_dep=0
+  manifest="$(manifest_path "$1")"
+  awk '
+    /^[[:space:]]*depends[[:space:]]*:[[:space:]]*$/ { in_dep=1; next }
+    /^[^[:space:]-]/ { in_dep=0 }
+    in_dep && /^[[:space:]]*-[[:space:]]*/ {
+      sub(/^[[:space:]]*-[[:space:]]*/, "")
+      sub(/[[:space:]]+#.*$/, "")
+      gsub(/^"|"$/, "")
+      gsub(/^'\''|'\''$/, "")
+      if ($0 != "") print
+    }
+  ' "$manifest"
+}
+
+script_for() {
+  local feature="$1" action="$2"
+  printf '%s/%s.sh\n' "$(feature_dir "$feature")" "$action"
+}
+
+run_feature_script() {
+  local action="$1" feature="$2" script log tmp
+  script="$(script_for "$feature" "$action")"
+  [[ -f "$script" ]] || return 0
+  [[ -x "$script" ]] || die "$script exists but is not executable"
+
+  log="$LOG_DIR/$(date +%Y%m%d-%H%M%S)-$action-$feature.log"
+  tmp="$(mktemp)"
+
+  export DOCPUNCT_FEATURE="$feature"
+  export DOCPUNCT_FEATURE_DIR
+  DOCPUNCT_FEATURE_DIR="$(feature_dir "$feature")"
+
+  if "$script" >"$tmp" 2>&1; then
+    rm -f -- "$tmp"
+  else
+    mv -- "$tmp" "$log"
+    printf 'docpunct: %s %s failed; log: %s\n' "$action" "$feature" "$log" >&2
+    exit 1
+  fi
+}
+
+install_feature() {
+  local feature="$1" dep
+  require_feature "$feature"
+  while IFS= read -r dep; do
+    [[ -n "$dep" ]] || continue
+    install_feature "$dep"
+  done < <(feature_deps "$feature")
+
+  if is_installed "$feature"; then
+    printf '%s already installed\n' "$feature"
+    return 0
+  fi
+
+  printf 'Installing %s\n' "$feature"
+  run_feature_script install "$feature"
+  mark_installed "$feature"
+}
+
+update_feature() {
+  local feature="$1" dep
+  require_feature "$feature"
+  while IFS= read -r dep; do
+    [[ -n "$dep" ]] || continue
+    update_feature "$dep"
+  done < <(feature_deps "$feature")
+
+  printf 'Updating %s\n' "$feature"
+  run_feature_script update "$feature"
+  is_installed "$feature" || mark_installed "$feature"
+}
+
+installed_dependents() {
+  local target="$1" installed dep
+  [[ -d "$INSTALLED_DIR" ]] || return 0
+  for installed in "$INSTALLED_DIR"/*; do
+    [[ -f "$installed" ]] || continue
+    installed="$(basename "$installed")"
+    while IFS= read -r dep; do
+      [[ "$dep" == "$target" ]] && printf '%s\n' "$installed"
+    done < <(feature_deps "$installed")
+  done
+  return 0
+}
+
+remove_feature() {
+  local feature="$1" blockers
+  require_feature "$feature"
+  if ! is_installed "$feature"; then
+    printf '%s is not installed\n' "$feature"
+    return 0
+  fi
+
+  blockers="$(installed_dependents "$feature" | sort -u | paste -sd ' ' -)"
+  if [[ -n "$blockers" ]]; then
+    die "cannot remove $feature; installed feature(s) depend on it: $blockers"
+  fi
+
+  printf 'Removing %s\n' "$feature"
+  run_feature_script remove "$feature"
+  unmark_installed "$feature"
+}
+
+list_features() {
+  local dir feature desc
+  for dir in "$FEATURES_DIR"/*; do
+    [[ -d "$dir" ]] || continue
+    feature="$(basename "$dir")"
+    require_feature "$feature"
+    desc="$(feature_description "$feature")"
+    if [[ -n "$desc" ]]; then
+      printf '%-22s %s\n' "$feature" "$desc"
+    else
+      printf '%s\n' "$feature"
+    fi
+  done | sort
+}
+
+status_features() {
+  local dir feature marker
+  for dir in "$FEATURES_DIR"/*; do
+    [[ -d "$dir" ]] || continue
+    feature="$(basename "$dir")"
+    marker="$INSTALLED_DIR/$feature"
+    if [[ -f "$marker" ]]; then
+      printf 'installed    %s\n' "$feature"
+    else
+      printf 'available    %s\n' "$feature"
+    fi
+  done | sort
+}
+
+relink_dotfiles() {
+  require_feature dotfiles
+  run_feature_script install dotfiles
+}
+
+main() {
+  local cmd="${1:-}"
+  [[ -n "$cmd" ]] || { usage; exit 2; }
+  shift || true
+  ensure_dirs
+
+  case "$cmd" in
+    install)
+      [[ "$#" -gt 0 ]] || die "install requires at least one feature"
+      while [[ "$#" -gt 0 ]]; do install_feature "$1"; shift; done
+      ;;
+    update)
+      [[ "$#" -gt 0 ]] || die "update requires at least one feature"
+      while [[ "$#" -gt 0 ]]; do update_feature "$1"; shift; done
+      ;;
+    remove)
+      [[ "$#" -gt 0 ]] || die "remove requires at least one feature"
+      while [[ "$#" -gt 0 ]]; do remove_feature "$1"; shift; done
+      ;;
+    list)
+      [[ "$#" -eq 0 ]] || die "list takes no arguments"
+      list_features
+      ;;
+    status)
+      [[ "$#" -eq 0 ]] || die "status takes no arguments"
+      status_features
+      ;;
+    relink)
+      [[ "$#" -eq 0 ]] || die "relink takes no arguments"
+      relink_dotfiles
+      ;;
+    -h|--help|help)
+      usage
+      ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

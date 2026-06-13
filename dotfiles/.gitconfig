@@ -1,0 +1,64 @@
+[user]
+    name =
+    email =
+[includeIf "gitdir:~/private/"]
+    path = ~/.gitconfig-private
+[push]
+    default = simple
+    recurseSubmodules = check
+[core]
+    trustctime = false
+    editor = nvim
+    filemode = false
+    autocrlf = false
+[filter "lfs"]
+    clean = git-lfs clean -- %f
+    smudge = git-lfs smudge -- %f
+    required = true
+    process = git-lfs filter-process
+[gc]
+    autoDetach = false
+[pull]
+    rebase = true
+[alias]
+    co = checkout
+    cob = checkout -b
+    st = status
+    br = branch
+    cm = commit
+    cmm = commit -m
+    pl = pull
+    ps = push
+    ft = fetch
+    lg = log --oneline --graph --decorate --all
+    last = log -1 HEAD
+    unstage = restore --staged
+    amend = commit --amend
+    rv = remote -v
+    aliases = config --get-regexp ^alias\\.
+[credential]
+	helper = manager
+	useHttpPath = false
+[diff]
+    tool = nvim
+[difftool]
+    prompt = false
+[difftool "nvim"]
+    cmd = nvim -d "$LOCAL" "$REMOTE"
+    dirDiff = true
+    trustExitCode = false
+[difftool "meld"]
+    cmd = meld "$LOCAL" "$REMOTE"
+[merge]
+    tool = nvim
+[mergetool]
+    prompt = false
+[mergetool "nvim"]
+    cmd = nvim -d "$LOCAL" "$MERGED" "$REMOTE"
+    trustExitCode = false
+[mergetool "meld"]
+    # Choose one of these two lines (not both!) explained below.
+    cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
+    #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
+[init]
+	defaultBranch = main

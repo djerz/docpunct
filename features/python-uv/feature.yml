@@ -1,0 +1,4 @@
+description: Install uv using the standalone installer.
+depends:
+  - debian-cli-packages
+

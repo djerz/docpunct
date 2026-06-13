@@ -1,0 +1,8 @@
+description: Base user environment.
+depends:
+  - debian-cli-packages
+  - git-credential-manager
+  - dotfiles
+  - rust
+  - node
+  - python-uv

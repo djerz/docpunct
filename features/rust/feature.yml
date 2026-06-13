@@ -1,0 +1,4 @@
+description: Install Rust using rustup.
+depends:
+  - debian-cli-packages
+

@@ -1,0 +1,4 @@
+description: Install Git Credential Manager from the latest upstream Linux release.
+depends:
+  - debian-cli-packages
+

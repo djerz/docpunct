@@ -1,0 +1,4 @@
+description: Build and install Neovim from the latest stable source tag.
+depends:
+  - debian-cli-packages
+

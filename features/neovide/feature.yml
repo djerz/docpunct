@@ -1,0 +1,6 @@
+description: Install Neovide using cargo.
+depends:
+  - debian-gui-packages
+  - rust
+  - neovim
+

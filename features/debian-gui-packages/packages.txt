@@ -1,0 +1,6 @@
+alacritty
+desktop-file-utils
+flameshot
+fontconfig
+gnome-tweaks
+vlc
