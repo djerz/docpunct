@@ -5,12 +5,13 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v4.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v4 feature set and implemented behavior.
+- `docpunct_v5.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v5 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains only distro-repository GUI packages plus `desktop-file-utils` for Neovide desktop entry support.
-- Third-party APT repository GUI apps are modeled as separate features: `brave-browser`, `visual-studio-code`, and `google-chrome`.
+- Third-party APT repository packages are modeled as separate features: `brave-browser`, `visual-studio-code`, `google-chrome`, and `docker`.
+- The next planned test improvement is to install Docker with docpunct, use the sibling `../dockerfiles` ShellCheck image, and then add a `just shellcheck` target to this repository.
 
 ## Done
 
@@ -51,15 +52,18 @@
   - `dotfiles` depends on `git-credential-manager`
   - `core` includes `git-credential-manager` before `dotfiles`
 - Added Neovide desktop entry template and install/remove handling in the `neovide` feature.
-- Updated `HOWTO.md` to reflect the v4 feature set and implemented behavior.
+- Updated `HOWTO.md` to reflect the latest feature set and implemented behavior.
 - Added dependency cycle detection before install/update traversal.
 - Updated `debian-gui-packages/packages.txt` to install `keepassxc`, `meld`, `gnome-icon-theme`, `adwaita-icon-theme-full`, and retained `desktop-file-utils` for Neovide.
 - Added third-party APT repository features for Brave Browser, Visual Studio Code, and Google Chrome. Each feature owns its package, source file, and signing key.
 - Added `docpunct_v4.md` as the latest specification snapshot for future resume sessions.
-- Changed `docpunct update FEATURE` to fail when `FEATURE` or any updated dependency is not installed, matching the v4 spec.
+- Changed `docpunct update FEATURE` to fail when `FEATURE` or any updated dependency is not installed, matching the spec.
 - Added a `docker` feature that installs Docker Engine from Docker's official APT repository after removing conflicting Ubuntu/distro Docker packages.
 - Added architecture guards for third-party APT package features and Docker suite handling for Ubuntu 22.04, 24.04, and 26.04.
 - Docker install adds the target user to the `docker` group when needed and Docker removal removes only the group membership it added.
+- Docker removal leaves the `docker` group in place and prints a manual `sudo groupdel docker` cleanup hint when the group still exists.
+- Added `docpunct_v5.md` as the latest specification snapshot for future resume sessions.
+- Cleaned the sibling `../dockerfiles` repository so its ShellCheck image references use `ghcr.io/djerz/shellcheck:latest` and other `djerz` GitHub/GHCR references instead of inherited `r.j3ss.co` or Jess references.
 
 ## Imported dotfiles
 
@@ -94,6 +98,7 @@
 - Docker feature scripts pass `bash -n`
 - Docker feature scripts are executable
 - Third-party APT feature scripts have architecture compatibility guards.
+- `git diff --check`
 
 ## Pending clarification
 
@@ -118,10 +123,15 @@
 - Package feature scripts have not been run because they invoke APT/sudo and alter the host.
 - Third-party APT repository feature scripts have not been run because they download signing keys/source configuration and invoke APT/sudo.
 - Docker feature scripts have not been run because they remove/install packages, download Docker's signing key/source configuration, and invoke APT/sudo.
+- ShellCheck has not yet been run against docpunct scripts because Docker has not yet been installed on this machine through docpunct.
+- The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
 
 ## Next steps
 
 1. Review and commit the current repository state.
-2. In the next implementation session, consider making install return immediately when the requested feature is already installed before resolving dependencies.
-3. Later, decide whether to import the empty `.gitconfig-private`.
-4. Later, consider signature/checksum validation for Git Credential Manager release assets.
+2. In the next session, install Docker with `./bin/docpunct install docker` only after explicit approval, then verify `docker --version` and `docker compose version`.
+3. Build or pull the ShellCheck image from the sibling `../dockerfiles` repository and run ShellCheck against `bin/docpunct` and `features/*/*.sh`.
+4. Add a repeatable `just shellcheck` target to docpunct that runs ShellCheck through the Docker image.
+5. Later, consider making install return immediately when the requested feature is already installed before resolving dependencies.
+6. Later, decide whether to import the empty `.gitconfig-private`.
+7. Later, consider signature/checksum validation for Git Credential Manager release assets.
