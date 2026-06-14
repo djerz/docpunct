@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Double Commander
+Comment=Twin-panel file manager
+Exec=__DOUBLECMD_EXEC__
+Icon=__DOUBLECMD_ICON__
+Terminal=false
+Categories=Utility;FileManager;

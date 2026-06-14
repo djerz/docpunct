@@ -65,7 +65,12 @@ Suggested working method:
 3. Propose a small implementation plan.
 4. Ask clarifying questions only if needed.
 5. Implement the framework in small commits or small logical steps.
-6. After each step, run simple syntax checks and safe dry-run style checks where possible.
+6. After each step, run tests appropriate to the change. At minimum, shell
+   script changes require ShellCheck through `./bin/docpunct shellcheck` or
+   `just shellcheck`; broader behavior changes should also run the matching
+   smoke or container targets. Test targets may be run without asking first,
+   including container tests that pull images or run APT/network work inside
+   containers.
 7. Keep a short progress note in `TODO.md` or similar so another session can continue.
 
 Do not run destructive install/remove operations without asking first.

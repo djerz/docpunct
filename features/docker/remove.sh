@@ -11,8 +11,16 @@ packages=(
 
 keyring="/etc/apt/keyrings/docker.asc"
 source_file="/etc/apt/sources.list.d/docker.sources"
-target_user="${DOCPUNCT_DOCKER_USER:-${SUDO_USER:-${USER:-}}}"
+target_user="${DOCPUNCT_DOCKER_USER:-}"
 group_user_marker="$DOCPUNCT_STATE_DIR/docker-group-user"
+
+if [[ -z "$target_user" ]]; then
+  if [[ -n "${SUDO_USER:-}" && "${SUDO_USER:-}" != root ]]; then
+    target_user="$SUDO_USER"
+  else
+    target_user="${USER:-}"
+  fi
+fi
 
 if [[ -z "$target_user" ]]; then
   printf 'Could not determine user to remove from the docker group\n' >&2

@@ -22,8 +22,16 @@ conflicting_packages=(
 keyring="/etc/apt/keyrings/docker.asc"
 source_file="/etc/apt/sources.list.d/docker.sources"
 repo_url="https://download.docker.com/linux/ubuntu"
-target_user="${DOCPUNCT_DOCKER_USER:-${SUDO_USER:-${USER:-}}}"
+target_user="${DOCPUNCT_DOCKER_USER:-}"
 group_user_marker="$DOCPUNCT_STATE_DIR/docker-group-user"
+
+if [[ -z "$target_user" ]]; then
+  if [[ -n "${SUDO_USER:-}" && "${SUDO_USER:-}" != root ]]; then
+    target_user="$SUDO_USER"
+  else
+    target_user="${USER:-}"
+  fi
+fi
 
 if [[ -z "$target_user" ]]; then
   printf 'Could not determine user to add to the docker group\n' >&2
@@ -41,6 +49,7 @@ if [[ "${#installed_conflicts[@]}" -gt 0 ]]; then
   sudo apt-get remove -y "${installed_conflicts[@]}"
 fi
 
+# shellcheck disable=SC1091
 . /etc/os-release
 suite="${DOCPUNCT_DOCKER_UBUNTU_SUITE:-${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}}"
 if [[ -z "$suite" ]]; then

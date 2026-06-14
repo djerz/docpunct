@@ -5,13 +5,28 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v5.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v5 feature set and implemented behavior.
+- `docpunct_v6.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v6 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains only distro-repository GUI packages plus `desktop-file-utils` for Neovide desktop entry support.
 - Third-party APT repository packages are modeled as separate features: `brave-browser`, `visual-studio-code`, `google-chrome`, and `docker`.
-- The next planned test improvement is to install Docker with docpunct, use the sibling `../dockerfiles` ShellCheck image, and then add a `just shellcheck` target to this repository.
+- Docker was installed with docpunct in the previous session, the sibling `../dockerfiles` ShellCheck image was usable, and this repository now has a repeatable `just shellcheck` target.
+- A first testing architecture is in place:
+  - `just test-smoke` runs host-safe Bash smoke tests with temporary home/cache directories.
+  - `just test-container ubuntu=VERSION` runs integration tests in disposable Ubuntu containers for 22.04, 24.04, or 26.04.
+  - `just test-containers` runs the container test matrix.
+  - `just test-docker-feature ubuntu=VERSION` runs the Docker feature in a separate privileged container.
+  - `just test` currently runs ShellCheck and host-safe smoke tests only.
+- Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
+- Future sessions should always run tests appropriate to the completed task:
+  - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
+  - core behavior changes: `./bin/docpunct test` or `just test`
+  - package/container behavior changes: the matching `test-container`,
+    `test-containers`, `test-docker-feature`, or feature-specific target
+- Future sessions are allowed to run any test target without asking first,
+  including container tests that pull images or run APT/network work inside
+  containers.
 
 ## Done
 
@@ -20,8 +35,10 @@
 - Added feature directories and manifests for:
   - `core`
   - `dotfiles`
+  - `fd-find`
   - `debian-cli-packages`
   - `debian-gui-packages`
+  - `desktop-apps`
   - `git-credential-manager`
   - `rust`
   - `node`
@@ -31,6 +48,7 @@
   - `brave-browser`
   - `visual-studio-code`
   - `google-chrome`
+  - `doublecmd`
 - Added install/update/remove scripts where needed.
 - Added dependency resolution for install/update.
 - Added conservative dependency guard for removal.
@@ -63,7 +81,20 @@
 - Docker install adds the target user to the `docker` group when needed and Docker removal removes only the group membership it added.
 - Docker removal leaves the `docker` group in place and prints a manual `sudo groupdel docker` cleanup hint when the group still exists.
 - Added `docpunct_v5.md` as the latest specification snapshot for future resume sessions.
+- Added `docpunct_v6.md` as the latest specification snapshot for future resume sessions.
 - Cleaned the sibling `../dockerfiles` repository so its ShellCheck image references use `ghcr.io/djerz/shellcheck:latest` and other `djerz` GitHub/GHCR references instead of inherited `r.j3ss.co` or Jess references.
+- Added a repeatable `just shellcheck` target that runs ShellCheck through `ghcr.io/djerz/shellcheck:latest` with Docker image pulls disabled.
+- Added host-safe smoke tests for listing, status, dotfile link/relink/remove behavior, dependency removal guards, update refusal, and dependency cycle refusal.
+- Added disposable Ubuntu container integration test scripts and just targets for Ubuntu 22.04, 24.04, and 26.04.
+- Added a separate privileged Docker-container test target for the `docker` feature.
+- Added matching `./bin/docpunct` commands for all `justfile` targets, including bootstrap and test targets.
+- Recorded the standing project practice that future sessions should run tests appropriate to the change.
+- Added a `doublecmd` feature that installs the latest Double Commander GitHub release from the portable Qt6 Linux tarball for the local architecture.
+- Added a separate non-privileged Double Commander container test target.
+- Added a `desktop-apps` meta-feature for GUI desktop applications.
+- Fixed Docker feature user selection so `sudo -u USER` contexts do not incorrectly target `root` through `SUDO_USER=root`.
+- Added `util-linux-extra` as an optional `debian-cli-packages` package because Ubuntu 22.04 does not provide it; `ripgrep` was already present.
+- Moved `fd-find` into a separate feature that installs the package and links `~/.local/bin/fd` to `fdfind`; `debian-cli-packages` depends on it.
 
 ## Imported dotfiles
 
@@ -98,6 +129,17 @@
 - Docker feature scripts pass `bash -n`
 - Docker feature scripts are executable
 - Third-party APT feature scripts have architecture compatibility guards.
+- ShellCheck passes for `bin/docpunct` and `features/*/*.sh` through the Docker image.
+- ShellCheck passes for test scripts through the Docker image.
+- `tests/smoke.sh`
+- `./bin/docpunct test`
+- `./bin/docpunct test-containers` with Ubuntu 22.04, 24.04, and 26.04.
+- `./bin/docpunct test-docker-feature 24.04`
+- Double Commander latest-release asset selector against current upstream release metadata.
+- `./bin/docpunct test-doublecmd-feature 24.04`
+- Docker feature group membership add/remove behavior in `./bin/docpunct test-docker-feature 24.04`.
+- `./bin/docpunct test-containers` after adding optional `util-linux-extra`.
+- `./bin/docpunct test-containers` after moving `fd-find` into its own feature and verifying the `fd` symlink.
 - `git diff --check`
 
 ## Pending clarification
@@ -110,28 +152,25 @@
 - Decide whether `docpunct install FEATURE` should return immediately for an already-installed requested feature before resolving dependencies.
 - Add install failure rollback that attempts `remove.sh` after a failed install script.
 - Consider signature/checksum validation for Git Credential Manager release assets.
-- Install-test APT/sudo-backed features only after explicit user approval.
+- Consider signature/checksum validation for Double Commander release assets.
 
 ## Known issues
 
 - `docpunct install FEATURE` resolves dependencies before checking whether `FEATURE` is already installed; this may install missing dependencies for an already-installed parent feature.
 - Install failure logs are kept, but install failure rollback via `remove.sh` is not implemented.
 - Git Credential Manager package signature validation is not implemented.
+- Double Commander release asset signature/checksum validation is not implemented.
 - Neovim removal currently removes the user binary/runtime path but leaves the source checkout under `~/.cache/docpunct/src/neovim`.
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
 - The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
-- Package feature scripts have not been run because they invoke APT/sudo and alter the host.
-- Third-party APT repository feature scripts have not been run because they download signing keys/source configuration and invoke APT/sudo.
-- Docker feature scripts have not been run because they remove/install packages, download Docker's signing key/source configuration, and invoke APT/sudo.
-- ShellCheck has not yet been run against docpunct scripts because Docker has not yet been installed on this machine through docpunct.
+- APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
+- Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
 - The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
 
 ## Next steps
 
 1. Review and commit the current repository state.
-2. In the next session, install Docker with `./bin/docpunct install docker` only after explicit approval, then verify `docker --version` and `docker compose version`.
-3. Build or pull the ShellCheck image from the sibling `../dockerfiles` repository and run ShellCheck against `bin/docpunct` and `features/*/*.sh`.
-4. Add a repeatable `just shellcheck` target to docpunct that runs ShellCheck through the Docker image.
-5. Later, consider making install return immediately when the requested feature is already installed before resolving dependencies.
-6. Later, decide whether to import the empty `.gitconfig-private`.
-7. Later, consider signature/checksum validation for Git Credential Manager release assets.
+2. Push the committed docpunct changes.
+3. In a later session, consider making install return immediately when the requested feature is already installed before resolving dependencies.
+4. Later, decide whether to import the empty `.gitconfig-private`.
+5. Later, consider signature/checksum validation for Git Credential Manager and Double Commander release assets.

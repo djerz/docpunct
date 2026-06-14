@@ -1,0 +1,4 @@
+description: Install the latest Double Commander release.
+depends:
+  - debian-cli-packages
+  - debian-gui-packages

@@ -28,6 +28,14 @@ Usage:
   docpunct status
   docpunct list
   docpunct relink
+  docpunct bootstrap
+  docpunct shellcheck
+  docpunct test-smoke
+  docpunct test-container [22.04|24.04|26.04]
+  docpunct test-containers
+  docpunct test-doublecmd-feature [22.04|24.04|26.04]
+  docpunct test-docker-feature [22.04|24.04|26.04]
+  docpunct test
 EOF
 }
 
@@ -90,7 +98,7 @@ feature_description() {
 }
 
 feature_deps() {
-  local manifest in_dep=0
+  local manifest
   manifest="$(manifest_path "$1")"
   awk '
     /^[[:space:]]*depends[[:space:]]*:[[:space:]]*$/ { in_dep=1; next }
@@ -246,6 +254,46 @@ relink_dotfiles() {
   run_feature_script install dotfiles
 }
 
+shellcheck_scripts() {
+  docker run --rm -i \
+    --pull=never \
+    --name docpunct-shellcheck \
+    -v "$ROOT_DIR:/usr/src:ro" \
+    --workdir /usr/src \
+    ghcr.io/djerz/shellcheck:latest \
+    shellcheck bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh
+}
+
+run_smoke_tests() {
+  "$ROOT_DIR/tests/smoke.sh"
+}
+
+run_container_tests() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run.sh" "$ubuntu_version"
+}
+
+run_all_container_tests() {
+  run_container_tests 22.04
+  run_container_tests 24.04
+  run_container_tests 26.04
+}
+
+run_docker_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-docker-feature.sh" "$ubuntu_version"
+}
+
+run_doublecmd_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-doublecmd-feature.sh" "$ubuntu_version"
+}
+
+run_default_tests() {
+  shellcheck_scripts
+  run_smoke_tests
+}
+
 main() {
   local cmd="${1:-}"
   [[ -n "$cmd" ]] || { usage; exit 2; }
@@ -253,6 +301,11 @@ main() {
   ensure_dirs
 
   case "$cmd" in
+    bootstrap)
+      [[ "$#" -eq 0 ]] || die "bootstrap takes no arguments"
+      detect_dependency_cycle core
+      install_feature core
+      ;;
     install)
       [[ "$#" -gt 0 ]] || die "install requires at least one feature"
       while [[ "$#" -gt 0 ]]; do detect_dependency_cycle "$1"; install_feature "$1"; shift; done
@@ -276,6 +329,34 @@ main() {
     relink)
       [[ "$#" -eq 0 ]] || die "relink takes no arguments"
       relink_dotfiles
+      ;;
+    shellcheck)
+      [[ "$#" -eq 0 ]] || die "shellcheck takes no arguments"
+      shellcheck_scripts
+      ;;
+    test-smoke)
+      [[ "$#" -eq 0 ]] || die "test-smoke takes no arguments"
+      run_smoke_tests
+      ;;
+    test-container)
+      [[ "$#" -le 1 ]] || die "test-container takes at most one Ubuntu version"
+      run_container_tests "${1:-24.04}"
+      ;;
+    test-containers)
+      [[ "$#" -eq 0 ]] || die "test-containers takes no arguments"
+      run_all_container_tests
+      ;;
+    test-docker-feature)
+      [[ "$#" -le 1 ]] || die "test-docker-feature takes at most one Ubuntu version"
+      run_docker_feature_test "${1:-24.04}"
+      ;;
+    test-doublecmd-feature)
+      [[ "$#" -le 1 ]] || die "test-doublecmd-feature takes at most one Ubuntu version"
+      run_doublecmd_feature_test "${1:-24.04}"
+      ;;
+    test)
+      [[ "$#" -eq 0 ]] || die "test takes no arguments"
+      run_default_tests
       ;;
     -h|--help|help)
       usage

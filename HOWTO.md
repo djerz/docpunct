@@ -34,7 +34,8 @@ just update neovim
 just remove neovide
 ```
 
-`just` is optional. The main command is always `./bin/docpunct`.
+`just` is optional. The main command is always `./bin/docpunct`, and every
+`just` target has an equivalent `./bin/docpunct` command.
 
 ---
 
@@ -127,12 +128,15 @@ The repository currently defines these features:
 ```text
 core
 dotfiles
+fd-find
 debian-cli-packages
 debian-gui-packages
+desktop-apps
 brave-browser
 visual-studio-code
 google-chrome
 docker
+doublecmd
 git-credential-manager
 rust
 node
@@ -166,6 +170,16 @@ python-uv
 
 `debian-cli-packages` installs common command-line packages with APT.
 
+`fd-find` installs Ubuntu/Debian's `fd-find` package and creates the upstream
+recommended compatibility link:
+
+```text
+~/.local/bin/fd -> /usr/bin/fdfind
+```
+
+`debian-cli-packages` depends on `fd-find` so the link is available whenever
+the common CLI package set is installed.
+
 `debian-gui-packages` installs graphical packages with APT:
 
 ```text
@@ -187,6 +201,17 @@ brave-browser
 visual-studio-code
 google-chrome
 docker
+```
+
+`desktop-apps` is a meta-feature for GUI desktop applications. It currently
+depends on:
+
+```text
+debian-gui-packages
+brave-browser
+visual-studio-code
+google-chrome
+doublecmd
 ```
 
 Each third-party package feature owns its package, APT source file, and signing
@@ -257,6 +282,28 @@ DOCPUNCT_DOCKER_UBUNTU_SUITE=noble ./bin/docpunct install docker
 the local Debian architecture, stores it in `~/.cache/docpunct/downloads`,
 installs it with `sudo dpkg -i`, repairs package dependencies with APT if
 needed, and runs `git-credential-manager configure`.
+
+`doublecmd` installs the latest Double Commander GitHub release from the
+portable Qt6 Linux tarball for the local architecture. It extracts the app to:
+
+```text
+~/.local/share/docpunct/doublecmd
+```
+
+It links the executable at:
+
+```text
+~/.local/bin/doublecmd
+```
+
+It also writes a desktop entry to:
+
+```text
+~/.local/share/applications/doublecmd.desktop
+```
+
+Removal deletes only those docpunct-owned install paths and leaves Double
+Commander user configuration/cache directories alone.
 
 `rust` installs Rust with the official `rustup` installer.
 
@@ -568,6 +615,75 @@ entry, but should not remove:
 ~/.config/neovide
 ~/.local/share/neovide
 ~/.cache/neovide
+```
+
+---
+
+## Testing
+
+After making changes, run tests appropriate to the area touched. Shell script
+changes should always be checked with ShellCheck. Behavior changes should also
+run the relevant smoke or container tests.
+
+Run ShellCheck through the Docker image:
+
+```sh
+just shellcheck
+./bin/docpunct shellcheck
+```
+
+Run host-safe smoke tests. These use temporary home/cache directories and do
+not run package installers:
+
+```sh
+just test-smoke
+./bin/docpunct test-smoke
+```
+
+Run the default local test set:
+
+```sh
+just test
+./bin/docpunct test
+```
+
+The default test set runs ShellCheck and host-safe smoke tests only.
+
+Run disposable Ubuntu container integration tests explicitly when Docker image
+pulls and APT/network work inside containers are acceptable:
+
+```sh
+just test-container ubuntu=22.04
+just test-container ubuntu=24.04
+just test-container ubuntu=26.04
+./bin/docpunct test-container 22.04
+./bin/docpunct test-container 24.04
+./bin/docpunct test-container 26.04
+```
+
+Run all supported Ubuntu container tests:
+
+```sh
+just test-containers
+./bin/docpunct test-containers
+```
+
+The Docker feature has a separate privileged-container test target:
+
+```sh
+just test-docker-feature ubuntu=24.04
+./bin/docpunct test-docker-feature 24.04
+```
+
+This target is intentionally separate from `just test` and
+`just test-containers`.
+
+The Double Commander feature has a separate non-privileged container test
+target:
+
+```sh
+just test-doublecmd-feature ubuntu=24.04
+./bin/docpunct test-doublecmd-feature 24.04
 ```
 
 ---

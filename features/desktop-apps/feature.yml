@@ -1,0 +1,7 @@
+description: Meta-feature for GUI desktop applications.
+depends:
+  - debian-gui-packages
+  - brave-browser
+  - visual-studio-code
+  - google-chrome
+  - doublecmd

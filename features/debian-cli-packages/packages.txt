@@ -2,7 +2,6 @@ build-essential
 ca-certificates
 cmake
 curl
-fd-find
 gettext
 git
 gnupg
