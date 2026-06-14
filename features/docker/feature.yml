@@ -1,0 +1,3 @@
+description: Install Docker Engine from the official Docker APT repository.
+depends:
+  - debian-cli-packages

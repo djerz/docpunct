@@ -132,6 +132,7 @@ debian-gui-packages
 brave-browser
 visual-studio-code
 google-chrome
+docker
 git-credential-manager
 rust
 node
@@ -185,11 +186,72 @@ Third-party APT repository packages are managed by separate features, not by
 brave-browser
 visual-studio-code
 google-chrome
+docker
 ```
 
 Each third-party package feature owns its package, APT source file, and signing
 key. Removing one of these features removes the package, source file, and key
 owned by that feature.
+
+Brave Browser, Visual Studio Code, and Google Chrome use upstream APT
+repositories with distro-independent `stable` suites, so the same source
+configuration is used on Ubuntu 22.04, 24.04, 26.04, and later supported
+Ubuntu versions. Their install scripts check the local Debian architecture
+before writing APT source files.
+
+`docker` installs Docker Engine from Docker's official APT repository. Before
+installing, it removes conflicting Ubuntu/distro packages when present:
+
+```text
+docker.io
+docker-compose
+docker-compose-v2
+docker-doc
+podman-docker
+containerd
+runc
+```
+
+It then installs:
+
+```text
+docker-ce
+docker-ce-cli
+containerd.io
+docker-buildx-plugin
+docker-compose-plugin
+```
+
+After installation, the feature adds the invoking user to the `docker` group
+with `sudo usermod -aG docker USER` when the user is not already a member. A
+script cannot activate that new group in the parent shell, so run this once
+after installation if you want to use Docker without opening a new login
+session:
+
+```sh
+newgrp docker
+```
+
+The user can be overridden when needed:
+
+```sh
+DOCPUNCT_DOCKER_USER=chris ./bin/docpunct install docker
+```
+
+Removal removes the Docker group membership only when the Docker feature added
+it. Pre-existing Docker group membership is left alone. The `docker` group
+itself is also left in place; removal prints a manual cleanup hint when the
+group still exists.
+
+Docker's repository is Ubuntu-codename-specific. The Docker feature uses
+`UBUNTU_CODENAME` from `/etc/os-release`, so Ubuntu 22.04 uses `jammy`, Ubuntu
+24.04 uses `noble`, and Ubuntu 26.04 uses `resolute`. If Docker has not yet
+published a `resolute` repository, the feature falls back to `noble`. You can
+override the repository suite explicitly:
+
+```sh
+DOCPUNCT_DOCKER_UBUNTU_SUITE=noble ./bin/docpunct install docker
+```
 
 `git-credential-manager` downloads the latest upstream Linux Debian package for
 the local Debian architecture, stores it in `~/.cache/docpunct/downloads`,

@@ -56,6 +56,10 @@
 - Updated `debian-gui-packages/packages.txt` to install `keepassxc`, `meld`, `gnome-icon-theme`, `adwaita-icon-theme-full`, and retained `desktop-file-utils` for Neovide.
 - Added third-party APT repository features for Brave Browser, Visual Studio Code, and Google Chrome. Each feature owns its package, source file, and signing key.
 - Added `docpunct_v4.md` as the latest specification snapshot for future resume sessions.
+- Changed `docpunct update FEATURE` to fail when `FEATURE` or any updated dependency is not installed, matching the v4 spec.
+- Added a `docker` feature that installs Docker Engine from Docker's official APT repository after removing conflicting Ubuntu/distro Docker packages.
+- Added architecture guards for third-party APT package features and Docker suite handling for Ubuntu 22.04, 24.04, and 26.04.
+- Docker install adds the target user to the `docker` group when needed and Docker removal removes only the group membership it added.
 
 ## Imported dotfiles
 
@@ -85,6 +89,11 @@
 - dependency cycle refusal using a temporary fake feature tree
 - new third-party APT feature scripts pass `bash -n`
 - new third-party APT feature scripts are executable
+- update refusal for an uninstalled feature using an isolated cache
+- update refusal for an uninstalled dependency using a temporary fake feature tree
+- Docker feature scripts pass `bash -n`
+- Docker feature scripts are executable
+- Third-party APT feature scripts have architecture compatibility guards.
 
 ## Pending clarification
 
@@ -93,7 +102,6 @@
 ## Remaining work
 
 - Decide whether to import the empty `.gitconfig-private`.
-- Decide whether `docpunct update FEATURE` should strictly fail when the feature is not installed, as specified, or whether the implementation/spec should keep the current install-after-success behavior.
 - Decide whether `docpunct install FEATURE` should return immediately for an already-installed requested feature before resolving dependencies.
 - Add install failure rollback that attempts `remove.sh` after a failed install script.
 - Consider signature/checksum validation for Git Credential Manager release assets.
@@ -101,7 +109,6 @@
 
 ## Known issues
 
-- `docpunct update FEATURE` currently marks an uninstalled feature as installed after a successful update script; v4 says update should fail when the feature is not installed.
 - `docpunct install FEATURE` resolves dependencies before checking whether `FEATURE` is already installed; this may install missing dependencies for an already-installed parent feature.
 - Install failure logs are kept, but install failure rollback via `remove.sh` is not implemented.
 - Git Credential Manager package signature validation is not implemented.
@@ -110,11 +117,11 @@
 - The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
 - Package feature scripts have not been run because they invoke APT/sudo and alter the host.
 - Third-party APT repository feature scripts have not been run because they download signing keys/source configuration and invoke APT/sudo.
+- Docker feature scripts have not been run because they remove/install packages, download Docker's signing key/source configuration, and invoke APT/sudo.
 
 ## Next steps
 
 1. Review and commit the current repository state.
-2. In the next implementation session, make update semantics match the v4 spec by failing `docpunct update FEATURE` when `FEATURE` is not installed.
-3. After that, consider making install return immediately when the requested feature is already installed before resolving dependencies.
-4. Later, decide whether to import the empty `.gitconfig-private`.
-5. Later, consider signature/checksum validation for Git Credential Manager release assets.
+2. In the next implementation session, consider making install return immediately when the requested feature is already installed before resolving dependencies.
+3. Later, decide whether to import the empty `.gitconfig-private`.
+4. Later, consider signature/checksum validation for Git Credential Manager release assets.

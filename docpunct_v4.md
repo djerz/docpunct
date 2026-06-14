@@ -47,6 +47,7 @@ docpunct/
 │   ├── brave-browser/
 │   ├── visual-studio-code/
 │   ├── google-chrome/
+│   ├── docker/
 │   ├── git-credential-manager/
 │   ├── rust/
 │   ├── node/
@@ -717,12 +718,13 @@ Third-party APT repository packages are managed by separate features rather
 than by `debian-gui-packages`. Each third-party package feature owns its package
 install/removal, APT source file, and signing key.
 
-Initial third-party GUI package features:
+Initial third-party APT package features:
 
 ```text
 brave-browser
 visual-studio-code
 google-chrome
+docker
 ```
 
 The `brave-browser` feature installs the `brave-browser` package from Brave's
@@ -733,6 +735,9 @@ official APT repository and owns:
 /usr/share/keyrings/brave-browser-archive-keyring.gpg
 ```
 
+The Brave APT repository uses a distro-independent `stable` suite and supports
+the `amd64` and `arm64` Debian architectures.
+
 The `visual-studio-code` feature installs the `code` package from Microsoft's
 official APT repository and owns:
 
@@ -741,12 +746,92 @@ official APT repository and owns:
 /usr/share/keyrings/microsoft.gpg
 ```
 
+The Visual Studio Code APT repository uses a distro-independent `stable` suite
+and supports the `amd64`, `arm64`, and `armhf` Debian architectures.
+
 The `google-chrome` feature installs the `google-chrome-stable` package from
 Google's official APT repository and owns:
 
 ```text
 /etc/apt/sources.list.d/google-chrome.sources
 /usr/share/keyrings/google-linux-signing-key.gpg
+```
+
+The Google Chrome APT repository uses a distro-independent `stable` suite and
+supports the `amd64` Debian architecture.
+
+The `docker` feature installs Docker Engine from Docker's official APT
+repository. Before installing, it removes conflicting Ubuntu/distro packages
+when present:
+
+```text
+docker.io
+docker-compose
+docker-compose-v2
+docker-doc
+podman-docker
+containerd
+runc
+```
+
+It installs:
+
+```text
+docker-ce
+docker-ce-cli
+containerd.io
+docker-buildx-plugin
+docker-compose-plugin
+```
+
+After package installation, the feature adds the target user to the `docker`
+group with:
+
+```sh
+sudo usermod -aG docker USER
+```
+
+The target user defaults to `DOCPUNCT_DOCKER_USER`, then `SUDO_USER`, then
+`USER`. If the feature adds the user to the `docker` group, it must write a
+state marker under `DOCPUNCT_STATE_DIR`. Removal should remove Docker group
+membership only when that state marker exists. Pre-existing Docker group
+membership must be left alone. The `docker` group itself must be left in place.
+If the group still exists after package removal, the removal script should print
+a manual cleanup hint:
+
+```sh
+sudo groupdel docker
+```
+
+The install script must not run `newgrp docker`, because it would start a child
+shell and cannot update the caller's parent shell. Instead, it should print an
+instruction to run:
+
+```sh
+newgrp docker
+```
+
+The feature owns:
+
+```text
+/etc/apt/sources.list.d/docker.sources
+/etc/apt/keyrings/docker.asc
+```
+
+Docker's APT repository is Ubuntu-codename-specific. The feature uses
+`UBUNTU_CODENAME` from `/etc/os-release` by default:
+
+```text
+Ubuntu 22.04 -> jammy
+Ubuntu 24.04 -> noble
+Ubuntu 26.04 -> resolute
+```
+
+If Docker has not yet published a `resolute` repository, the feature falls back
+to `noble`. The suite can be overridden with:
+
+```sh
+DOCPUNCT_DOCKER_UBUNTU_SUITE=noble ./bin/docpunct install docker
 ```
 
 ---
@@ -936,7 +1021,7 @@ The first implementation must support:
 - dotfile backup and restore
 - Debian CLI package management
 - Debian GUI package management
-- third-party APT repository package management for Brave Browser, Visual Studio Code, and Google Chrome
+- third-party APT repository package management for Brave Browser, Visual Studio Code, Google Chrome, and Docker
 - Git Credential Manager
 - Rust
 - Node.js

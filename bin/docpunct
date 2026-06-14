@@ -168,6 +168,10 @@ install_feature() {
 update_feature() {
   local feature="$1" dep
   require_feature "$feature"
+  if ! is_installed "$feature"; then
+    die "not installed: $feature"
+  fi
+
   while IFS= read -r dep; do
     [[ -n "$dep" ]] || continue
     update_feature "$dep"
@@ -175,7 +179,6 @@ update_feature() {
 
   printf 'Updating %s\n' "$feature"
   run_feature_script update "$feature"
-  is_installed "$feature" || mark_installed "$feature"
 }
 
 installed_dependents() {
