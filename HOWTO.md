@@ -2,9 +2,11 @@
 
 This document explains how to use and extend `docpunct`.
 
-`docpunct` is a small personal bootstrap system for Ubuntu. It installs, updates, and removes features that define parts of a Linux user environment.
+`docpunct` is a small personal bootstrap system for Ubuntu. It installs,
+updates, and removes features that define parts of a Linux user environment.
 
-It is intentionally simple. It is not a package manager.
+It is intentionally simple, explicit, and human-readable. It is not a general
+purpose package manager.
 
 ---
 
@@ -23,9 +25,10 @@ Run the core install:
 ./bin/docpunct install core
 ```
 
-If you later add a `justfile`, you may also use convenience commands such as:
+The `justfile` provides convenience commands:
 
 ```sh
+just bootstrap
 just install core
 just update neovim
 just remove neovide
@@ -43,7 +46,7 @@ List available features:
 ./bin/docpunct list
 ```
 
-Show installed features:
+Show feature status:
 
 ```sh
 ./bin/docpunct status
@@ -77,7 +80,7 @@ Relink dotfiles after moving the repository:
 
 ## Runtime directories
 
-`docpunct` stores its own generated state and cache files under:
+`docpunct` stores generated state and cache files under:
 
 ```text
 ~/.cache/docpunct
@@ -89,6 +92,7 @@ Important subdirectories:
 ~/.cache/docpunct/state
 ~/.cache/docpunct/log
 ~/.cache/docpunct/src
+~/.cache/docpunct/downloads
 ~/.cache/docpunct/backups/dotfiles
 ```
 
@@ -98,10 +102,118 @@ Source repositories built by docpunct are checked out under:
 ~/.cache/docpunct/src
 ```
 
-Example:
+Downloaded release assets, such as Git Credential Manager Debian packages, are
+kept under:
 
 ```text
-~/.cache/docpunct/src/neovim
+~/.cache/docpunct/downloads
+```
+
+User-installed binaries should use standard user locations such as:
+
+```text
+~/.local/bin
+```
+
+Tools with established install locations keep their defaults, such as Rust via
+`rustup`, Node.js via `nvm`, and uv via its standalone installer.
+
+---
+
+## Initial features
+
+The repository currently defines these features:
+
+```text
+core
+dotfiles
+debian-cli-packages
+debian-gui-packages
+brave-browser
+visual-studio-code
+google-chrome
+git-credential-manager
+rust
+node
+python-uv
+neovim
+neovide
+```
+
+`core` is a meta-feature depending on:
+
+```text
+debian-cli-packages
+git-credential-manager
+dotfiles
+rust
+node
+python-uv
+```
+
+`dotfiles` depends on `git-credential-manager` because the imported
+`.gitconfig` uses:
+
+```ini
+[credential]
+	helper = manager
+```
+
+---
+
+## Feature notes
+
+`debian-cli-packages` installs common command-line packages with APT.
+
+`debian-gui-packages` installs graphical packages with APT:
+
+```text
+keepassxc
+meld
+gnome-icon-theme
+adwaita-icon-theme-full
+desktop-file-utils
+```
+
+`desktop-file-utils` is included for Neovide desktop entry validation and
+updates.
+
+Third-party APT repository packages are managed by separate features, not by
+`debian-gui-packages`:
+
+```text
+brave-browser
+visual-studio-code
+google-chrome
+```
+
+Each third-party package feature owns its package, APT source file, and signing
+key. Removing one of these features removes the package, source file, and key
+owned by that feature.
+
+`git-credential-manager` downloads the latest upstream Linux Debian package for
+the local Debian architecture, stores it in `~/.cache/docpunct/downloads`,
+installs it with `sudo dpkg -i`, repairs package dependencies with APT if
+needed, and runs `git-credential-manager configure`.
+
+`rust` installs Rust with the official `rustup` installer.
+
+`node` installs Node.js with `nvm`.
+
+`python-uv` installs uv with Astral's standalone installer.
+
+`neovim` builds Neovim from source under `~/.cache/docpunct/src/neovim`.
+
+`neovide` installs Neovide with:
+
+```sh
+cargo install --locked neovide
+```
+
+It also generates a desktop entry from the repository template and writes it to:
+
+```text
+~/.local/share/applications/neovide.desktop
 ```
 
 ---
@@ -116,7 +228,8 @@ Example:
 ~/.bashrc -> /path/to/docpunct/dotfiles/.bashrc
 ```
 
-If a target file already exists, docpunct makes a one-time backup before replacing it with a symlink.
+If a target file already exists and is not already managed by docpunct,
+docpunct makes a one-time backup before replacing it with a symlink.
 
 Backups are stored under:
 
@@ -124,13 +237,36 @@ Backups are stored under:
 ~/.cache/docpunct/backups/dotfiles
 ```
 
-When the dotfiles feature is removed, docpunct removes the symlink and restores the backup if one exists.
+When the dotfiles feature is removed, docpunct removes the symlink and restores
+the backup if one exists.
 
 If the repository moves, run:
 
 ```sh
 ./bin/docpunct relink
 ```
+
+The imported dotfiles are:
+
+```text
+.bashrc
+.gitconfig
+.config/nvim/init.lua
+.config/nvim/lazy-lock.json
+.config/nvim/readme.txt
+.config/nvim/lua/config/keymaps.lua
+.config/nvim/lua/config/lazy.lua
+.config/nvim/lua/plugins/copilotchat.lua
+.config/nvim/lua/plugins/diffview.lua
+.config/nvim/lua/plugins/hexview.lua
+.config/nvim/lua/plugins/init.lua
+.config/nvim/lua/plugins/telescope.lua
+.config/nvim/lua/plugins/web-devicons.lua
+```
+
+Private files such as `.gitconfig-private` are not imported without an explicit
+decision. The initially supplied `.gitconfig-private` was empty and was left out
+because its name indicates private data.
 
 Dotfiles should not hardcode usernames.
 
@@ -229,7 +365,7 @@ The feature name is the directory name.
 
 Do not add a `name` property to `feature.yml`.
 
-Minimal example:
+Supported properties:
 
 ```yaml
 description: Install my custom tool.
@@ -266,17 +402,22 @@ remove.sh
 
 Do not declare script names in YAML.
 
-When a script exists, docpunct runs it from the feature directory with helpful environment variables.
+When a script exists, docpunct runs it from the feature directory with helpful
+environment variables.
 
 Available variables:
 
 ```sh
 DOCPUNCT_ROOT
+DOCPUNCT_FEATURES_DIR
 DOCPUNCT_FEATURE
 DOCPUNCT_FEATURE_DIR
 DOCPUNCT_STATE_DIR
+DOCPUNCT_INSTALLED_DIR
 DOCPUNCT_CACHE_DIR
 DOCPUNCT_LOG_DIR
+DOCPUNCT_SRC_DIR
+DOCPUNCT_DOTFILES_BACKUP_DIR
 ```
 
 Example `install.sh`:
@@ -304,15 +445,17 @@ rm -f "$HOME/.local/bin/my-tool"
 
 ### Install
 
-If the feature is already installed, docpunct returns successfully and does not run the scripts again.
+If the feature is already installed, docpunct returns successfully and does not
+run the scripts again.
 
 Example:
 
 ```text
-already installed: neovim
+neovim already installed
 ```
 
-If the feature is not installed, docpunct installs dependencies first, runs `install.sh` if present, and marks the feature installed only after success.
+If the feature is not installed, docpunct installs dependencies first, runs
+`install.sh` if present, and marks the feature installed only after success.
 
 ### Update
 
@@ -320,7 +463,8 @@ A feature must already be installed before it can be updated.
 
 When updating, dependencies are updated first.
 
-If update fails, docpunct keeps the feature marked as installed and does not automatically remove it.
+If update fails, docpunct keeps the feature marked as installed and does not
+automatically remove it.
 
 ### Remove
 
@@ -330,6 +474,8 @@ If another installed feature depends on the feature, docpunct refuses removal.
 
 Removal only unmarks the feature after `remove.sh` succeeds.
 
+Dependencies are not automatically removed.
+
 ---
 
 ## Writing safe remove.sh scripts
@@ -338,9 +484,11 @@ Removal should be conservative.
 
 Remove files that clearly belong to the feature.
 
-Avoid deleting broad user directories unless they are fully owned by the feature.
+Avoid deleting broad user directories unless they are fully owned by the
+feature.
 
-For example, the Neovim feature should remove the docpunct source checkout and installed binary, but should not remove:
+For example, the Neovim feature may remove docpunct-installed binaries and
+runtime files, but it should not remove:
 
 ```text
 ~/.config/nvim
@@ -348,7 +496,11 @@ For example, the Neovim feature should remove the docpunct source checkout and i
 ~/.cache/nvim
 ```
 
-The Neovide feature should not remove:
+The current Neovim removal script leaves the source checkout under
+`~/.cache/docpunct/src/neovim` untouched.
+
+The Neovide feature removes the docpunct-installed user binary and desktop
+entry, but should not remove:
 
 ```text
 ~/.config/neovide
@@ -368,32 +520,7 @@ Never commit:
 - machine-specific secrets
 - personal private data
 
-Private configuration should stay outside the repository or be managed separately.
+Private configuration should stay outside the repository, be managed
+separately, or be encrypted with dedicated tooling.
 
 The repository should remain safe to clone publicly.
-
----
-
-## Initial features
-
-The initial implementation should provide these features:
-
-```text
-core
-dotfiles
-debian-cli-packages
-debian-gui-packages
-rust
-node
-python-uv
-neovim
-neovide
-```
-
-`core` is a meta-feature depending on:
-
-```text
-dotfiles
-debian-cli-packages
-```
-

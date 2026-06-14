@@ -1,0 +1,4 @@
+description: Install Google Chrome from the official Google APT repository.
+depends:
+  - debian-cli-packages
+

@@ -1,6 +1,8 @@
-alacritty
+# User-selected GUI packages.
+keepassxc
+meld
+gnome-icon-theme
+adwaita-icon-theme-full
+
+# Required by the Neovide feature for desktop entry validation and updates.
 desktop-file-utils
-flameshot
-fontconfig
-gnome-tweaks
-vlc

@@ -1,0 +1,4 @@
+description: Install Brave Browser from the official Brave APT repository.
+depends:
+  - debian-cli-packages
+

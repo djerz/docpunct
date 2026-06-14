@@ -1,0 +1,4 @@
+description: Install Visual Studio Code from the official Microsoft APT repository.
+depends:
+  - debian-cli-packages
+

@@ -105,6 +105,21 @@ feature_deps() {
   ' "$manifest"
 }
 
+detect_dependency_cycle() {
+  local feature="$1" stack="${2:-}" dep cycle
+  require_feature "$feature"
+
+  if [[ " $stack " == *" $feature "* ]]; then
+    cycle="${stack# } $feature"
+    die "dependency cycle detected: $cycle"
+  fi
+
+  while IFS= read -r dep; do
+    [[ -n "$dep" ]] || continue
+    detect_dependency_cycle "$dep" "$stack $feature"
+  done < <(feature_deps "$feature")
+}
+
 script_for() {
   local feature="$1" action="$2"
   printf '%s/%s.sh\n' "$(feature_dir "$feature")" "$action"
@@ -237,11 +252,11 @@ main() {
   case "$cmd" in
     install)
       [[ "$#" -gt 0 ]] || die "install requires at least one feature"
-      while [[ "$#" -gt 0 ]]; do install_feature "$1"; shift; done
+      while [[ "$#" -gt 0 ]]; do detect_dependency_cycle "$1"; install_feature "$1"; shift; done
       ;;
     update)
       [[ "$#" -gt 0 ]] || die "update requires at least one feature"
-      while [[ "$#" -gt 0 ]]; do update_feature "$1"; shift; done
+      while [[ "$#" -gt 0 ]]; do detect_dependency_cycle "$1"; update_feature "$1"; shift; done
       ;;
     remove)
       [[ "$#" -gt 0 ]] || die "remove requires at least one feature"
