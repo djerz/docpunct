@@ -1,6 +1,6 @@
 [user]
-    name =
-    email =
+    name = Chris Welmelinger
+    email = chris.welmelinger@gmail.com
 [includeIf "gitdir:~/private/"]
     path = ~/.gitconfig-private
 [push]
