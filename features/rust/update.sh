@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-rustup update
+if [[ -s "$HOME/.cargo/env" ]]; then
+  # shellcheck source=/dev/null
+  . "$HOME/.cargo/env"
+fi
 
+rustup update

@@ -319,6 +319,9 @@ Commander user configuration/cache directories alone.
 cargo install --locked neovide
 ```
 
+The Neovide feature sources `$HOME/.cargo/env` before invoking Cargo so it can
+work in the same docpunct run that installed Rust.
+
 It also generates a desktop entry from the repository template and writes it to:
 
 ```text
@@ -528,6 +531,18 @@ DOCPUNCT_LOG_DIR
 DOCPUNCT_SRC_DIR
 DOCPUNCT_DOTFILES_BACKUP_DIR
 ```
+
+If a feature script invokes Cargo or Rust tools, source Cargo's environment in
+that script before calling them:
+
+```sh
+if [ -s "$HOME/.cargo/env" ]; then
+  . "$HOME/.cargo/env"
+fi
+```
+
+Do not rely on `.bashrc`, the Rust feature, or another feature script to make
+Cargo available in the current script environment.
 
 Example `install.sh`:
 

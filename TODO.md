@@ -5,8 +5,8 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v6.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v6 feature set and implemented behavior.
+- `docpunct_v7.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v7 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains only distro-repository GUI packages plus `desktop-file-utils` for Neovide desktop entry support.
@@ -27,6 +27,10 @@
 - Future sessions are allowed to run any test target without asking first,
   including container tests that pull images or run APT/network work inside
   containers.
+- Future features that invoke Cargo or Rust tools must source
+  `$HOME/.cargo/env` themselves before calling those tools; do not rely on
+  `.bashrc`, the Rust feature script, or a previous child process to update the
+  current feature script environment.
 
 ## Done
 
@@ -95,6 +99,13 @@
 - Fixed Docker feature user selection so `sudo -u USER` contexts do not incorrectly target `root` through `SUDO_USER=root`.
 - Added `util-linux-extra` as an optional `debian-cli-packages` package because Ubuntu 22.04 does not provide it; `ripgrep` was already present.
 - Moved `fd-find` into a separate feature that installs the package and links `~/.local/bin/fd` to `fdfind`; `debian-cli-packages` depends on it.
+- Added Cargo/nvm shell initialization to the imported `.bashrc`; Cargo env
+  loading is guarded so shells still start before Rust is installed.
+- Fixed Rust and Neovide feature scripts so they source `$HOME/.cargo/env`
+  themselves before invoking Rust/Cargo tools.
+- Added a host-safe smoke regression proving Neovide install finds Cargo via
+  `$HOME/.cargo/env` without requiring `.bashrc` or a new shell session.
+- Added `docpunct_v7.md` as the latest specification snapshot for future resume sessions.
 
 ## Imported dotfiles
 
@@ -141,6 +152,9 @@
 - `./bin/docpunct test-containers` after adding optional `util-linux-extra`.
 - `./bin/docpunct test-containers` after moving `fd-find` into its own feature and verifying the `fd` symlink.
 - `git diff --check`
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh` after
+  fixing Cargo environment handling.
+- `./bin/docpunct test-smoke` after fixing Cargo environment handling.
 
 ## Pending clarification
 
@@ -153,6 +167,9 @@
 - Add install failure rollback that attempts `remove.sh` after a failed install script.
 - Consider signature/checksum validation for Git Credential Manager release assets.
 - Consider signature/checksum validation for Double Commander release assets.
+- Run `./bin/docpunct shellcheck` or `./bin/docpunct test` after Docker socket
+  access is available; the attempted `./bin/docpunct test` in this session was
+  interrupted before ShellCheck could complete.
 
 ## Known issues
 
@@ -165,12 +182,16 @@
 - The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
+- ShellCheck was not rerun after the Cargo environment fix because the
+  sandboxed command could not access the Docker socket and the escalated retry
+  was interrupted by the user.
 - The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
 
 ## Next steps
 
-1. Review and commit the current repository state.
-2. Push the committed docpunct changes.
-3. In a later session, consider making install return immediately when the requested feature is already installed before resolving dependencies.
+1. Review, commit, and push the current docpunct repository state.
+2. In the next session, run `./bin/docpunct shellcheck` or `./bin/docpunct test`
+   once Docker socket access is available.
+3. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
 4. Later, decide whether to import the empty `.gitconfig-private`.
 5. Later, consider signature/checksum validation for Git Credential Manager and Double Commander release assets.

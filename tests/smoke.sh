@@ -88,6 +88,30 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/nu
   exit 1
 }
 
+neovide_home="$tmpdir/neovide-home"
+mkdir -p "$neovide_home/.cargo/bin"
+cat >"$neovide_home/.cargo/env" <<'EOF'
+export PATH="$HOME/.cargo/bin:$PATH"
+EOF
+cat >"$neovide_home/.cargo/bin/cargo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >"$HOME/cargo-args"
+EOF
+chmod +x "$neovide_home/.cargo/bin/cargo"
+env \
+  HOME="$neovide_home" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/neovide" \
+  "$repo_root/features/neovide/install.sh"
+[[ "$(cat "$neovide_home/cargo-args")" == "install --locked neovide" ]] || {
+  printf 'expected neovide install to use cargo from .cargo/env\n' >&2
+  exit 1
+}
+[[ -f "$neovide_home/.local/share/applications/neovide.desktop" ]] || {
+  printf 'expected neovide install to write desktop entry\n' >&2
+  exit 1
+}
+
 fake_features="$tmpdir/features"
 write_feature "$fake_features" base
 write_feature "$fake_features" child base
