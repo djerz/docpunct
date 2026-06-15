@@ -1,0 +1,3 @@
+description: Install a curated set of Nerd Fonts user-locally.
+depends:
+  - debian-cli-packages

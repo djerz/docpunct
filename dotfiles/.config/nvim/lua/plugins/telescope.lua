@@ -36,9 +36,11 @@ return {
 			vim.keymap.set("n", "<leader>fn", function()
 				builtin.find_files({
 					cwd = vim.fn.stdpath("config"),
+					follow = true,
+					hidden = true,
+					no_ignore = true,
 				})
 			end, { desc = "Telescope find neovim config" })
 		end,
 	},
 }
-

@@ -5,8 +5,8 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v8.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v8 feature set and implemented behavior.
+- `docpunct_v9.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v9 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains distro-repository GUI packages plus
@@ -35,6 +35,10 @@
   `$HOME/.cargo/env` themselves before calling those tools; do not rely on
   `.bashrc`, the Rust feature script, or a previous child process to update the
   current feature script environment.
+- Before removing APT packages owned by a feature, check whether they are
+  shared desktop/system dependencies and warn before implementing removal that
+  could cause APT to remove packages such as `ubuntu-desktop`,
+  `ubuntu-desktop-minimal`, `gdm3`, `gnome-control-center`, or `nautilus`.
 
 ## Done
 
@@ -119,22 +123,29 @@
   such as `apt-get` from consuming the parent dependency stream on stdin and
   skipping later dependencies.
 - Added `docpunct_v8.md` as the latest specification snapshot for future resume sessions.
+- Split `debian-gui-packages` removal into a dedicated
+  `removable-packages.txt` so shared Ubuntu desktop dependencies are installed
+  but not removed by docpunct.
+- Added a `nerdfonts` feature that installs a curated user-local Nerd Fonts
+  set and made `neovide` depend on it.
+- Changed Neovim dotfile management from file-level symlinks to a
+  directory-level `~/.config/nvim` symlink and added an `update dotfiles`
+  migration path for existing docpunct-owned file symlinks.
+- Marked the old Neovim file-level symlink migration path as deprecated; remove
+  it after existing machines have run `docpunct update dotfiles`.
+- Added `features/neovide/neovide.ico` as the Neovide desktop entry icon; the
+  Neovide install script copies it to a user-local icon path and the remove
+  script removes only that copied icon.
+- Updated the imported Telescope config so `<leader>fn` follows symlinks and
+  includes hidden/non-ignored files when searching Neovim config.
+- Added `docpunct_v9.md` as the latest specification snapshot for future
+  resume sessions.
 
 ## Imported dotfiles
 
 - `.bashrc`
 - `.gitconfig`
-- `.config/nvim/init.lua`
-- `.config/nvim/lazy-lock.json`
-- `.config/nvim/readme.txt`
-- `.config/nvim/lua/config/keymaps.lua`
-- `.config/nvim/lua/config/lazy.lua`
-- `.config/nvim/lua/plugins/copilotchat.lua`
-- `.config/nvim/lua/plugins/diffview.lua`
-- `.config/nvim/lua/plugins/hexview.lua`
-- `.config/nvim/lua/plugins/init.lua`
-- `.config/nvim/lua/plugins/telescope.lua`
-- `.config/nvim/lua/plugins/web-devicons.lua`
+- `.config/nvim`
 
 ## Verified
 
@@ -177,6 +188,17 @@
 - `./bin/docpunct test-neovide-feature 22.04`
 - `./bin/docpunct test-neovide-feature 24.04`
 - `./bin/docpunct test-neovide-feature 26.04`
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh` after
+  the v9 session changes.
+- `./bin/docpunct test-smoke` after adding conservative GUI package removal,
+  Nerd Fonts, Neovide icon handling, Telescope config search behavior, and the
+  dotfiles Neovim directory-symlink migration.
+- `./bin/docpunct shellcheck` after the v9 shell script changes.
+- `./bin/docpunct test` after the v9 shell script changes.
+- Nerd Fonts latest-release asset names were verified through the GitHub API
+  metadata for `FiraCode.zip`, `Hack.zip`, `JetBrainsMono.zip`, `Noto.zip`,
+  and `SourceCodePro.zip`.
+- `git diff --check` after the v9 session documentation and script updates.
 
 ## Pending clarification
 
@@ -189,6 +211,9 @@
 - Add install failure rollback that attempts `remove.sh` after a failed install script.
 - Consider signature/checksum validation for Git Credential Manager release assets.
 - Consider signature/checksum validation for Double Commander release assets.
+- Consider signature/checksum validation for Nerd Fonts release assets.
+- Remove the deprecated Neovim file-level symlink migration logic from
+  `features/dotfiles/install.sh` after existing machines have migrated.
 
 ## Known issues
 
@@ -196,6 +221,7 @@
 - Install failure logs are kept, but install failure rollback via `remove.sh` is not implemented.
 - Git Credential Manager package signature validation is not implemented.
 - Double Commander release asset signature/checksum validation is not implemented.
+- Nerd Fonts release asset signature/checksum validation is not implemented.
 - Neovim removal currently removes the user binary/runtime path but leaves the source checkout under `~/.cache/docpunct/src/neovim`.
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
 - The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
@@ -205,7 +231,7 @@
 
 ## Next steps
 
-1. Review, commit, and push the current docpunct repository state.
+1. Review, commit, and push the current docpunct repository state, including `docpunct_v9.md`.
 2. In the next session, first confirm the pushed commit is present and the worktree is clean.
 3. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
 4. Later, decide whether to import the empty `.gitconfig-private`.

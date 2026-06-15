@@ -138,6 +138,7 @@ google-chrome
 docker
 doublecmd
 git-credential-manager
+nerdfonts
 rust
 node
 python-uv
@@ -192,11 +193,29 @@ libfontconfig1-dev
 libfreetype6-dev
 ```
 
+Only leaf applications listed in `removable-packages.txt` are removed by the
+`debian-gui-packages` remove script. Shared desktop dependencies such as
+`desktop-file-utils`, icon themes, and development libraries are installed when
+needed but are not removed by docpunct, because removing them can cause APT to
+remove Ubuntu desktop packages that depend on them.
+
 `desktop-file-utils` is included for Neovide desktop entry validation and
 updates.
 
 `libfontconfig1-dev` and `libfreetype6-dev` are included because the Neovide
 Cargo build links against Fontconfig and FreeType.
+
+`nerdfonts` installs a curated set of Nerd Fonts user-locally under:
+
+```text
+~/.local/share/fonts/docpunct/nerdfonts
+```
+
+The curated set is defined in `features/nerdfonts/fonts.txt` and currently
+includes JetBrainsMono, Hack, FiraCode Nerd Font, SauceCodePro NF, and Noto
+Mono. The feature downloads matching archives from the latest upstream Nerd
+Fonts GitHub release and refreshes the user font cache when `fc-cache` is
+available. Removing the feature deletes only the docpunct-owned font directory.
 
 Third-party APT repository packages are managed by separate features, not by
 `debian-gui-packages`:
@@ -345,6 +364,19 @@ Example:
 ~/.bashrc -> /path/to/docpunct/dotfiles/.bashrc
 ```
 
+Neovim config is managed as a directory-level symlink:
+
+```text
+~/.config/nvim -> /path/to/docpunct/dotfiles/.config/nvim
+```
+
+This keeps Neovim, Telescope, language servers, and plugin tooling looking at a
+single coherent config tree. `./bin/docpunct update dotfiles` can migrate an
+older file-level Neovim symlink layout when the existing directory contains
+only docpunct-owned symlinks and directories. If local files are present,
+docpunct refuses the migration instead of deleting them. This migration support
+is deprecated and should be removed after existing machines have been updated.
+
 If a target file already exists and is not already managed by docpunct,
 docpunct makes a one-time backup before replacing it with a symlink.
 
@@ -368,17 +400,7 @@ The imported dotfiles are:
 ```text
 .bashrc
 .gitconfig
-.config/nvim/init.lua
-.config/nvim/lazy-lock.json
-.config/nvim/readme.txt
-.config/nvim/lua/config/keymaps.lua
-.config/nvim/lua/config/lazy.lua
-.config/nvim/lua/plugins/copilotchat.lua
-.config/nvim/lua/plugins/diffview.lua
-.config/nvim/lua/plugins/hexview.lua
-.config/nvim/lua/plugins/init.lua
-.config/nvim/lua/plugins/telescope.lua
-.config/nvim/lua/plugins/web-devicons.lua
+.config/nvim
 ```
 
 Private files such as `.gitconfig-private` are not imported without an explicit

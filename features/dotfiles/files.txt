@@ -3,14 +3,4 @@
 # .bashrc
 .gitconfig
 .bashrc
-.config/nvim/init.lua
-.config/nvim/lazy-lock.json
-.config/nvim/readme.txt
-.config/nvim/lua/config/keymaps.lua
-.config/nvim/lua/config/lazy.lua
-.config/nvim/lua/plugins/copilotchat.lua
-.config/nvim/lua/plugins/diffview.lua
-.config/nvim/lua/plugins/hexview.lua
-.config/nvim/lua/plugins/init.lua
-.config/nvim/lua/plugins/telescope.lua
-.config/nvim/lua/plugins/web-devicons.lua
+.config/nvim

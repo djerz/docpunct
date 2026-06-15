@@ -68,11 +68,18 @@ assert_contains "$list_output" "dotfiles"
 status_output="$(run_docpunct status)"
 assert_contains "$status_output" "available    core"
 
+neovide_manifest="$(cat "$repo_root/features/neovide/feature.yml")"
+assert_contains "$neovide_manifest" "  - nerdfonts"
+
 dotfiles_features="$tmpdir/dotfiles-features"
 mkdir -p "$dotfiles_features/dotfiles"
 printf 'description: Test dotfiles\n' >"$dotfiles_features/dotfiles/feature.yml"
-printf '.bashrc\n' >"$dotfiles_features/dotfiles/files.txt"
+printf '.bashrc\n.config/nvim\n' >"$dotfiles_features/dotfiles/files.txt"
+mkdir -p "$tmpdir/dotfiles/.config/nvim/lua/plugins"
+printf 'vim config\n' >"$tmpdir/dotfiles/.config/nvim/init.lua"
+printf 'plugin config\n' >"$tmpdir/dotfiles/.config/nvim/lua/plugins/init.lua"
 ln -s "$repo_root/features/dotfiles/install.sh" "$dotfiles_features/dotfiles/install.sh"
+ln -s "$repo_root/features/dotfiles/update.sh" "$dotfiles_features/dotfiles/update.sh"
 ln -s "$repo_root/features/dotfiles/remove.sh" "$dotfiles_features/dotfiles/remove.sh"
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/null
@@ -80,11 +87,45 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/n
   printf 'expected dotfiles install to create .bashrc symlink\n' >&2
   exit 1
 }
+[[ -L "$test_home/.config/nvim" ]] || {
+  printf 'expected dotfiles install to create nvim directory symlink\n' >&2
+  exit 1
+}
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct relink >/dev/null
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/null
 [[ ! -e "$test_home/.bashrc" ]] || {
   printf 'expected dotfiles remove to remove .bashrc symlink\n' >&2
+  exit 1
+}
+[[ ! -e "$test_home/.config/nvim" ]] || {
+  printf 'expected dotfiles remove to remove nvim directory symlink\n' >&2
+  exit 1
+}
+
+migration_features="$tmpdir/migration-features"
+migration_cache="$tmpdir/migration-cache"
+migration_home="$tmpdir/migration-home"
+mkdir -p "$migration_features/dotfiles" "$migration_home/.config/nvim/lua/plugins" "$migration_cache/state/installed"
+printf 'description: Test dotfiles migration\n' >"$migration_features/dotfiles/feature.yml"
+printf '.config/nvim\n' >"$migration_features/dotfiles/files.txt"
+ln -s "$repo_root/features/dotfiles/install.sh" "$migration_features/dotfiles/install.sh"
+ln -s "$repo_root/features/dotfiles/update.sh" "$migration_features/dotfiles/update.sh"
+printf 'feature=dotfiles\n' >"$migration_cache/state/installed/dotfiles"
+ln -s "$repo_root/dotfiles/.config/nvim/init.lua" "$migration_home/.config/nvim/init.lua"
+ln -s "$repo_root/dotfiles/.config/nvim/lua/plugins/init.lua" "$migration_home/.config/nvim/lua/plugins/init.lua"
+
+env \
+  HOME="$migration_home" \
+  DOCPUNCT_FEATURES_DIR="$migration_features" \
+  DOCPUNCT_CACHE_DIR="$migration_cache" \
+  "$repo_root/bin/docpunct" update dotfiles >/dev/null
+[[ -L "$migration_home/.config/nvim" ]] || {
+  printf 'expected dotfiles update to migrate nvim file symlinks to directory symlink\n' >&2
+  exit 1
+}
+[[ "$(readlink "$migration_home/.config/nvim")" == "$repo_root/dotfiles/.config/nvim" ]] || {
+  printf 'expected migrated nvim symlink to point at dotfiles nvim directory\n' >&2
   exit 1
 }
 
@@ -109,6 +150,118 @@ env \
 }
 [[ -f "$neovide_home/.local/share/applications/neovide.desktop" ]] || {
   printf 'expected neovide install to write desktop entry\n' >&2
+  exit 1
+}
+[[ -f "$neovide_home/.local/share/icons/docpunct/neovide.ico" ]] || {
+  printf 'expected neovide install to copy desktop icon\n' >&2
+  exit 1
+}
+assert_contains \
+  "$(cat "$neovide_home/.local/share/applications/neovide.desktop")" \
+  "Icon=$neovide_home/.local/share/icons/docpunct/neovide.ico"
+
+nerdfonts_home="$tmpdir/nerdfonts-home"
+nerdfonts_cache="$tmpdir/nerdfonts-cache"
+nerdfonts_bin="$tmpdir/nerdfonts-bin"
+nerdfonts_fc_log="$tmpdir/nerdfonts-fc-cache.log"
+mkdir -p "$nerdfonts_home" "$nerdfonts_cache" "$nerdfonts_bin"
+cat >"$nerdfonts_bin/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == "-fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" ]]; then
+  printf '{"tag_name":"v9.9.9","assets":[]}\n'
+  exit 0
+fi
+
+output=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    -o)
+      output="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+[[ -n "$output" ]] || exit 1
+printf 'fake archive\n' >"$output"
+EOF
+cat >"$nerdfonts_bin/jq" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *".tag_name"* ]]; then
+  printf 'v9.9.9\n'
+elif [[ "$*" == *"--arg name"* ]]; then
+  name=""
+  while [[ "$#" -gt 0 ]]; do
+    if [[ "$1" == "--arg" && "${2:-}" == "name" ]]; then
+      name="$3"
+      break
+    fi
+    shift
+  done
+  printf 'https://example.invalid/%s\n' "$name"
+else
+  printf 'JetBrainsMono.zip\nHack.zip\nFiraCode.zip\nSourceCodePro.zip\nNoto.zip\n'
+fi
+EOF
+cat >"$nerdfonts_bin/unzip" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+archive=""
+dest=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    -d)
+      dest="$2"
+      shift 2
+      ;;
+    -*)
+      shift
+      ;;
+    *)
+      archive="$1"
+      shift
+      ;;
+  esac
+done
+[[ -n "$archive" && -n "$dest" ]] || exit 1
+mkdir -p "$dest"
+base="$(basename "$archive" .zip)"
+printf 'fake font\n' >"$dest/$base Nerd Font Complete.ttf"
+EOF
+cat >"$nerdfonts_bin/fc-cache" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$NERDFONTS_FC_LOG"
+EOF
+chmod +x "$nerdfonts_bin/curl" "$nerdfonts_bin/jq" "$nerdfonts_bin/unzip" "$nerdfonts_bin/fc-cache"
+
+env \
+  HOME="$nerdfonts_home" \
+  PATH="$nerdfonts_bin:$PATH" \
+  DOCPUNCT_CACHE_DIR="$nerdfonts_cache" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/nerdfonts" \
+  NERDFONTS_FC_LOG="$nerdfonts_fc_log" \
+  "$repo_root/features/nerdfonts/install.sh"
+for font_asset in JetBrainsMono Hack FiraCode SourceCodePro Noto; do
+  [[ -f "$nerdfonts_home/.local/share/fonts/docpunct/nerdfonts/$font_asset Nerd Font Complete.ttf" ]] || {
+    printf 'expected nerdfonts install to install font from asset: %s\n' "$font_asset" >&2
+    exit 1
+  }
+done
+assert_contains "$(cat "$nerdfonts_fc_log")" "-f $nerdfonts_home/.local/share/fonts"
+
+env \
+  HOME="$nerdfonts_home" \
+  PATH="$nerdfonts_bin:$PATH" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/nerdfonts" \
+  NERDFONTS_FC_LOG="$nerdfonts_fc_log" \
+  "$repo_root/features/nerdfonts/remove.sh"
+[[ ! -e "$nerdfonts_home/.local/share/fonts/docpunct/nerdfonts" ]] || {
+  printf 'expected nerdfonts remove to delete docpunct-owned font directory\n' >&2
   exit 1
 }
 
@@ -159,5 +312,47 @@ DOCPUNCT_FEATURES_DIR="$stdin_features" DOCPUNCT_CACHE_DIR="$stdin_cache" "$repo
   printf 'expected stdin-sibling dependency to be installed after stdin-consuming script\n' >&2
   exit 1
 }
+
+gui_remove_bin="$tmpdir/gui-remove-bin"
+gui_remove_log="$tmpdir/gui-remove-apt.log"
+mkdir -p "$gui_remove_bin"
+cat >"$gui_remove_bin/dpkg-query" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+package="${@: -1}"
+case "$package" in
+  keepassxc|meld|desktop-file-utils|gnome-icon-theme|adwaita-icon-theme-full|libfontconfig1-dev|libfreetype6-dev)
+    printf 'ii '
+    ;;
+  *)
+    exit 1
+    ;;
+esac
+EOF
+cat >"$gui_remove_bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+"$@"
+EOF
+cat >"$gui_remove_bin/apt-get" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$GUI_REMOVE_LOG"
+EOF
+chmod +x "$gui_remove_bin/dpkg-query" "$gui_remove_bin/sudo" "$gui_remove_bin/apt-get"
+
+env \
+  PATH="$gui_remove_bin:$PATH" \
+  GUI_REMOVE_LOG="$gui_remove_log" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/debian-gui-packages" \
+  "$repo_root/features/debian-gui-packages/remove.sh"
+gui_remove_output="$(cat "$gui_remove_log")"
+assert_contains "$gui_remove_output" "remove -y keepassxc meld"
+for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-full libfontconfig1-dev libfreetype6-dev ubuntu-desktop ubuntu-desktop-minimal gdm3 gnome-control-center nautilus; do
+  if [[ "$gui_remove_output" == *"$protected_package"* ]]; then
+    printf 'expected debian-gui-packages remove not to include protected/shared package: %s\noutput was:\n%s\n' "$protected_package" "$gui_remove_output" >&2
+    exit 1
+  fi
+done
 
 printf 'smoke tests passed\n'

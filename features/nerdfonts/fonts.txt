@@ -1,0 +1,6 @@
+# Curated Nerd Fonts release assets.
+JetBrainsMono.zip
+Hack.zip
+FiraCode.zip
+SourceCodePro.zip
+Noto.zip
