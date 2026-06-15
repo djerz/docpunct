@@ -188,10 +188,15 @@ meld
 gnome-icon-theme
 adwaita-icon-theme-full
 desktop-file-utils
+libfontconfig1-dev
+libfreetype6-dev
 ```
 
 `desktop-file-utils` is included for Neovide desktop entry validation and
 updates.
+
+`libfontconfig1-dev` and `libfreetype6-dev` are included because the Neovide
+Cargo build links against Fontconfig and FreeType.
 
 Third-party APT repository packages are managed by separate features, not by
 `debian-gui-packages`:
@@ -699,6 +704,13 @@ target:
 ```sh
 just test-doublecmd-feature ubuntu=24.04
 ./bin/docpunct test-doublecmd-feature 24.04
+```
+
+The Neovide feature has a separate non-privileged container test target:
+
+```sh
+just test-neovide-feature ubuntu=24.04
+./bin/docpunct test-neovide-feature 24.04
 ```
 
 ---

@@ -5,11 +5,13 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v7.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v7 feature set and implemented behavior.
+- `docpunct_v8.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v8 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
-- `debian-gui-packages` contains only distro-repository GUI packages plus `desktop-file-utils` for Neovide desktop entry support.
+- `debian-gui-packages` contains distro-repository GUI packages plus
+  `desktop-file-utils`, `libfontconfig1-dev`, and `libfreetype6-dev` for
+  Neovide desktop entry support and Cargo link-time requirements.
 - Third-party APT repository packages are modeled as separate features: `brave-browser`, `visual-studio-code`, `google-chrome`, and `docker`.
 - Docker was installed with docpunct in the previous session, the sibling `../dockerfiles` ShellCheck image was usable, and this repository now has a repeatable `just shellcheck` target.
 - A first testing architecture is in place:
@@ -18,6 +20,8 @@
   - `just test-containers` runs the container test matrix.
   - `just test-docker-feature ubuntu=VERSION` runs the Docker feature in a separate privileged container.
   - `just test` currently runs ShellCheck and host-safe smoke tests only.
+  - `just test-neovide-feature ubuntu=VERSION` runs a real Neovide install in
+    a separate non-privileged container.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
@@ -106,6 +110,15 @@
 - Added a host-safe smoke regression proving Neovide install finds Cargo via
   `$HOME/.cargo/env` without requiring `.bashrc` or a new shell session.
 - Added `docpunct_v7.md` as the latest specification snapshot for future resume sessions.
+- Added `libfontconfig1-dev` and `libfreetype6-dev` to
+  `debian-gui-packages` so Neovide can link against Fontconfig and FreeType
+  during `cargo install --locked neovide`.
+- Added a feature-specific Neovide container test target.
+- Fixed dependency traversal so install/update/cycle detection snapshots
+  dependency lists before running child feature scripts. This prevents scripts
+  such as `apt-get` from consuming the parent dependency stream on stdin and
+  skipping later dependencies.
+- Added `docpunct_v8.md` as the latest specification snapshot for future resume sessions.
 
 ## Imported dotfiles
 
@@ -155,6 +168,15 @@
 - `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh` after
   fixing Cargo environment handling.
 - `./bin/docpunct test-smoke` after fixing Cargo environment handling.
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh` after
+  fixing Neovide install dependencies and dependency traversal.
+- `./bin/docpunct test-smoke` after adding the stdin-consuming dependency
+  regression.
+- `./bin/docpunct shellcheck` after adding the Neovide feature test target and
+  fixing dependency traversal.
+- `./bin/docpunct test-neovide-feature 22.04`
+- `./bin/docpunct test-neovide-feature 24.04`
+- `./bin/docpunct test-neovide-feature 26.04`
 
 ## Pending clarification
 
@@ -167,9 +189,6 @@
 - Add install failure rollback that attempts `remove.sh` after a failed install script.
 - Consider signature/checksum validation for Git Credential Manager release assets.
 - Consider signature/checksum validation for Double Commander release assets.
-- Run `./bin/docpunct shellcheck` or `./bin/docpunct test` after Docker socket
-  access is available; the attempted `./bin/docpunct test` in this session was
-  interrupted before ShellCheck could complete.
 
 ## Known issues
 
@@ -182,16 +201,12 @@
 - The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
-- ShellCheck was not rerun after the Cargo environment fix because the
-  sandboxed command could not access the Docker socket and the escalated retry
-  was interrupted by the user.
 - The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
 
 ## Next steps
 
 1. Review, commit, and push the current docpunct repository state.
-2. In the next session, run `./bin/docpunct shellcheck` or `./bin/docpunct test`
-   once Docker socket access is available.
+2. In the next session, first confirm the pushed commit is present and the worktree is clean.
 3. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
 4. Later, decide whether to import the empty `.gitconfig-private`.
 5. Later, consider signature/checksum validation for Git Credential Manager and Double Commander release assets.

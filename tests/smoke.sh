@@ -138,4 +138,26 @@ assert_fails_with \
   "dependency cycle detected" \
   env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$tmpdir/cycle-cache" "$repo_root/bin/docpunct" install cycle-a
 
+stdin_features="$tmpdir/stdin-features"
+write_feature "$stdin_features" stdin-parent "stdin-reader stdin-sibling"
+write_feature "$stdin_features" stdin-reader
+write_feature "$stdin_features" stdin-sibling
+cat >"$stdin_features/stdin-reader/install.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+cat >/dev/null || true
+EOF
+chmod +x "$stdin_features/stdin-reader/install.sh"
+
+stdin_cache="$tmpdir/stdin-cache"
+DOCPUNCT_FEATURES_DIR="$stdin_features" DOCPUNCT_CACHE_DIR="$stdin_cache" "$repo_root/bin/docpunct" install stdin-parent >/dev/null
+[[ -f "$stdin_cache/state/installed/stdin-reader" ]] || {
+  printf 'expected stdin-reader dependency to be installed\n' >&2
+  exit 1
+}
+[[ -f "$stdin_cache/state/installed/stdin-sibling" ]] || {
+  printf 'expected stdin-sibling dependency to be installed after stdin-consuming script\n' >&2
+  exit 1
+}
+
 printf 'smoke tests passed\n'

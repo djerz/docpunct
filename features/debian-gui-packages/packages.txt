@@ -6,3 +6,7 @@ adwaita-icon-theme-full
 
 # Required by the Neovide feature for desktop entry validation and updates.
 desktop-file-utils
+
+# Required by the Neovide feature when linking the cargo-built binary.
+libfontconfig1-dev
+libfreetype6-dev

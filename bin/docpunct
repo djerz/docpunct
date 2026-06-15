@@ -35,6 +35,7 @@ Usage:
   docpunct test-containers
   docpunct test-doublecmd-feature [22.04|24.04|26.04]
   docpunct test-docker-feature [22.04|24.04|26.04]
+  docpunct test-neovide-feature [22.04|24.04|26.04]
   docpunct test
 EOF
 }
@@ -115,6 +116,7 @@ feature_deps() {
 
 detect_dependency_cycle() {
   local feature="$1" stack="${2:-}" dep cycle
+  local deps=()
   require_feature "$feature"
 
   if [[ " $stack " == *" $feature "* ]]; then
@@ -122,10 +124,11 @@ detect_dependency_cycle() {
     die "dependency cycle detected: $cycle"
   fi
 
-  while IFS= read -r dep; do
+  mapfile -t deps < <(feature_deps "$feature")
+  for dep in "${deps[@]}"; do
     [[ -n "$dep" ]] || continue
     detect_dependency_cycle "$dep" "$stack $feature"
-  done < <(feature_deps "$feature")
+  done
 }
 
 script_for() {
@@ -157,11 +160,13 @@ run_feature_script() {
 
 install_feature() {
   local feature="$1" dep
+  local deps=()
   require_feature "$feature"
-  while IFS= read -r dep; do
+  mapfile -t deps < <(feature_deps "$feature")
+  for dep in "${deps[@]}"; do
     [[ -n "$dep" ]] || continue
     install_feature "$dep"
-  done < <(feature_deps "$feature")
+  done
 
   if is_installed "$feature"; then
     printf '%s already installed\n' "$feature"
@@ -175,15 +180,17 @@ install_feature() {
 
 update_feature() {
   local feature="$1" dep
+  local deps=()
   require_feature "$feature"
   if ! is_installed "$feature"; then
     die "not installed: $feature"
   fi
 
-  while IFS= read -r dep; do
+  mapfile -t deps < <(feature_deps "$feature")
+  for dep in "${deps[@]}"; do
     [[ -n "$dep" ]] || continue
     update_feature "$dep"
-  done < <(feature_deps "$feature")
+  done
 
   printf 'Updating %s\n' "$feature"
   run_feature_script update "$feature"
@@ -289,6 +296,11 @@ run_doublecmd_feature_test() {
   "$ROOT_DIR/tests/container/run-doublecmd-feature.sh" "$ubuntu_version"
 }
 
+run_neovide_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-neovide-feature.sh" "$ubuntu_version"
+}
+
 run_default_tests() {
   shellcheck_scripts
   run_smoke_tests
@@ -353,6 +365,10 @@ main() {
     test-doublecmd-feature)
       [[ "$#" -le 1 ]] || die "test-doublecmd-feature takes at most one Ubuntu version"
       run_doublecmd_feature_test "${1:-24.04}"
+      ;;
+    test-neovide-feature)
+      [[ "$#" -le 1 ]] || die "test-neovide-feature takes at most one Ubuntu version"
+      run_neovide_feature_test "${1:-24.04}"
       ;;
     test)
       [[ "$#" -eq 0 ]] || die "test takes no arguments"
