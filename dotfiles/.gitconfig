@@ -37,8 +37,8 @@
     rv = remote -v
     aliases = config --get-regexp ^alias\\.
 [credential]
-	helper = manager
 	useHttpPath = false
+	helper = /usr/local/bin/git-credential-manager
 [diff]
     tool = nvim
 [difftool]
@@ -62,3 +62,5 @@
     #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
 [init]
 	defaultBranch = main
+[credential "https://dev.azure.com"]
+	useHttpPath = true

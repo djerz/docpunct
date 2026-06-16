@@ -20,6 +20,7 @@ sudo -u docpunct-test \
     cd /workspace/docpunct
     ./bin/docpunct install doublecmd
     test -x "$HOME/.local/share/docpunct/doublecmd/doublecmd"
+    ! ldd "$HOME/.local/share/docpunct/doublecmd/doublecmd" | grep 'not found'
     test -L "$HOME/.local/bin/doublecmd"
     test -f "$HOME/.local/share/applications/doublecmd.desktop"
     ./bin/docpunct update doublecmd

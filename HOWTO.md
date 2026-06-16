@@ -191,6 +191,7 @@ adwaita-icon-theme-full
 desktop-file-utils
 libfontconfig1-dev
 libfreetype6-dev
+libqt6printsupport6
 ```
 
 Only leaf applications listed in `removable-packages.txt` are removed by the
@@ -204,6 +205,10 @@ updates.
 
 `libfontconfig1-dev` and `libfreetype6-dev` are included because the Neovide
 Cargo build links against Fontconfig and FreeType.
+
+`libqt6printsupport6` is included because the Double Commander Qt6 portable
+build needs Qt6 runtime libraries from the system. APT pulls in the matching
+Qt6 core, GUI, and widgets libraries as dependencies.
 
 `nerdfonts` installs a curated set of Nerd Fonts user-locally under:
 
@@ -325,6 +330,10 @@ It also writes a desktop entry to:
 ```text
 ~/.local/share/applications/doublecmd.desktop
 ```
+
+The upstream Qt6 portable archive is not fully self-contained on Ubuntu.
+`debian-gui-packages` installs `libqt6printsupport6`, which provides the Qt6
+runtime dependency chain needed by the installed binary.
 
 Removal deletes only those docpunct-owned install paths and leaves Double
 Commander user configuration/cache directories alone.

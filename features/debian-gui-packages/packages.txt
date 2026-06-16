@@ -10,3 +10,6 @@ desktop-file-utils
 # Required by the Neovide feature when linking the cargo-built binary.
 libfontconfig1-dev
 libfreetype6-dev
+
+# Required by the Double Commander Qt6 portable build at runtime.
+libqt6printsupport6

@@ -5,13 +5,14 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v9.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v9 feature set and implemented behavior.
+- `docpunct_v10.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v10 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains distro-repository GUI packages plus
-  `desktop-file-utils`, `libfontconfig1-dev`, and `libfreetype6-dev` for
-  Neovide desktop entry support and Cargo link-time requirements.
+  `desktop-file-utils`, `libfontconfig1-dev`, `libfreetype6-dev`, and
+  `libqt6printsupport6` for Neovide desktop entry support, Neovide Cargo
+  link-time requirements, and the Double Commander Qt6 runtime.
 - Third-party APT repository packages are modeled as separate features: `brave-browser`, `visual-studio-code`, `google-chrome`, and `docker`.
 - Docker was installed with docpunct in the previous session, the sibling `../dockerfiles` ShellCheck image was usable, and this repository now has a repeatable `just shellcheck` target.
 - A first testing architecture is in place:
@@ -22,6 +23,9 @@
   - `just test` currently runs ShellCheck and host-safe smoke tests only.
   - `just test-neovide-feature ubuntu=VERSION` runs a real Neovide install in
     a separate non-privileged container.
+  - `just test-doublecmd-feature ubuntu=VERSION` runs a real Double Commander
+    install in a separate non-privileged container and checks the installed
+    binary for unresolved shared libraries with `ldd`.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
@@ -140,6 +144,13 @@
   includes hidden/non-ignored files when searching Neovim config.
 - Added `docpunct_v9.md` as the latest specification snapshot for future
   resume sessions.
+- Added `libqt6printsupport6` to `debian-gui-packages` because the Double
+  Commander Qt6 portable build needs system Qt6 runtime libraries on Ubuntu.
+- Strengthened the Double Commander feature container test so it fails when
+  `ldd` reports unresolved shared libraries for the installed binary.
+- Updated `HOWTO.md` for the Double Commander Qt6 runtime dependency.
+- Added `docpunct_v10.md` as the latest specification snapshot for future
+  resume sessions.
 
 ## Imported dotfiles
 
@@ -199,6 +210,10 @@
   metadata for `FiraCode.zip`, `Hack.zip`, `JetBrainsMono.zip`, `Noto.zip`,
   and `SourceCodePro.zip`.
 - `git diff --check` after the v9 session documentation and script updates.
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh` after
+  adding the Double Commander Qt6 runtime dependency.
+- `./bin/docpunct test-doublecmd-feature 24.04` after adding
+  `libqt6printsupport6` and the Double Commander `ldd` regression check.
 
 ## Pending clarification
 
@@ -214,6 +229,9 @@
 - Consider signature/checksum validation for Nerd Fonts release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
   `features/dotfiles/install.sh` after existing machines have migrated.
+- Clean up or intentionally keep the local `dotfiles/.gitconfig` credential
+  helper edits before committing, because that file currently has trailing
+  whitespace and blocks `git diff --check`.
 
 ## Known issues
 
@@ -228,11 +246,18 @@
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
 - The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
+- `git diff --check` currently fails because the pre-existing local
+  `dotfiles/.gitconfig` edit contains trailing whitespace on a blank
+  `helper = ` credential line.
 
 ## Next steps
 
-1. Review, commit, and push the current docpunct repository state, including `docpunct_v9.md`.
-2. In the next session, first confirm the pushed commit is present and the worktree is clean.
-3. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
-4. Later, decide whether to import the empty `.gitconfig-private`.
-5. Later, consider signature/checksum validation for Git Credential Manager and Double Commander release assets.
+1. Review the local `dotfiles/.gitconfig` credential helper change and either
+   fix/keep it intentionally or remove it before committing.
+2. Commit and push the current docpunct repository state, including
+   `docpunct_v10.md`.
+3. In the next session, first confirm the pushed commit is present and the
+   worktree is clean.
+4. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
+5. Later, decide whether to import the empty `.gitconfig-private`.
+6. Later, consider signature/checksum validation for Git Credential Manager and Double Commander release assets.
