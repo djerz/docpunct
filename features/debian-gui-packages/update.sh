@@ -6,4 +6,4 @@ set -euo pipefail
 
 mapfile -t packages < <(read_package_list "$DOCPUNCT_FEATURE_DIR/packages.txt")
 sudo apt-get update
-sudo apt-get install -y --only-upgrade "${packages[@]}"
+sudo apt-get install -y "${packages[@]}"
