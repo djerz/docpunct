@@ -5,14 +5,15 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v10.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v10 feature set and implemented behavior.
+- `docpunct_v11.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v11 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains distro-repository GUI packages plus
   `desktop-file-utils`, `libfontconfig1-dev`, `libfreetype6-dev`, and
-  `libqt6printsupport6` for Neovide desktop entry support, Neovide Cargo
-  link-time requirements, and the Double Commander Qt6 runtime.
+  `wl-clipboard`, `xclip`, and `libqt6printsupport6` for Neovide desktop entry
+  support, Neovide Cargo link-time requirements, Neovide clipboard integration,
+  and the Double Commander Qt6 runtime.
 - Third-party APT repository packages are modeled as separate features: `brave-browser`, `visual-studio-code`, `google-chrome`, and `docker`.
 - Docker was installed with docpunct in the previous session, the sibling `../dockerfiles` ShellCheck image was usable, and this repository now has a repeatable `just shellcheck` target.
 - A first testing architecture is in place:
@@ -27,6 +28,13 @@
     install in a separate non-privileged container and checks the installed
     binary for unresolved shared libraries with `ldd`.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
+- `docpunct update FEATURE` now still requires the requested feature to be
+  installed, but installs newly introduced dependencies before updating the
+  requested feature. This allows dependency recipe changes to apply without a
+  remove/install loop.
+- `dotfiles` install and update both use `features/dotfiles/reconcile.sh`, so
+  new dotfile entries added to `files.txt` get the same backup-and-link
+  handling during update as during initial install.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -91,7 +99,9 @@
 - Updated `debian-gui-packages/packages.txt` to install `keepassxc`, `meld`, `gnome-icon-theme`, `adwaita-icon-theme-full`, and retained `desktop-file-utils` for Neovide.
 - Added third-party APT repository features for Brave Browser, Visual Studio Code, and Google Chrome. Each feature owns its package, source file, and signing key.
 - Added `docpunct_v4.md` as the latest specification snapshot for future resume sessions.
-- Changed `docpunct update FEATURE` to fail when `FEATURE` or any updated dependency is not installed, matching the spec.
+- Changed `docpunct update FEATURE` to fail when `FEATURE` is not installed.
+  Later behavior was reworked so newly introduced dependencies are installed
+  during update.
 - Added a `docker` feature that installs Docker Engine from Docker's official APT repository after removing conflicting Ubuntu/distro Docker packages.
 - Added architecture guards for third-party APT package features and Docker suite handling for Ubuntu 22.04, 24.04, and 26.04.
 - Docker install adds the target user to the `docker` group when needed and Docker removal removes only the group membership it added.
@@ -151,6 +161,15 @@
 - Updated `HOWTO.md` for the Double Commander Qt6 runtime dependency.
 - Added `docpunct_v10.md` as the latest specification snapshot for future
   resume sessions.
+- Added `wl-clipboard` and `xclip` to `debian-gui-packages` so
+  Neovide/Neovim clipboard integration works on Wayland and X11 sessions.
+- Reworked `docpunct update FEATURE` so newly introduced dependencies are
+  installed during update while the requested feature itself must already be
+  installed.
+- Split dotfile reconciliation into `features/dotfiles/reconcile.sh` and made
+  both install and update use it.
+- Added `docpunct_v11.md` as the latest specification snapshot for future
+  resume sessions.
 
 ## Imported dotfiles
 
@@ -171,7 +190,7 @@
 - new third-party APT feature scripts pass `bash -n`
 - new third-party APT feature scripts are executable
 - update refusal for an uninstalled feature using an isolated cache
-- update refusal for an uninstalled dependency using a temporary fake feature tree
+- update installs a newly introduced dependency using a temporary fake feature tree
 - Docker feature scripts pass `bash -n`
 - Docker feature scripts are executable
 - Third-party APT feature scripts have architecture compatibility guards.
@@ -214,6 +233,19 @@
   adding the Double Commander Qt6 runtime dependency.
 - `./bin/docpunct test-doublecmd-feature 24.04` after adding
   `libqt6printsupport6` and the Double Commander `ldd` regression check.
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh` after
+  reworking update dependency handling and dotfile reconciliation.
+- `shellcheck bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh`
+  with the host ShellCheck binary after Docker socket access blocked the
+  project Docker ShellCheck target.
+- `./bin/docpunct test-smoke` after adding regressions for newly introduced
+  update dependencies and dotfile update backups.
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh`,
+  host `shellcheck`, `./bin/docpunct test-smoke`, and `git diff --check` after
+  adding `wl-clipboard` and `xclip` to `debian-gui-packages`.
+- `git diff --check`, `bash -n bin/docpunct features/*/*.sh tests/*.sh
+  tests/container/*.sh`, host `shellcheck`, and `./bin/docpunct test-smoke`
+  after creating `docpunct_v11.md` and updating the resume handoff.
 
 ## Pending clarification
 
@@ -228,10 +260,7 @@
 - Consider signature/checksum validation for Double Commander release assets.
 - Consider signature/checksum validation for Nerd Fonts release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
-  `features/dotfiles/install.sh` after existing machines have migrated.
-- Clean up or intentionally keep the local `dotfiles/.gitconfig` credential
-  helper edits before committing, because that file currently has trailing
-  whitespace and blocks `git diff --check`.
+  `features/dotfiles/reconcile.sh` after existing machines have migrated.
 
 ## Known issues
 
@@ -246,16 +275,16 @@
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
 - The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
-- `git diff --check` currently fails because the pre-existing local
-  `dotfiles/.gitconfig` edit contains trailing whitespace on a blank
-  `helper = ` credential line.
+- The worktree currently has a local `dotfiles/.config/nvim/lazy-lock.json`
+  CopilotChat.nvim lockfile update that should be reviewed before committing.
 
 ## Next steps
 
-1. Review the local `dotfiles/.gitconfig` credential helper change and either
-   fix/keep it intentionally or remove it before committing.
+1. Review the local `dotfiles/.config/nvim/lazy-lock.json` CopilotChat.nvim
+   lockfile update and either keep it intentionally or remove it before
+   committing.
 2. Commit and push the current docpunct repository state, including
-   `docpunct_v10.md`.
+   `docpunct_v11.md`.
 3. In the next session, first confirm the pushed commit is present and the
    worktree is clean.
 4. Consider making install return immediately when the requested feature is already installed before resolving dependencies.

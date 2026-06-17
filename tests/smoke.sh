@@ -81,6 +81,7 @@ printf 'plugin config\n' >"$tmpdir/dotfiles/.config/nvim/lua/plugins/init.lua"
 ln -s "$repo_root/features/dotfiles/install.sh" "$dotfiles_features/dotfiles/install.sh"
 ln -s "$repo_root/features/dotfiles/update.sh" "$dotfiles_features/dotfiles/update.sh"
 ln -s "$repo_root/features/dotfiles/remove.sh" "$dotfiles_features/dotfiles/remove.sh"
+ln -s "$repo_root/features/dotfiles/reconcile.sh" "$dotfiles_features/dotfiles/reconcile.sh"
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/null
 [[ -L "$test_home/.bashrc" ]] || {
@@ -93,6 +94,17 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/n
 }
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct relink >/dev/null
+printf '.bashrc\n.config/nvim\n.gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
+printf 'host gitconfig\n' >"$test_home/.gitconfig"
+DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct update dotfiles >/dev/null
+[[ -L "$test_home/.gitconfig" ]] || {
+  printf 'expected dotfiles update to link newly added dotfile\n' >&2
+  exit 1
+}
+[[ "$(cat "$test_cache/backups/dotfiles/.gitconfig")" == "host gitconfig" ]] || {
+  printf 'expected dotfiles update to back up replaced host file\n' >&2
+  exit 1
+}
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/null
 [[ ! -e "$test_home/.bashrc" ]] || {
   printf 'expected dotfiles remove to remove .bashrc symlink\n' >&2
@@ -111,6 +123,7 @@ printf 'description: Test dotfiles migration\n' >"$migration_features/dotfiles/f
 printf '.config/nvim\n' >"$migration_features/dotfiles/files.txt"
 ln -s "$repo_root/features/dotfiles/install.sh" "$migration_features/dotfiles/install.sh"
 ln -s "$repo_root/features/dotfiles/update.sh" "$migration_features/dotfiles/update.sh"
+ln -s "$repo_root/features/dotfiles/reconcile.sh" "$migration_features/dotfiles/reconcile.sh"
 printf 'feature=dotfiles\n' >"$migration_cache/state/installed/dotfiles"
 ln -s "$repo_root/dotfiles/.config/nvim/init.lua" "$migration_home/.config/nvim/init.lua"
 ln -s "$repo_root/dotfiles/.config/nvim/lua/plugins/init.lua" "$migration_home/.config/nvim/lua/plugins/init.lua"
@@ -283,9 +296,11 @@ update_cache="$tmpdir/update-cache"
 mkdir -p "$update_cache/state/installed"
 printf 'feature=child\n' >"$update_cache/state/installed/child"
 
-assert_fails_with \
-  "not installed: base" \
-  env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" "$repo_root/bin/docpunct" update child
+env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" "$repo_root/bin/docpunct" update child >/dev/null
+[[ -f "$update_cache/state/installed/base" ]] || {
+  printf 'expected update to install a newly introduced dependency\n' >&2
+  exit 1
+}
 
 assert_fails_with \
   "dependency cycle detected" \
@@ -321,7 +336,7 @@ cat >"$gui_remove_bin/dpkg-query" <<'EOF'
 set -euo pipefail
 package="${@: -1}"
 case "$package" in
-  keepassxc|meld|desktop-file-utils|gnome-icon-theme|adwaita-icon-theme-full|libfontconfig1-dev|libfreetype6-dev)
+  keepassxc|meld|desktop-file-utils|gnome-icon-theme|adwaita-icon-theme-full|libfontconfig1-dev|libfreetype6-dev|wl-clipboard|xclip)
     printf 'ii '
     ;;
   *)
@@ -348,7 +363,7 @@ env \
   "$repo_root/features/debian-gui-packages/remove.sh"
 gui_remove_output="$(cat "$gui_remove_log")"
 assert_contains "$gui_remove_output" "remove -y keepassxc meld"
-for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-full libfontconfig1-dev libfreetype6-dev ubuntu-desktop ubuntu-desktop-minimal gdm3 gnome-control-center nautilus; do
+for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-full libfontconfig1-dev libfreetype6-dev wl-clipboard xclip ubuntu-desktop ubuntu-desktop-minimal gdm3 gnome-control-center nautilus; do
   if [[ "$gui_remove_output" == *"$protected_package"* ]]; then
     printf 'expected debian-gui-packages remove not to include protected/shared package: %s\noutput was:\n%s\n' "$protected_package" "$gui_remove_output" >&2
     exit 1

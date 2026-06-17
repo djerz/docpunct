@@ -189,7 +189,11 @@ update_feature() {
   mapfile -t deps < <(feature_deps "$feature")
   for dep in "${deps[@]}"; do
     [[ -n "$dep" ]] || continue
-    update_feature "$dep"
+    if is_installed "$dep"; then
+      update_feature "$dep"
+    else
+      install_feature "$dep"
+    fi
   done
 
   printf 'Updating %s\n' "$feature"

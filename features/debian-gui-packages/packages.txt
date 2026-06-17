@@ -11,5 +11,9 @@ desktop-file-utils
 libfontconfig1-dev
 libfreetype6-dev
 
+# Required by Neovide/Neovim clipboard integration on Wayland and X11.
+wl-clipboard
+xclip
+
 # Required by the Double Commander Qt6 portable build at runtime.
 libqt6printsupport6

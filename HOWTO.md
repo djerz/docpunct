@@ -191,6 +191,8 @@ adwaita-icon-theme-full
 desktop-file-utils
 libfontconfig1-dev
 libfreetype6-dev
+wl-clipboard
+xclip
 libqt6printsupport6
 ```
 
@@ -205,6 +207,9 @@ updates.
 
 `libfontconfig1-dev` and `libfreetype6-dev` are included because the Neovide
 Cargo build links against Fontconfig and FreeType.
+
+`wl-clipboard` and `xclip` are included so Neovide/Neovim clipboard integration
+works on Wayland and X11 sessions.
 
 `libqt6printsupport6` is included because the Double Commander Qt6 portable
 build needs Qt6 runtime libraries from the system. APT pulls in the matching
@@ -621,7 +626,10 @@ If the feature is not installed, docpunct installs dependencies first, runs
 
 A feature must already be installed before it can be updated.
 
-When updating, dependencies are updated first.
+When updating, installed dependencies are updated first. If the feature recipe
+now lists a dependency that is not installed yet, docpunct installs that
+dependency before updating the requested feature. This lets recipe changes
+apply without a remove/install loop.
 
 If update fails, docpunct keeps the feature marked as installed and does not
 automatically remove it.
