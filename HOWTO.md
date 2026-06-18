@@ -376,6 +376,7 @@ Example:
 
 ```text
 ~/.bashrc -> /path/to/docpunct/dotfiles/.bashrc
+~/.profile -> /path/to/docpunct/dotfiles/.profile
 ```
 
 Neovim config is managed as a directory-level symlink:
@@ -413,6 +414,7 @@ The imported dotfiles are:
 
 ```text
 .bashrc
+.profile
 .gitconfig
 .config/nvim
 ```
@@ -582,8 +584,8 @@ if [ -s "$HOME/.cargo/env" ]; then
 fi
 ```
 
-Do not rely on `.bashrc`, the Rust feature, or another feature script to make
-Cargo available in the current script environment.
+Do not rely on `.profile`, `.bashrc`, the Rust feature, or another feature
+script to make Cargo available in the current script environment.
 
 Example `install.sh`:
 

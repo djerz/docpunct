@@ -40,7 +40,7 @@
 	useHttpPath = false
 	helper = /usr/local/bin/git-credential-manager
 [diff]
-    tool = nvim
+    tool = meld
 [difftool]
     prompt = false
 [difftool "nvim"]
@@ -50,7 +50,7 @@
 [difftool "meld"]
     cmd = meld "$LOCAL" "$REMOTE"
 [merge]
-    tool = nvim
+    tool = meld
 [mergetool]
     prompt = false
 [mergetool "nvim"]

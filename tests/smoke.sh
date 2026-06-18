@@ -74,7 +74,7 @@ assert_contains "$neovide_manifest" "  - nerdfonts"
 dotfiles_features="$tmpdir/dotfiles-features"
 mkdir -p "$dotfiles_features/dotfiles"
 printf 'description: Test dotfiles\n' >"$dotfiles_features/dotfiles/feature.yml"
-printf '.bashrc\n.config/nvim\n' >"$dotfiles_features/dotfiles/files.txt"
+printf '.bashrc\n.profile\n.config/nvim\n' >"$dotfiles_features/dotfiles/files.txt"
 mkdir -p "$tmpdir/dotfiles/.config/nvim/lua/plugins"
 printf 'vim config\n' >"$tmpdir/dotfiles/.config/nvim/init.lua"
 printf 'plugin config\n' >"$tmpdir/dotfiles/.config/nvim/lua/plugins/init.lua"
@@ -88,13 +88,17 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/n
   printf 'expected dotfiles install to create .bashrc symlink\n' >&2
   exit 1
 }
+[[ -L "$test_home/.profile" ]] || {
+  printf 'expected dotfiles install to create .profile symlink\n' >&2
+  exit 1
+}
 [[ -L "$test_home/.config/nvim" ]] || {
   printf 'expected dotfiles install to create nvim directory symlink\n' >&2
   exit 1
 }
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct relink >/dev/null
-printf '.bashrc\n.config/nvim\n.gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
+printf '.bashrc\n.profile\n.config/nvim\n.gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
 printf 'host gitconfig\n' >"$test_home/.gitconfig"
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct update dotfiles >/dev/null
 [[ -L "$test_home/.gitconfig" ]] || {
@@ -110,8 +114,32 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/nu
   printf 'expected dotfiles remove to remove .bashrc symlink\n' >&2
   exit 1
 }
+[[ ! -e "$test_home/.profile" ]] || {
+  printf 'expected dotfiles remove to remove .profile symlink\n' >&2
+  exit 1
+}
 [[ ! -e "$test_home/.config/nvim" ]] || {
   printf 'expected dotfiles remove to remove nvim directory symlink\n' >&2
+  exit 1
+}
+
+profile_home="$tmpdir/profile-home"
+mkdir -p "$profile_home/.nvm/versions/node/v99.0.0/bin" "$profile_home/.cargo/bin"
+cp "$repo_root/dotfiles/.profile" "$profile_home/.profile"
+printf 'printf "fake node\\n"\n' >"$profile_home/.nvm/versions/node/v99.0.0/bin/node"
+chmod +x "$profile_home/.nvm/versions/node/v99.0.0/bin/node"
+cat >"$profile_home/.nvm/nvm.sh" <<'EOF'
+#!/usr/bin/env sh
+export PATH="$NVM_DIR/versions/node/v99.0.0/bin:$PATH"
+EOF
+cat >"$profile_home/.cargo/env" <<'EOF'
+export PATH="$HOME/.cargo/bin:$PATH"
+EOF
+profile_node_path="$(
+  env -i HOME="$profile_home" PATH=/usr/bin:/bin bash -lc ". \"\$HOME/.profile\"; command -v node"
+)"
+[[ "$profile_node_path" == "$profile_home/.nvm/versions/node/v99.0.0/bin/node" ]] || {
+  printf 'expected .profile to make nvm node available on PATH, got: %s\n' "$profile_node_path" >&2
   exit 1
 }
 

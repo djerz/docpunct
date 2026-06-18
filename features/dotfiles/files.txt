@@ -3,4 +3,5 @@
 # .bashrc
 .gitconfig
 .bashrc
+.profile
 .config/nvim

@@ -5,8 +5,8 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v11.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v11 feature set and implemented behavior.
+- `docpunct_v12.md` is the latest spec and records decisions made through the current session.
+- `HOWTO.md` has been updated to match the v12 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` is unchanged and accepted as the current CLI package list.
 - `debian-gui-packages` contains distro-repository GUI packages plus
@@ -35,6 +35,9 @@
 - `dotfiles` install and update both use `features/dotfiles/reconcile.sh`, so
   new dotfile entries added to `files.txt` get the same backup-and-link
   handling during update as during initial install.
+- Login-shell PATH setup now lives in imported `.profile`, including
+  `~/.local/bin`, Cargo env loading, and NVM initialization so `node` follows
+  the current NVM default in non-interactive login shells.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -45,8 +48,8 @@
   containers.
 - Future features that invoke Cargo or Rust tools must source
   `$HOME/.cargo/env` themselves before calling those tools; do not rely on
-  `.bashrc`, the Rust feature script, or a previous child process to update the
-  current feature script environment.
+  `.profile`, `.bashrc`, the Rust feature script, or a previous child process
+  to update the current feature script environment.
 - Before removing APT packages owned by a feature, check whether they are
   shared desktop/system dependencies and warn before implementing removal that
   could cause APT to remove packages such as `ubuntu-desktop`,
@@ -170,10 +173,22 @@
   both install and update use it.
 - Added `docpunct_v11.md` as the latest specification snapshot for future
   resume sessions.
+- Added managed `dotfiles/.profile`, listed `.profile` in
+  `features/dotfiles/files.txt`, and moved login-shell PATH setup there from
+  `.bashrc`.
+- Kept interactive shell behavior in `.bashrc`, including NVM Bash completion,
+  while `.profile` handles `$HOME/.local/bin`, Cargo env loading, `NVM_DIR`,
+  and `nvm.sh` so `node` follows the NVM-managed default version in
+  non-interactive login Bash shells.
+- Added a smoke regression proving `.profile` makes an NVM-provided `node`
+  available on `PATH`.
+- Added `docpunct_v12.md` as the latest specification snapshot for future
+  resume sessions.
 
 ## Imported dotfiles
 
 - `.bashrc`
+- `.profile`
 - `.gitconfig`
 - `.config/nvim`
 
@@ -246,6 +261,11 @@
 - `git diff --check`, `bash -n bin/docpunct features/*/*.sh tests/*.sh
   tests/container/*.sh`, host `shellcheck`, and `./bin/docpunct test-smoke`
   after creating `docpunct_v11.md` and updating the resume handoff.
+- `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh`,
+  host `shellcheck`, `./bin/docpunct test-smoke`, and `git diff --check`
+  after moving PATH-related shell setup from `.bashrc` to `.profile`.
+- `git diff --check` after updating `TODO.md` and creating `docpunct_v12.md`.
+- `git diff --check` after aligning `HOWTO.md` with the `.profile` split.
 
 ## Pending clarification
 
@@ -274,19 +294,25 @@
 - The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
-- The sibling `../dockerfiles` repository has local cleanup edits that should be reviewed, committed, and pushed separately from this docpunct repository if not already done.
-- The worktree currently has a local `dotfiles/.config/nvim/lazy-lock.json`
-  CopilotChat.nvim lockfile update that should be reviewed before committing.
+- `./bin/docpunct shellcheck` is blocked in the current host environment by
+  Docker socket permissions; host `shellcheck` passed and is the current
+  fallback.
+- APT/container-heavy tests were not rerun for the `.profile` change because
+  the behavior is covered by host-safe smoke tests.
+- The worktree currently has local dotfile edits outside the `.profile`
+  session work: `dotfiles/.gitconfig` changes diff/merge tools from `nvim` to
+  `meld`, and `dotfiles/.config/nvim/lazy-lock.json` updates the
+  CopilotChat.nvim lockfile commit. Review them before committing.
 
 ## Next steps
 
-1. Review the local `dotfiles/.config/nvim/lazy-lock.json` CopilotChat.nvim
-   lockfile update and either keep it intentionally or remove it before
-   committing.
+1. Review the local `dotfiles/.gitconfig` and
+   `dotfiles/.config/nvim/lazy-lock.json` changes and decide whether they
+   should be included in the commit.
 2. Commit and push the current docpunct repository state, including
-   `docpunct_v11.md`.
+   `docpunct_v12.md`.
 3. In the next session, first confirm the pushed commit is present and the
    worktree is clean.
 4. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
 5. Later, decide whether to import the empty `.gitconfig-private`.
-6. Later, consider signature/checksum validation for Git Credential Manager and Double Commander release assets.
+6. Later, consider signature/checksum validation for Git Credential Manager, Double Commander, and Nerd Fonts release assets.
