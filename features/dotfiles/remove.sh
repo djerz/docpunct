@@ -4,6 +4,8 @@ set -euo pipefail
 files_list="$DOCPUNCT_FEATURE_DIR/files.txt"
 dotfiles_dir="$DOCPUNCT_ROOT/dotfiles"
 
+"$DOCPUNCT_FEATURE_DIR/shell-hooks.sh" remove
+
 while IFS= read -r relpath || [[ -n "$relpath" ]]; do
   relpath="${relpath%%#*}"
   relpath="${relpath#"${relpath%%[![:space:]]*}"}"
@@ -29,4 +31,3 @@ while IFS= read -r relpath || [[ -n "$relpath" ]]; do
     mv -- "$backup_path" "$target_path"
   fi
 done <"$files_list"
-

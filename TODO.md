@@ -4,7 +4,8 @@
 
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
-- Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
+- Safe dotfiles were imported into `dotfiles/` and listed in
+  `features/dotfiles/files.txt`.
 - `arch/docpunct_arch.md` is the single living architecture specification and
   records decisions made through the current session.
 - `HOWTO.md` has been updated to match the living architecture and implemented
@@ -44,9 +45,10 @@
 - `dotfiles` install and update both use `features/dotfiles/reconcile.sh`, so
   new dotfile entries added to `files.txt` get the same backup-and-link
   handling during update as during initial install.
-- Login-shell PATH setup now lives in imported `.profile`, including
-  `~/.local/bin`, Cargo env loading, and NVM initialization so `node` follows
-  the current NVM default in non-interactive login shells.
+- Shared shell environment setup now lives in `session-env.sh`, with
+  `.profile` and `.bashrc` using additive marked blocks so existing host shell
+  configuration is preserved. `bash-ext.sh` owns personal Bash aliases and NVM
+  completion.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -66,6 +68,9 @@
 
 ## Done
 
+- Replaced whole-file `.profile` and `.bashrc` symlinks with additive managed
+  blocks sourcing shared `session-env.sh` and Bash-specific `bash-ext.sh`
+  fragments, including migration from existing docpunct symlinks.
 - Consolidated the versioned `docpunct_vX.md` specification snapshots into
   the single living `arch/docpunct_arch.md` document and updated resume/task
   references to use it.
@@ -199,9 +204,9 @@
 
 ## Imported dotfiles
 
-- `.bashrc`
-- `.profile`
 - `.gitconfig`
+- `.config/docpunct/session-env.sh`
+- `.config/docpunct/bash-ext.sh`
 - `.config/nvim`
 
 ## Verified
@@ -285,6 +290,9 @@
   tests/container/*.sh`, host `shellcheck`, and `./bin/docpunct test-smoke`
   after adding the already-installed install early return and failed-install
   cleanup.
+- `git diff --check`, `bash -n`, host `shellcheck`, and
+  `./bin/docpunct test-smoke` after replacing whole-file shell entrypoint
+  symlinks with additive managed blocks and shared shell fragments.
 
 ## Pending clarification
 

@@ -377,14 +377,28 @@ It also generates a desktop entry from the repository template and writes it to:
 
 ## Dotfiles
 
-Dotfiles are managed as symbolic links.
+Most dotfiles are managed as symbolic links. Shell entrypoint files are handled
+additively so docpunct does not replace an existing complex shell setup.
 
 Example:
 
 ```text
-~/.bashrc -> /path/to/docpunct/dotfiles/.bashrc
-~/.profile -> /path/to/docpunct/dotfiles/.profile
+~/.config/docpunct/session-env.sh -> /path/to/docpunct/dotfiles/.config/docpunct/session-env.sh
+~/.config/docpunct/bash-ext.sh -> /path/to/docpunct/dotfiles/.config/docpunct/bash-ext.sh
 ```
+
+Docpunct inserts a small marked block near the top of `.profile` that sources
+`session-env.sh`, and another near the top of `.bashrc` that sources
+`bash-ext.sh`. Existing content remains in place. `bash-ext.sh` sources the
+shared environment before adding interactive aliases and NVM completion.
+
+Install and update replace only docpunct's marked blocks. Removal deletes only
+those blocks and the managed fragment links. Foreign shell-entrypoint symlinks
+and malformed or duplicated marker blocks are refused rather than rewritten.
+
+Updating an older docpunct installation migrates its whole-file `.profile` and
+`.bashrc` symlinks. The original backups are restored when available, then the
+additive blocks are inserted.
 
 Neovim config is managed as a directory-level symlink:
 
@@ -417,12 +431,12 @@ If the repository moves, run:
 ./bin/docpunct relink
 ```
 
-The imported dotfiles are:
+The managed dotfiles are:
 
 ```text
-.bashrc
-.profile
 .gitconfig
+.config/docpunct/session-env.sh
+.config/docpunct/bash-ext.sh
 .config/nvim
 ```
 

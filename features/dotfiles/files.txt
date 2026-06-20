@@ -2,6 +2,6 @@
 # Example:
 # .bashrc
 .gitconfig
-.bashrc
-.profile
+.config/docpunct/session-env.sh
+.config/docpunct/bash-ext.sh
 .config/nvim

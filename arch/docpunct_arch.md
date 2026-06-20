@@ -603,13 +603,15 @@ Removal must avoid deleting unrelated user data.
 
 ## Dotfiles
 
-Dotfiles are managed through symbolic links.
+Most dotfiles are managed through symbolic links. `.profile` and `.bashrc` are
+managed additively because existing installations may already contain complex
+shell configuration that docpunct must preserve.
 
 Example file-level symlink:
 
 ```text
-~/.bashrc -> /path/to/docpunct/dotfiles/.bashrc
-~/.profile -> /path/to/docpunct/dotfiles/.profile
+~/.config/docpunct/session-env.sh -> /path/to/docpunct/dotfiles/.config/docpunct/session-env.sh
+~/.config/docpunct/bash-ext.sh -> /path/to/docpunct/dotfiles/.config/docpunct/bash-ext.sh
 ```
 
 Neovim configuration is managed as a directory-level symlink:
@@ -636,6 +638,16 @@ Installation behavior:
    - replace it with the directory-level symlink only when it contains only
      docpunct-owned symlinks and directories
    - refuse the migration when local files or non-docpunct symlinks are present
+5. Reconcile shell entrypoints separately:
+   - insert one canonical marked block near the top of `.profile` that sources
+     `~/.config/docpunct/session-env.sh`
+   - insert one canonical marked block near the top of `.bashrc` that sources
+     `~/.config/docpunct/bash-ext.sh`
+   - preserve all content outside those blocks
+   - refuse foreign entrypoint symlinks and malformed or duplicate markers
+6. When migrating old docpunct-owned whole-file `.profile` or `.bashrc`
+   symlinks, restore the saved original when available before inserting the
+   marked block. Create a minimal regular entrypoint when no backup exists.
 
 Backups are stored under:
 
@@ -647,6 +659,8 @@ Removal behavior:
 
 1. Remove the symlink.
 2. Restore the original backup if one exists.
+3. Remove only docpunct's marked blocks from `.profile` and `.bashrc`; do not
+   remove the regular entrypoint files or other content.
 
 The command:
 
@@ -681,16 +695,17 @@ instead of:
 /home/chris/.local/bin
 ```
 
-Imported shell startup files may initialize user-local toolchains, but login
-and interactive shell setup have separate responsibilities:
+The managed shell fragments keep login and interactive shell setup separate:
 
-- `.profile` owns login/session environment such as `PATH`, Cargo env loading,
+- `session-env.sh` owns shared environment such as `PATH`, Cargo env loading,
   `NVM_DIR`, and `nvm.sh` loading for `node` availability.
-- `.bashrc` owns interactive Bash behavior such as aliases, prompt, history,
-  programmable completion, and NVM Bash completion.
+- `bash-ext.sh` sources `session-env.sh`, then owns personal interactive Bash
+  aliases and NVM Bash completion.
+- Existing `.profile` and `.bashrc` files retain ownership of all other host
+  behavior, including prompt, history, terminal setup, and system completion.
 
 Toolchain initializers must be safe before the corresponding tool is installed.
-For example, Cargo env loading in `.profile` must be guarded:
+For example, Cargo env loading in `session-env.sh` must be guarded:
 
 ```sh
 [ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
@@ -699,23 +714,23 @@ For example, Cargo env loading in `.profile` must be guarded:
 Feature scripts must not rely on `.profile` or `.bashrc` for non-interactive
 installs.
 
-Initial dotfiles may include:
+Managed dotfiles may include:
 
 ```text
 .gitconfig
-.bashrc
-.profile
+.config/docpunct/session-env.sh
+.config/docpunct/bash-ext.sh
 .config/nvim
 ```
 
 The dotfile feature should support extending this list over time.
 
-The initial imported dotfiles are:
+The managed dotfiles are:
 
 ```text
-.bashrc
-.profile
 .gitconfig
+.config/docpunct/session-env.sh
+.config/docpunct/bash-ext.sh
 .config/nvim
 ```
 
@@ -733,7 +748,7 @@ was left out because its name indicates private data.
 Machine-specific paths must be removed when safe. The initial Neovim Copilot
 configuration had a hardcoded Node path and the override was removed.
 
-The imported `.profile` initializes user-local PATH and login-shell toolchain
+The managed `session-env.sh` initializes user-local PATH and shell toolchain
 environment:
 
 ```sh
@@ -749,8 +764,8 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 ```
 
-The imported `.bashrc` may initialize interactive shell integrations such as
-NVM Bash completion:
+The managed `bash-ext.sh` initializes personal aliases and interactive shell
+integrations such as NVM Bash completion:
 
 ```sh
 export NVM_DIR="$HOME/.nvm"

@@ -74,7 +74,7 @@ assert_contains "$neovide_manifest" "  - nerdfonts"
 dotfiles_features="$tmpdir/dotfiles-features"
 mkdir -p "$dotfiles_features/dotfiles"
 printf 'description: Test dotfiles\n' >"$dotfiles_features/dotfiles/feature.yml"
-printf '.bashrc\n.profile\n.config/nvim\n' >"$dotfiles_features/dotfiles/files.txt"
+printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/nvim\n' >"$dotfiles_features/dotfiles/files.txt"
 mkdir -p "$tmpdir/dotfiles/.config/nvim/lua/plugins"
 printf 'vim config\n' >"$tmpdir/dotfiles/.config/nvim/init.lua"
 printf 'plugin config\n' >"$tmpdir/dotfiles/.config/nvim/lua/plugins/init.lua"
@@ -82,14 +82,30 @@ ln -s "$repo_root/features/dotfiles/install.sh" "$dotfiles_features/dotfiles/ins
 ln -s "$repo_root/features/dotfiles/update.sh" "$dotfiles_features/dotfiles/update.sh"
 ln -s "$repo_root/features/dotfiles/remove.sh" "$dotfiles_features/dotfiles/remove.sh"
 ln -s "$repo_root/features/dotfiles/reconcile.sh" "$dotfiles_features/dotfiles/reconcile.sh"
+ln -s "$repo_root/features/dotfiles/shell-hooks.sh" "$dotfiles_features/dotfiles/shell-hooks.sh"
+
+printf 'host bashrc\n' >"$test_home/.bashrc"
+printf 'host profile\n' >"$test_home/.profile"
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/null
-[[ -L "$test_home/.bashrc" ]] || {
-  printf 'expected dotfiles install to create .bashrc symlink\n' >&2
+[[ -f "$test_home/.bashrc" && ! -L "$test_home/.bashrc" ]] || {
+  printf 'expected dotfiles install to preserve .bashrc as a regular file\n' >&2
   exit 1
 }
-[[ -L "$test_home/.profile" ]] || {
-  printf 'expected dotfiles install to create .profile symlink\n' >&2
+[[ -f "$test_home/.profile" && ! -L "$test_home/.profile" ]] || {
+  printf 'expected dotfiles install to preserve .profile as a regular file\n' >&2
+  exit 1
+}
+assert_contains "$(cat "$test_home/.bashrc")" "host bashrc"
+assert_contains "$(cat "$test_home/.bashrc")" ". \"\$HOME/.config/docpunct/bash-ext.sh\""
+assert_contains "$(cat "$test_home/.profile")" "host profile"
+assert_contains "$(cat "$test_home/.profile")" ". \"\$HOME/.config/docpunct/session-env.sh\""
+[[ -L "$test_home/.config/docpunct/session-env.sh" ]] || {
+  printf 'expected dotfiles install to link session-env.sh\n' >&2
+  exit 1
+}
+[[ -L "$test_home/.config/docpunct/bash-ext.sh" ]] || {
+  printf 'expected dotfiles install to link bash-ext.sh\n' >&2
   exit 1
 }
 [[ -L "$test_home/.config/nvim" ]] || {
@@ -98,7 +114,11 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/n
 }
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct relink >/dev/null
-printf '.bashrc\n.profile\n.config/nvim\n.gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
+[[ "$(grep -Fc '# >>> docpunct shell setup >>>' "$test_home/.bashrc")" -eq 1 ]] || {
+  printf 'expected relink to keep one .bashrc shell block\n' >&2
+  exit 1
+}
+printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/nvim\n.gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
 printf 'host gitconfig\n' >"$test_home/.gitconfig"
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct update dotfiles >/dev/null
 [[ -L "$test_home/.gitconfig" ]] || {
@@ -110,12 +130,16 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct update dotfiles >/dev/nu
   exit 1
 }
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/null
-[[ ! -e "$test_home/.bashrc" ]] || {
-  printf 'expected dotfiles remove to remove .bashrc symlink\n' >&2
+[[ "$(cat "$test_home/.bashrc")" == "host bashrc" ]] || {
+  printf 'expected dotfiles remove to preserve original .bashrc content\n' >&2
   exit 1
 }
-[[ ! -e "$test_home/.profile" ]] || {
-  printf 'expected dotfiles remove to remove .profile symlink\n' >&2
+[[ "$(cat "$test_home/.profile")" == "host profile" ]] || {
+  printf 'expected dotfiles remove to preserve original .profile content\n' >&2
+  exit 1
+}
+[[ ! -e "$test_home/.config/docpunct/session-env.sh" ]] || {
+  printf 'expected dotfiles remove to remove session-env.sh symlink\n' >&2
   exit 1
 }
 [[ ! -e "$test_home/.config/nvim" ]] || {
@@ -124,8 +148,9 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/nu
 }
 
 profile_home="$tmpdir/profile-home"
-mkdir -p "$profile_home/.nvm/versions/node/v99.0.0/bin" "$profile_home/.cargo/bin"
-cp "$repo_root/dotfiles/.profile" "$profile_home/.profile"
+mkdir -p "$profile_home/.nvm/versions/node/v99.0.0/bin" "$profile_home/.cargo/bin" "$profile_home/.config/docpunct"
+ln -s "$repo_root/dotfiles/.config/docpunct/session-env.sh" "$profile_home/.config/docpunct/session-env.sh"
+ln -s "$repo_root/dotfiles/.config/docpunct/bash-ext.sh" "$profile_home/.config/docpunct/bash-ext.sh"
 printf 'printf "fake node\\n"\n' >"$profile_home/.nvm/versions/node/v99.0.0/bin/node"
 chmod +x "$profile_home/.nvm/versions/node/v99.0.0/bin/node"
 cat >"$profile_home/.nvm/nvm.sh" <<'EOF'
@@ -135,26 +160,75 @@ EOF
 cat >"$profile_home/.cargo/env" <<'EOF'
 export PATH="$HOME/.cargo/bin:$PATH"
 EOF
+cat >"$profile_home/.nvm/bash_completion" <<'EOF'
+BASH_EXT_COMPLETION=loaded
+EOF
 profile_node_path="$(
-  env -i HOME="$profile_home" PATH=/usr/bin:/bin bash -lc ". \"\$HOME/.profile\"; command -v node"
+  env -i HOME="$profile_home" PATH=/usr/bin:/bin sh -c ". \"\$HOME/.config/docpunct/session-env.sh\"; command -v node"
 )"
 [[ "$profile_node_path" == "$profile_home/.nvm/versions/node/v99.0.0/bin/node" ]] || {
   printf 'expected .profile to make nvm node available on PATH, got: %s\n' "$profile_node_path" >&2
   exit 1
 }
+bash_ext_output="$(
+  # shellcheck disable=SC2016
+  env -i HOME="$profile_home" PATH=/usr/bin:/bin \
+    bash --noprofile --norc -ic \
+    '. "$HOME/.config/docpunct/bash-ext.sh"; alias ll; printf "completion=%s\n" "$BASH_EXT_COMPLETION"' \
+    2>/dev/null
+)"
+assert_contains "$bash_ext_output" "alias ll='ls -alF'"
+assert_contains "$bash_ext_output" "completion=loaded"
+
+hook_test_home="$tmpdir/hook-test-home"
+hook_test_cache="$tmpdir/hook-test-cache"
+mkdir -p "$hook_test_home" "$hook_test_cache/backups/dotfiles"
+printf 'foreign bashrc\n' >"$tmpdir/foreign-bashrc"
+ln -s "$tmpdir/foreign-bashrc" "$hook_test_home/.bashrc"
+assert_fails_with \
+  "refusing to edit foreign shell symlink" \
+  env \
+    HOME="$hook_test_home" \
+    DOCPUNCT_ROOT="$repo_root" \
+    DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
+    "$repo_root/features/dotfiles/shell-hooks.sh" install
+[[ "$(cat "$tmpdir/foreign-bashrc")" == "foreign bashrc" ]] || {
+  printf 'expected foreign .bashrc symlink target to remain untouched\n' >&2
+  exit 1
+}
+
+rm -- "$hook_test_home/.bashrc"
+printf '%s\n%s\n%s\n%s\n' \
+  '# >>> docpunct shell setup >>>' \
+  '# >>> docpunct shell setup >>>' \
+  '# <<< docpunct shell setup <<<' \
+  '# <<< docpunct shell setup <<<' >"$hook_test_home/.profile"
+assert_fails_with \
+  "markers are malformed or duplicated" \
+  env \
+    HOME="$hook_test_home" \
+    DOCPUNCT_ROOT="$repo_root" \
+    DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
+    "$repo_root/features/dotfiles/shell-hooks.sh" install
 
 migration_features="$tmpdir/migration-features"
 migration_cache="$tmpdir/migration-cache"
 migration_home="$tmpdir/migration-home"
 mkdir -p "$migration_features/dotfiles" "$migration_home/.config/nvim/lua/plugins" "$migration_cache/state/installed"
 printf 'description: Test dotfiles migration\n' >"$migration_features/dotfiles/feature.yml"
-printf '.config/nvim\n' >"$migration_features/dotfiles/files.txt"
+printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/nvim\n' >"$migration_features/dotfiles/files.txt"
 ln -s "$repo_root/features/dotfiles/install.sh" "$migration_features/dotfiles/install.sh"
 ln -s "$repo_root/features/dotfiles/update.sh" "$migration_features/dotfiles/update.sh"
 ln -s "$repo_root/features/dotfiles/reconcile.sh" "$migration_features/dotfiles/reconcile.sh"
+ln -s "$repo_root/features/dotfiles/shell-hooks.sh" "$migration_features/dotfiles/shell-hooks.sh"
 printf 'feature=dotfiles\n' >"$migration_cache/state/installed/dotfiles"
 ln -s "$repo_root/dotfiles/.config/nvim/init.lua" "$migration_home/.config/nvim/init.lua"
 ln -s "$repo_root/dotfiles/.config/nvim/lua/plugins/init.lua" "$migration_home/.config/nvim/lua/plugins/init.lua"
+mkdir -p "$migration_cache/backups/dotfiles"
+printf 'restored bashrc\n' >"$migration_cache/backups/dotfiles/.bashrc"
+printf 'restored profile\n' >"$migration_cache/backups/dotfiles/.profile"
+ln -s "$repo_root/dotfiles/.bashrc" "$migration_home/.bashrc"
+ln -s "$repo_root/dotfiles/.profile" "$migration_home/.profile"
 
 env \
   HOME="$migration_home" \
@@ -169,6 +243,13 @@ env \
   printf 'expected migrated nvim symlink to point at dotfiles nvim directory\n' >&2
   exit 1
 }
+[[ ! -L "$migration_home/.bashrc" ]] || {
+  printf 'expected dotfiles update to migrate legacy .bashrc symlink\n' >&2
+  exit 1
+}
+assert_contains "$(cat "$migration_home/.bashrc")" "restored bashrc"
+assert_contains "$(cat "$migration_home/.bashrc")" ". \"\$HOME/.config/docpunct/bash-ext.sh\""
+assert_contains "$(cat "$migration_home/.profile")" "restored profile"
 
 neovide_home="$tmpdir/neovide-home"
 mkdir -p "$neovide_home/.cargo/bin"

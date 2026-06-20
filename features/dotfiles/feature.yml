@@ -1,3 +1,3 @@
-description: Link personal dotfiles into the home directory.
+description: Manage personal dotfiles and additive shell setup.
 depends:
   - git-credential-manager
