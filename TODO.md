@@ -33,10 +33,9 @@
     install in a separate non-privileged container and checks the installed
     binary for unresolved shared libraries with `ldd`.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
-- `docpunct update FEATURE` now still requires the requested feature to be
-  installed, but installs newly introduced dependencies before updating the
-  requested feature. This allows dependency recipe changes to apply without a
-  remove/install loop.
+- `docpunct update FEATURE` requires the requested feature to be installed and
+  updates only that feature. It reports dependency actions that may also be
+  needed in dependency-first order without running them automatically.
 - `docpunct install FEATURE` now returns immediately when the requested
   feature is already installed, before validating or traversing dependencies.
 - Failed feature installs now attempt the same feature's `remove.sh` as
@@ -72,6 +71,9 @@
 
 ## Done
 
+- Changed update behavior so only the explicitly requested feature is updated;
+  dependencies are reported as ordered update/install suggestions and are not
+  changed automatically.
 - Replaced whole-file `.profile` and `.bashrc` symlinks with additive managed
   blocks sourcing shared `session-env.sh` and Bash-specific `bash-ext.sh`
   fragments, including migration from existing docpunct symlinks.
@@ -193,9 +195,9 @@
 - Updated `HOWTO.md` for the Double Commander Qt6 runtime dependency.
 - Added `wl-clipboard` and `xclip` to `debian-gui-packages` so
   Neovide/Neovim clipboard integration works on Wayland and X11 sessions.
-- Reworked `docpunct update FEATURE` so newly introduced dependencies are
-  installed during update while the requested feature itself must already be
-  installed.
+- Reworked `docpunct update FEATURE` to update only the requested feature and
+  report possible dependency update/install commands in dependency-first
+  order.
 - Split dotfile reconciliation into `features/dotfiles/reconcile.sh` and made
   both install and update use it.
 - Added managed `dotfiles/.profile`, listed `.profile` in
@@ -305,6 +307,10 @@
 - Current upstream GitHub release metadata was checked for Git Credential
   Manager and Double Commander SHA-256 digests, and the Nerd Fonts checksum
   parser was checked against the current upstream `SHA-256.txt` format.
+- `bash -n`, host `shellcheck`, scoped `git diff --check`, and
+  `./bin/docpunct test-smoke` after making update dependency handling advisory.
+  Smoke coverage verifies dependency-first guidance and that a missing
+  dependency is not installed automatically.
 
 ## Pending clarification
 

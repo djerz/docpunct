@@ -657,10 +657,11 @@ install failure log.
 
 A feature must already be installed before it can be updated.
 
-When updating, installed dependencies are updated first. If the feature recipe
-now lists a dependency that is not installed yet, docpunct installs that
-dependency before updating the requested feature. This lets recipe changes
-apply without a remove/install loop.
+Updating changes only the explicitly requested feature. Docpunct inspects its
+full dependency tree and prints commands for dependencies that may also need
+attention, in dependency-first order. It suggests `docpunct update` for an
+installed dependency and `docpunct install` for a missing dependency, but does
+not run either automatically.
 
 If update fails, docpunct keeps the feature marked as installed and does not
 automatically remove it.

@@ -194,24 +194,48 @@ install_requested_feature() {
   install_feature "$feature"
 }
 
-update_feature() {
+collect_update_dependencies() {
   local feature="$1" dep
   local deps=()
+
+  mapfile -t deps < <(feature_deps "$feature")
+  for dep in "${deps[@]}"; do
+    [[ -n "$dep" ]] || continue
+    collect_update_dependencies "$dep"
+    if [[ -z "${UPDATE_DEP_SEEN[$dep]:-}" ]]; then
+      UPDATE_DEPENDENCIES+=("$dep")
+      UPDATE_DEP_SEEN["$dep"]=1
+    fi
+  done
+}
+
+print_update_dependency_guidance() {
+  local feature="$1" dep
+  local -a UPDATE_DEPENDENCIES=()
+  local -A UPDATE_DEP_SEEN=()
+
+  collect_update_dependencies "$feature"
+  [[ "${#UPDATE_DEPENDENCIES[@]}" -gt 0 ]] || return 0
+
+  printf 'Dependencies of %s may also need attention; they will not be changed automatically.\n' "$feature"
+  printf 'Run these commands in dependency-first order as needed:\n'
+  for dep in "${UPDATE_DEPENDENCIES[@]}"; do
+    if is_installed "$dep"; then
+      printf '  docpunct update %s\n' "$dep"
+    else
+      printf '  docpunct install %s\n' "$dep"
+    fi
+  done
+}
+
+update_feature() {
+  local feature="$1"
   require_feature "$feature"
   if ! is_installed "$feature"; then
     die "not installed: $feature"
   fi
 
-  mapfile -t deps < <(feature_deps "$feature")
-  for dep in "${deps[@]}"; do
-    [[ -n "$dep" ]] || continue
-    if is_installed "$dep"; then
-      update_feature "$dep"
-    else
-      install_feature "$dep"
-    fi
-  done
-
+  print_update_dependency_guidance "$feature"
   printf 'Updating %s\n' "$feature"
   run_feature_script update "$feature"
 }

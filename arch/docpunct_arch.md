@@ -22,6 +22,11 @@ symlink with a deprecated migration path for existing machines. Version 10 also
 records the fix for Double Commander's Qt6 portable build runtime dependency on
 Ubuntu systems.
 
+Version 14 records the session that made `docpunct update FEATURE` update only
+the explicitly requested feature. Dependencies are no longer changed
+automatically; docpunct reports possible update or install commands in
+dependency-first order instead.
+
 Version 13 records the session that added fail-closed SHA-256 verification for
 Git Credential Manager, Double Commander, and Nerd Fonts release downloads.
 GitHub release API digests are used for Git Credential Manager and Double
@@ -417,7 +422,10 @@ Scripts should be idempotent internally where reasonable, but docpunct itself pr
 
 ## Dependency resolution
 
-Dependencies must be installed or updated before the feature that depends on them.
+Install resolves and installs dependencies automatically before the feature
+that depends on them. Update changes only the explicitly requested feature.
+Before updating it, docpunct must list dependency actions that may also be
+needed in deterministic, dependency-first order, without running them.
 
 Dependency ordering must be deterministic.
 
@@ -465,9 +473,11 @@ If `docpunct update FEATURE` is called for a feature that is not installed, it m
 
 If the feature is installed, docpunct must:
 
-1. Update installed dependencies first.
-2. Install dependencies that are now listed by the recipe but are not yet installed.
-3. Run `update.sh` if present.
+1. Inspect the full dependency tree without changing it.
+2. Print suggested `docpunct update DEPENDENCY` commands for installed
+   dependencies and `docpunct install DEPENDENCY` commands for missing
+   dependencies, in dependency-first order.
+3. Run `update.sh` only for the explicitly requested feature.
 
 ### Remove
 

@@ -28,6 +28,14 @@ assert_contains() {
   }
 }
 
+assert_not_contains() {
+  local haystack="$1" needle="$2"
+  [[ "$haystack" != *"$needle"* ]] || {
+    printf 'expected output not to contain: %s\noutput was:\n%s\n' "$needle" "$haystack" >&2
+    exit 1
+  }
+}
+
 assert_fails_with() {
   local expected="$1"
   shift
@@ -415,6 +423,7 @@ env \
 fake_features="$tmpdir/features"
 write_feature "$fake_features" base
 write_feature "$fake_features" child base
+write_feature "$fake_features" grandchild child
 write_feature "$fake_features" cycle-a cycle-b
 write_feature "$fake_features" cycle-b cycle-a
 
@@ -439,11 +448,35 @@ update_cache="$tmpdir/update-cache"
 mkdir -p "$update_cache/state/installed"
 printf 'feature=child\n' >"$update_cache/state/installed/child"
 
-env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" "$repo_root/bin/docpunct" update child >/dev/null
-[[ -f "$update_cache/state/installed/base" ]] || {
-  printf 'expected update to install a newly introduced dependency\n' >&2
+update_output="$(
+  env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" \
+    "$repo_root/bin/docpunct" update child
+)"
+assert_contains "$update_output" "docpunct install base"
+assert_contains "$update_output" "Updating child"
+[[ ! -f "$update_cache/state/installed/base" ]] || {
+  printf 'expected update not to install a newly introduced dependency\n' >&2
   exit 1
 }
+
+printf 'feature=grandchild\n' >"$update_cache/state/installed/grandchild"
+grandchild_update_output="$(
+  env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" \
+    "$repo_root/bin/docpunct" update grandchild
+)"
+assert_contains \
+  "$grandchild_update_output" \
+  $'docpunct install base\n  docpunct update child'
+assert_not_contains "$grandchild_update_output" "Updating child"
+[[ ! -f "$update_cache/state/installed/base" ]] || {
+  printf 'expected transitive dependency guidance not to install base\n' >&2
+  exit 1
+}
+
+assert_fails_with \
+  "not installed: base" \
+  env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" \
+    "$repo_root/bin/docpunct" update base
 
 assert_fails_with \
   "dependency cycle detected" \
