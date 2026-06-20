@@ -22,6 +22,23 @@ mkdir -p "$download_dir" "$fonts_parent" "$staging_dir"
 
 release_json="$(curl -fsSL "$api_url")"
 tag="$(printf '%s\n' "$release_json" | jq -r '.tag_name')"
+checksums_url="$(
+  printf '%s\n' "$release_json" |
+    jq -r '
+      .assets[]
+      | select(.name == "SHA-256.txt")
+      | .browser_download_url
+    ' |
+    head -n 1
+)"
+
+if [[ -z "$checksums_url" || "$checksums_url" == "null" ]]; then
+  printf 'could not find Nerd Fonts SHA-256.txt asset in latest release %s\n' "$tag" >&2
+  exit 1
+fi
+
+checksums_path="$tmpdir/SHA-256.txt"
+curl -fL "$checksums_url" -o "$checksums_path"
 
 mapfile -t font_assets < <(read_font_assets)
 for asset_name in "${font_assets[@]}"; do
@@ -47,6 +64,17 @@ for asset_name in "${font_assets[@]}"; do
   mkdir -p "$extract_dir"
 
   curl -fL "$asset_url" -o "$archive_path"
+  expected_sha256="$(
+    awk -v name="$asset_name" '$2 == name || $2 == "*" name { print $1; exit }' "$checksums_path"
+  )"
+  if [[ ! "$expected_sha256" =~ ^[[:xdigit:]]{64}$ ]]; then
+    printf 'could not find a valid SHA-256 checksum for Nerd Fonts asset: %s\n' "$asset_name" >&2
+    exit 1
+  fi
+  printf '%s  %s\n' "$expected_sha256" "$archive_path" | sha256sum --check --status - || {
+    printf 'Nerd Fonts archive checksum verification failed: %s\n' "$archive_path" >&2
+    exit 1
+  }
   unzip -q -o "$archive_path" -d "$extract_dir"
 
   found_fonts=0

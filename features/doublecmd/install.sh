@@ -33,15 +33,17 @@ release_json="$(curl -fsSL "$api_url")"
 tag="$(printf '%s\n' "$release_json" | jq -r '.tag_name')"
 version="${tag#v}"
 asset_name="doublecmd-${version}.qt6.${asset_arch}.tar.xz"
-asset_url="$(
+asset_record="$(
   printf '%s\n' "$release_json" |
     jq -r --arg name "$asset_name" '
       .assets[]
       | select(.name == $name)
-      | .browser_download_url
+      | [.browser_download_url, (.digest // "")]
+      | @tsv
     ' |
     head -n 1
 )"
+IFS=$'\t' read -r asset_url asset_digest <<<"$asset_record"
 
 if [[ -z "$asset_url" || "$asset_url" == "null" ]]; then
   printf 'could not find Double Commander Qt6 %s asset in latest release %s\n' "$asset_arch" "$tag" >&2
@@ -50,8 +52,18 @@ if [[ -z "$asset_url" || "$asset_url" == "null" ]]; then
   exit 1
 fi
 
+if [[ ! "$asset_digest" =~ ^sha256:([[:xdigit:]]{64})$ ]]; then
+  printf 'latest Double Commander release does not provide a valid SHA-256 digest for %s\n' "$asset_name" >&2
+  exit 1
+fi
+expected_sha256="${BASH_REMATCH[1]}"
+
 archive_path="$download_dir/$asset_name"
 curl -fL "$asset_url" -o "$archive_path"
+printf '%s  %s\n' "$expected_sha256" "$archive_path" | sha256sum --check --status - || {
+  printf 'Double Commander archive checksum verification failed: %s\n' "$archive_path" >&2
+  exit 1
+}
 
 tar -xJf "$archive_path" -C "$tmpdir"
 [[ -x "$tmpdir/doublecmd/doublecmd" ]] || {

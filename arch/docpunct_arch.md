@@ -22,6 +22,12 @@ symlink with a deprecated migration path for existing machines. Version 10 also
 records the fix for Double Commander's Qt6 portable build runtime dependency on
 Ubuntu systems.
 
+Version 13 records the session that added fail-closed SHA-256 verification for
+Git Credential Manager, Double Commander, and Nerd Fonts release downloads.
+GitHub release API digests are used for Git Credential Manager and Double
+Commander, while Nerd Fonts archives are checked against the release's
+`SHA-256.txt` asset.
+
 Version 12 records the sessions that:
 
 - added managed `dotfiles/.profile` and included `.profile` in
@@ -910,8 +916,9 @@ Removal behavior:
 1. Run `git-credential-manager unconfigure` when available.
 2. Remove the Debian package named `gcm`.
 
-Known future improvement: validate package signatures or checksums before
-installation.
+The downloaded package is verified against the SHA-256 digest in GitHub's
+release API before installation. This detects a corrupted or mismatched
+download but is not independent publisher-signature verification.
 
 ---
 
@@ -1068,8 +1075,9 @@ Removal must delete only:
 ~/.local/share/fonts/docpunct/nerdfonts
 ```
 
-Signature/checksum validation for Nerd Fonts release assets is not implemented
-yet and remains future work.
+Each Nerd Fonts archive is verified against the release's `SHA-256.txt` asset
+before extraction. This detects a corrupted or mismatched download but is not
+independent publisher-signature verification.
 
 The `brave-browser` feature installs the `brave-browser` package from Brave's
 official APT repository and owns:
@@ -1259,8 +1267,9 @@ Removal should remove only docpunct-owned install paths:
 Removal must not remove Double Commander user cache, configuration, or data
 files.
 
-Known future improvement: validate release asset signatures or checksums before
-installation.
+The downloaded archive is verified against the SHA-256 digest in GitHub's
+release API before extraction. This detects a corrupted or mismatched download
+but is not independent publisher-signature verification.
 
 ---
 

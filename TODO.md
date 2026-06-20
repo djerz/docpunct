@@ -49,6 +49,10 @@
   `.profile` and `.bashrc` using additive marked blocks so existing host shell
   configuration is preserved. `bash-ext.sh` owns personal Bash aliases and NVM
   completion.
+- Git Credential Manager and Double Commander downloads are now verified
+  against SHA-256 digests in the GitHub release API before installation or
+  extraction. Nerd Fonts archives are verified against the upstream release's
+  `SHA-256.txt` asset.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -80,6 +84,8 @@
 - Added best-effort failed-install cleanup through the feature's `remove.sh`,
   including regression coverage for artifact removal, retained install logs,
   and unchanged installed state.
+- Added fail-closed SHA-256 verification for Git Credential Manager, Double
+  Commander, and Nerd Fonts release downloads.
 - Added `AIHANDOVER.md` with a concise prompt that directs new sessions to the
   authoritative specification, usage, task, and TODO documents.
 - Added `libicu-dev` to `debian-cli-packages`, made the Git Credential Manager
@@ -293,6 +299,12 @@
 - `git diff --check`, `bash -n`, host `shellcheck`, and
   `./bin/docpunct test-smoke` after replacing whole-file shell entrypoint
   symlinks with additive managed blocks and shared shell fragments.
+- `bash -n`, host `shellcheck`, `./bin/docpunct test-smoke`, and scoped
+  `git diff --check` after adding release-asset SHA-256 verification. The Nerd
+  Fonts smoke coverage includes rejection of an invalid checksum.
+- Current upstream GitHub release metadata was checked for Git Credential
+  Manager and Double Commander SHA-256 digests, and the Nerd Fonts checksum
+  parser was checked against the current upstream `SHA-256.txt` format.
 
 ## Pending clarification
 
@@ -301,9 +313,8 @@
 ## Remaining work
 
 - Decide whether to import the empty `.gitconfig-private`.
-- Consider signature/checksum validation for Git Credential Manager release assets.
-- Consider signature/checksum validation for Double Commander release assets.
-- Consider signature/checksum validation for Nerd Fonts release assets.
+- Consider independent publisher-signature validation for Git Credential
+  Manager, Double Commander, and Nerd Fonts release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
   `features/dotfiles/reconcile.sh` after existing machines have migrated.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
@@ -312,12 +323,12 @@
 
 ## Known issues
 
-- Git Credential Manager package signature validation is not implemented.
-- Double Commander release asset signature/checksum validation is not implemented.
-- Nerd Fonts release asset signature/checksum validation is not implemented.
+- Independent publisher-signature validation is not implemented for Git
+  Credential Manager, Double Commander, or Nerd Fonts release assets. Their
+  SHA-256 checksums come from the same GitHub release trust boundary as the
+  downloads.
 - Neovim removal currently removes the user binary/runtime path but leaves the source checkout under `~/.cache/docpunct/src/neovim`.
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
-- The Git Credential Manager installer has been API-selector tested but not install-tested because it downloads a `.deb` and invokes `sudo dpkg`.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
 - `./bin/docpunct shellcheck` is blocked in the current host environment by
@@ -329,8 +340,8 @@
 ## Next steps
 
 1. Decide whether to import the empty `.gitconfig-private`.
-2. Consider signature/checksum validation for Git Credential Manager,
-   Double Commander, and Nerd Fonts release assets.
+2. Consider independent publisher-signature validation for Git Credential
+   Manager, Double Commander, and Nerd Fonts release assets.
 3. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
 4. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration

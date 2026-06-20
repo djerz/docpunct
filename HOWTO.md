@@ -231,8 +231,9 @@ Qt6 core, GUI, and widgets libraries as dependencies.
 The curated set is defined in `features/nerdfonts/fonts.txt` and currently
 includes JetBrainsMono, Hack, FiraCode Nerd Font, SauceCodePro NF, and Noto
 Mono. The feature downloads matching archives from the latest upstream Nerd
-Fonts GitHub release and refreshes the user font cache when `fc-cache` is
-available. Removing the feature deletes only the docpunct-owned font directory.
+Fonts GitHub release, verifies them against that release's `SHA-256.txt`, and
+refreshes the user font cache when `fc-cache` is available. Removing the
+feature deletes only the docpunct-owned font directory.
 
 Third-party APT repository packages are managed by separate features, not by
 `debian-gui-packages`:
@@ -321,11 +322,13 @@ DOCPUNCT_DOCKER_UBUNTU_SUITE=noble ./bin/docpunct install docker
 
 `git-credential-manager` downloads the latest upstream Linux Debian package for
 the local Debian architecture, stores it in `~/.cache/docpunct/downloads`,
-installs it with `sudo dpkg -i`, repairs package dependencies with APT if
-needed, and runs `git-credential-manager configure`.
+verifies its GitHub release API SHA-256 digest, installs it with
+`sudo dpkg -i`, repairs package dependencies with APT if needed, and runs
+`git-credential-manager configure`.
 
 `doublecmd` installs the latest Double Commander GitHub release from the
-portable Qt6 Linux tarball for the local architecture. It extracts the app to:
+portable Qt6 Linux tarball for the local architecture. It verifies the
+archive's GitHub release API SHA-256 digest before extracting the app to:
 
 ```text
 ~/.local/share/docpunct/doublecmd

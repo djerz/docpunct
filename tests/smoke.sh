@@ -308,13 +308,26 @@ while [[ "$#" -gt 0 ]]; do
   esac
 done
 [[ -n "$output" ]] || exit 1
-printf 'fake archive\n' >"$output"
+if [[ "$output" == */SHA-256.txt ]]; then
+  if [[ "${NERDFONTS_BAD_CHECKSUM:-0}" == "1" ]]; then
+    checksum="0000000000000000000000000000000000000000000000000000000000000000"
+  else
+    checksum="$(printf 'fake archive\n' | sha256sum | awk '{print $1}')"
+  fi
+  for name in JetBrainsMono.zip Hack.zip FiraCode.zip SourceCodePro.zip Noto.zip; do
+    printf '%s  %s\n' "$checksum" "$name"
+  done >"$output"
+else
+  printf 'fake archive\n' >"$output"
+fi
 EOF
 cat >"$nerdfonts_bin/jq" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "$*" == *".tag_name"* ]]; then
   printf 'v9.9.9\n'
+elif [[ "$*" == *'select(.name == "SHA-256.txt")'* ]]; then
+  printf 'https://example.invalid/SHA-256.txt\n'
 elif [[ "$*" == *"--arg name"* ]]; then
   name=""
   while [[ "$#" -gt 0 ]]; do
@@ -375,6 +388,18 @@ for font_asset in JetBrainsMono Hack FiraCode SourceCodePro Noto; do
   }
 done
 assert_contains "$(cat "$nerdfonts_fc_log")" "-f $nerdfonts_home/.local/share/fonts"
+
+if env \
+  HOME="$nerdfonts_home" \
+  PATH="$nerdfonts_bin:$PATH" \
+  DOCPUNCT_CACHE_DIR="$nerdfonts_cache" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/nerdfonts" \
+  NERDFONTS_FC_LOG="$nerdfonts_fc_log" \
+  NERDFONTS_BAD_CHECKSUM=1 \
+  "$repo_root/features/nerdfonts/install.sh" 2>/dev/null; then
+  printf 'expected nerdfonts install to reject an invalid archive checksum\n' >&2
+  exit 1
+fi
 
 env \
   HOME="$nerdfonts_home" \
