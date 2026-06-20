@@ -631,6 +631,11 @@ neovim already installed
 If the feature is not installed, docpunct installs dependencies first, runs
 `install.sh` if present, and marks the feature installed only after success.
 
+If `install.sh` fails, docpunct keeps the install error log and attempts the
+feature's `remove.sh` as best-effort cleanup. The feature remains unmarked. A
+cleanup failure is reported separately and does not replace the original
+install failure log.
+
 ### Update
 
 A feature must already be installed before it can be updated.

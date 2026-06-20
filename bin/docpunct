@@ -154,7 +154,7 @@ run_feature_script() {
   else
     mv -- "$tmp" "$log"
     printf 'docpunct: %s %s failed; log: %s\n' "$action" "$feature" "$log" >&2
-    exit 1
+    return 1
   fi
 }
 
@@ -162,20 +162,36 @@ install_feature() {
   local feature="$1" dep
   local deps=()
   require_feature "$feature"
-  mapfile -t deps < <(feature_deps "$feature")
-  for dep in "${deps[@]}"; do
-    [[ -n "$dep" ]] || continue
-    install_feature "$dep"
-  done
 
   if is_installed "$feature"; then
     printf '%s already installed\n' "$feature"
     return 0
   fi
 
+  mapfile -t deps < <(feature_deps "$feature")
+  for dep in "${deps[@]}"; do
+    [[ -n "$dep" ]] || continue
+    install_feature "$dep"
+  done
+
   printf 'Installing %s\n' "$feature"
-  run_feature_script install "$feature"
+  if ! run_feature_script install "$feature"; then
+    printf 'Cleaning up failed install: %s\n' "$feature" >&2
+    if ! run_feature_script remove "$feature"; then
+      printf 'docpunct: cleanup after failed install also failed: %s\n' "$feature" >&2
+    fi
+    return 1
+  fi
   mark_installed "$feature"
+}
+
+install_requested_feature() {
+  local feature="$1"
+  require_feature "$feature"
+  if ! is_installed "$feature"; then
+    detect_dependency_cycle "$feature"
+  fi
+  install_feature "$feature"
 }
 
 update_feature() {
@@ -319,12 +335,11 @@ main() {
   case "$cmd" in
     bootstrap)
       [[ "$#" -eq 0 ]] || die "bootstrap takes no arguments"
-      detect_dependency_cycle core
-      install_feature core
+      install_requested_feature core
       ;;
     install)
       [[ "$#" -gt 0 ]] || die "install requires at least one feature"
-      while [[ "$#" -gt 0 ]]; do detect_dependency_cycle "$1"; install_feature "$1"; shift; done
+      while [[ "$#" -gt 0 ]]; do install_requested_feature "$1"; shift; done
       ;;
     update)
       [[ "$#" -gt 0 ]] || die "update requires at least one feature"

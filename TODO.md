@@ -5,8 +5,10 @@
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported unchanged into `dotfiles/` and listed in `features/dotfiles/files.txt`.
-- `docpunct_v12.md` is the latest spec and records decisions made through the current session.
-- `HOWTO.md` has been updated to match the v12 feature set and implemented behavior.
+- `arch/docpunct_arch.md` is the single living architecture specification and
+  records decisions made through the current session.
+- `HOWTO.md` has been updated to match the living architecture and implemented
+  behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
 - `debian-cli-packages` includes `libicu-dev` so Git Credential Manager's
   bundled .NET runtime can start on fresh Ubuntu installations, including
@@ -34,6 +36,11 @@
   installed, but installs newly introduced dependencies before updating the
   requested feature. This allows dependency recipe changes to apply without a
   remove/install loop.
+- `docpunct install FEATURE` now returns immediately when the requested
+  feature is already installed, before validating or traversing dependencies.
+- Failed feature installs now attempt the same feature's `remove.sh` as
+  best-effort cleanup, retain the original install error log, and leave the
+  feature unmarked.
 - `dotfiles` install and update both use `features/dotfiles/reconcile.sh`, so
   new dotfile entries added to `files.txt` get the same backup-and-link
   handling during update as during initial install.
@@ -59,6 +66,15 @@
 
 ## Done
 
+- Consolidated the versioned `docpunct_vX.md` specification snapshots into
+  the single living `arch/docpunct_arch.md` document and updated resume/task
+  references to use it.
+- Made install return immediately for an already-installed requested feature
+  before dependency cycle detection or traversal, and added a smoke regression
+  covering an installed feature whose manifest names a missing dependency.
+- Added best-effort failed-install cleanup through the feature's `remove.sh`,
+  including regression coverage for artifact removal, retained install logs,
+  and unchanged installed state.
 - Added `AIHANDOVER.md` with a concise prompt that directs new sessions to the
   authoritative specification, usage, task, and TODO documents.
 - Added `libicu-dev` to `debian-cli-packages`, made the Git Credential Manager
@@ -110,7 +126,6 @@
 - Added dependency cycle detection before install/update traversal.
 - Updated `debian-gui-packages/packages.txt` to install `keepassxc`, `meld`, `gnome-icon-theme`, `adwaita-icon-theme-full`, and retained `desktop-file-utils` for Neovide.
 - Added third-party APT repository features for Brave Browser, Visual Studio Code, and Google Chrome. Each feature owns its package, source file, and signing key.
-- Added `docpunct_v4.md` as the latest specification snapshot for future resume sessions.
 - Changed `docpunct update FEATURE` to fail when `FEATURE` is not installed.
   Later behavior was reworked so newly introduced dependencies are installed
   during update.
@@ -118,8 +133,6 @@
 - Added architecture guards for third-party APT package features and Docker suite handling for Ubuntu 22.04, 24.04, and 26.04.
 - Docker install adds the target user to the `docker` group when needed and Docker removal removes only the group membership it added.
 - Docker removal leaves the `docker` group in place and prints a manual `sudo groupdel docker` cleanup hint when the group still exists.
-- Added `docpunct_v5.md` as the latest specification snapshot for future resume sessions.
-- Added `docpunct_v6.md` as the latest specification snapshot for future resume sessions.
 - Cleaned the sibling `../dockerfiles` repository so its ShellCheck image references use `ghcr.io/djerz/shellcheck:latest` and other `djerz` GitHub/GHCR references instead of inherited `r.j3ss.co` or Jess references.
 - Added a repeatable `just shellcheck` target that runs ShellCheck through `ghcr.io/djerz/shellcheck:latest` with Docker image pulls disabled.
 - Added host-safe smoke tests for listing, status, dotfile link/relink/remove behavior, dependency removal guards, update refusal, and dependency cycle refusal.
@@ -139,7 +152,6 @@
   themselves before invoking Rust/Cargo tools.
 - Added a host-safe smoke regression proving Neovide install finds Cargo via
   `$HOME/.cargo/env` without requiring `.bashrc` or a new shell session.
-- Added `docpunct_v7.md` as the latest specification snapshot for future resume sessions.
 - Added `libfontconfig1-dev` and `libfreetype6-dev` to
   `debian-gui-packages` so Neovide can link against Fontconfig and FreeType
   during `cargo install --locked neovide`.
@@ -148,7 +160,6 @@
   dependency lists before running child feature scripts. This prevents scripts
   such as `apt-get` from consuming the parent dependency stream on stdin and
   skipping later dependencies.
-- Added `docpunct_v8.md` as the latest specification snapshot for future resume sessions.
 - Split `debian-gui-packages` removal into a dedicated
   `removable-packages.txt` so shared Ubuntu desktop dependencies are installed
   but not removed by docpunct.
@@ -164,15 +175,11 @@
   script removes only that copied icon.
 - Updated the imported Telescope config so `<leader>fn` follows symlinks and
   includes hidden/non-ignored files when searching Neovim config.
-- Added `docpunct_v9.md` as the latest specification snapshot for future
-  resume sessions.
 - Added `libqt6printsupport6` to `debian-gui-packages` because the Double
   Commander Qt6 portable build needs system Qt6 runtime libraries on Ubuntu.
 - Strengthened the Double Commander feature container test so it fails when
   `ldd` reports unresolved shared libraries for the installed binary.
 - Updated `HOWTO.md` for the Double Commander Qt6 runtime dependency.
-- Added `docpunct_v10.md` as the latest specification snapshot for future
-  resume sessions.
 - Added `wl-clipboard` and `xclip` to `debian-gui-packages` so
   Neovide/Neovim clipboard integration works on Wayland and X11 sessions.
 - Reworked `docpunct update FEATURE` so newly introduced dependencies are
@@ -180,8 +187,6 @@
   installed.
 - Split dotfile reconciliation into `features/dotfiles/reconcile.sh` and made
   both install and update use it.
-- Added `docpunct_v11.md` as the latest specification snapshot for future
-  resume sessions.
 - Added managed `dotfiles/.profile`, listed `.profile` in
   `features/dotfiles/files.txt`, and moved login-shell PATH setup there from
   `.bashrc`.
@@ -191,8 +196,6 @@
   non-interactive login Bash shells.
 - Added a smoke regression proving `.profile` makes an NVM-provided `node`
   available on `PATH`.
-- Added `docpunct_v12.md` as the latest specification snapshot for future
-  resume sessions.
 
 ## Imported dotfiles
 
@@ -269,15 +272,19 @@
   adding `wl-clipboard` and `xclip` to `debian-gui-packages`.
 - `git diff --check`, `bash -n bin/docpunct features/*/*.sh tests/*.sh
   tests/container/*.sh`, host `shellcheck`, and `./bin/docpunct test-smoke`
-  after creating `docpunct_v11.md` and updating the resume handoff.
+  after updating the architecture document and resume handoff.
 - `bash -n bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh`,
   host `shellcheck`, `./bin/docpunct test-smoke`, and `git diff --check`
   after moving PATH-related shell setup from `.bashrc` to `.profile`.
-- `git diff --check` after updating `TODO.md` and creating `docpunct_v12.md`.
+- `git diff --check` after updating `TODO.md` and the architecture document.
 - `git diff --check` after aligning `HOWTO.md` with the `.profile` split.
 - Host `shellcheck`, `./bin/docpunct test-smoke`, and
   `./bin/docpunct test-container 26.04` after adding Git Credential Manager's
   ICU runtime dependency.
+- `git diff --check`, `bash -n bin/docpunct features/*/*.sh tests/*.sh
+  tests/container/*.sh`, host `shellcheck`, and `./bin/docpunct test-smoke`
+  after adding the already-installed install early return and failed-install
+  cleanup.
 
 ## Pending clarification
 
@@ -286,8 +293,6 @@
 ## Remaining work
 
 - Decide whether to import the empty `.gitconfig-private`.
-- Decide whether `docpunct install FEATURE` should return immediately for an already-installed requested feature before resolving dependencies.
-- Add install failure rollback that attempts `remove.sh` after a failed install script.
 - Consider signature/checksum validation for Git Credential Manager release assets.
 - Consider signature/checksum validation for Double Commander release assets.
 - Consider signature/checksum validation for Nerd Fonts release assets.
@@ -296,8 +301,6 @@
 
 ## Known issues
 
-- `docpunct install FEATURE` resolves dependencies before checking whether `FEATURE` is already installed; this may install missing dependencies for an already-installed parent feature.
-- Install failure logs are kept, but install failure rollback via `remove.sh` is not implemented.
 - Git Credential Manager package signature validation is not implemented.
 - Double Commander release asset signature/checksum validation is not implemented.
 - Nerd Fonts release asset signature/checksum validation is not implemented.
@@ -311,20 +314,11 @@
   fallback.
 - APT/container-heavy tests were not rerun for the `.profile` change because
   the behavior is covered by host-safe smoke tests.
-- The worktree currently has local dotfile edits outside the `.profile`
-  session work: `dotfiles/.gitconfig` changes diff/merge tools from `nvim` to
-  `meld`, and `dotfiles/.config/nvim/lazy-lock.json` updates the
-  CopilotChat.nvim lockfile commit. Review them before committing.
 
 ## Next steps
 
-1. Review the local `dotfiles/.gitconfig` and
-   `dotfiles/.config/nvim/lazy-lock.json` changes and decide whether they
-   should be included in the commit.
-2. Commit and push the current docpunct repository state, including
-   `docpunct_v12.md`.
-3. In the next session, first confirm the pushed commit is present and the
-   worktree is clean.
-4. Consider making install return immediately when the requested feature is already installed before resolving dependencies.
-5. Later, decide whether to import the empty `.gitconfig-private`.
-6. Later, consider signature/checksum validation for Git Credential Manager, Double Commander, and Nerd Fonts release assets.
+1. Decide whether to import the empty `.gitconfig-private`.
+2. Consider signature/checksum validation for Git Credential Manager,
+   Double Commander, and Nerd Fonts release assets.
+3. Remove the deprecated Neovim file-level symlink migration logic after
+   existing machines have migrated.

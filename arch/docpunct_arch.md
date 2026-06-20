@@ -1,17 +1,58 @@
-# docpunct — Specification v9
+# docpunct — Architecture
 
-This version incorporates implementation decisions made during the initial
-Codex implementation sessions through specification v8, plus the session that
+This living architecture document incorporates implementation decisions made
+during the initial Codex implementation sessions through specification v11,
+plus the session that
+split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
+user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
+binary are available in non-interactive login Bash shells.
+
+Version 11 incorporated the session that
+reworked update behavior so recipe changes can be applied without a
+remove/install loop, factored dotfile reconciliation into a shared script used
+by both install and update, added Neovide/Neovim clipboard helper packages, and
+kept Debian GUI package removal conservative for those helpers.
+
+Version 10 incorporated the session that
 made Debian GUI package removal conservative after an Ubuntu desktop removal
 cascade, added a curated Nerd Fonts feature, wired Neovide to Nerd Fonts,
 installed a repo-owned Neovide desktop icon, and changed Neovim dotfile
 management from file-level symlinks to a directory-level `~/.config/nvim`
-symlink with a deprecated migration path for existing machines.
+symlink with a deprecated migration path for existing machines. Version 10 also
+records the fix for Double Commander's Qt6 portable build runtime dependency on
+Ubuntu systems.
 
-Version 9 records the sessions that:
+Version 12 records the sessions that:
 
-- made `docpunct update FEATURE` fail when the feature or any updated
-  dependency is not installed
+- added managed `dotfiles/.profile` and included `.profile` in
+  `features/dotfiles/files.txt`
+- moved login-shell PATH-related setup from `.bashrc` to `.profile`
+- kept interactive shell behavior in `.bashrc`, including aliases, prompt,
+  Bash completion, and NVM Bash completion
+- made `.profile` add `$HOME/.local/bin`, source `$HOME/.cargo/env` when it
+  exists, export `NVM_DIR`, and source `$NVM_DIR/nvm.sh` when it exists
+- chose to source `nvm.sh` from `.profile` so the `node` binary follows the
+  NVM-managed default version in non-interactive login Bash shells
+- added a host-safe smoke regression proving `.profile` can make an
+  NVM-provided `node` binary available on `PATH`
+
+Version 11 records the sessions that:
+
+- made `docpunct update FEATURE` fail when the requested feature is not
+  installed, while installing newly introduced dependencies so recipe changes
+  can be applied without a remove/install loop
+- made Debian package feature updates apply the current package recipe, so
+  package additions such as `wl-clipboard` and `xclip` do not require a
+  remove/install loop
+- split `features/dotfiles/reconcile.sh` out of `install.sh` and made both
+  `install.sh` and `update.sh` call it, so newly added dotfile entries receive
+  the same backup-and-link handling during update as during initial install
+- added `wl-clipboard` and `xclip` to `debian-gui-packages` so
+  Neovide/Neovim clipboard integration works on Wayland and X11 sessions
+- kept `wl-clipboard` and `xclip` out of
+  `debian-gui-packages/removable-packages.txt`, treating them as support
+  packages that should not be removed by conservative GUI package removal
+- fixed the Double Commander container test's ShellCheck quoting issue
 - added Docker Engine as an opt-in third-party APT repository feature
 - added Ubuntu-version and architecture compatibility handling for third-party
   APT repository features
@@ -59,6 +100,11 @@ Version 9 records the sessions that:
 - added `features/dotfiles/update.sh` so `docpunct update dotfiles` can migrate
   old docpunct-owned file-level Neovim symlinks without uninstalling dotfiles
 - marked that migration path as deprecated and scheduled for later removal
+- added `libqt6printsupport6` to `debian-gui-packages`, because the
+  Double Commander Qt6 portable build requires Qt6 runtime libraries that are
+  not bundled in the upstream archive
+- strengthened the Double Commander feature container test so it fails when
+  `ldd` reports unresolved shared libraries for the installed binary
 
 ## Goal
 
@@ -365,7 +411,7 @@ Scripts should be idempotent internally where reasonable, but docpunct itself pr
 
 ## Dependency resolution
 
-Dependencies must be installed and updated before the feature that depends on them.
+Dependencies must be installed or updated before the feature that depends on them.
 
 Dependency ordering must be deterministic.
 
@@ -413,8 +459,9 @@ If `docpunct update FEATURE` is called for a feature that is not installed, it m
 
 If the feature is installed, docpunct must:
 
-1. Update dependencies first.
-2. Run `update.sh` if present.
+1. Update installed dependencies first.
+2. Install dependencies that are now listed by the recipe but are not yet installed.
+3. Run `update.sh` if present.
 
 ### Remove
 
@@ -562,6 +609,7 @@ Example file-level symlink:
 
 ```text
 ~/.bashrc -> /path/to/docpunct/dotfiles/.bashrc
+~/.profile -> /path/to/docpunct/dotfiles/.profile
 ```
 
 Neovim configuration is managed as a directory-level symlink:
@@ -633,21 +681,30 @@ instead of:
 /home/chris/.local/bin
 ```
 
-Imported shell startup files may initialize user-local toolchains, but those
-initializers must be safe before the corresponding tool is installed. For
-example, Cargo env loading in `.bashrc` must be guarded:
+Imported shell startup files may initialize user-local toolchains, but login
+and interactive shell setup have separate responsibilities:
+
+- `.profile` owns login/session environment such as `PATH`, Cargo env loading,
+  `NVM_DIR`, and `nvm.sh` loading for `node` availability.
+- `.bashrc` owns interactive Bash behavior such as aliases, prompt, history,
+  programmable completion, and NVM Bash completion.
+
+Toolchain initializers must be safe before the corresponding tool is installed.
+For example, Cargo env loading in `.profile` must be guarded:
 
 ```sh
 [ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 ```
 
-Feature scripts must not rely on `.bashrc` for non-interactive installs.
+Feature scripts must not rely on `.profile` or `.bashrc` for non-interactive
+installs.
 
 Initial dotfiles may include:
 
 ```text
 .gitconfig
 .bashrc
+.profile
 .config/nvim
 ```
 
@@ -657,6 +714,7 @@ The initial imported dotfiles are:
 
 ```text
 .bashrc
+.profile
 .gitconfig
 .config/nvim
 ```
@@ -675,13 +733,27 @@ was left out because its name indicates private data.
 Machine-specific paths must be removed when safe. The initial Neovim Copilot
 configuration had a hardcoded Node path and the override was removed.
 
-The imported `.bashrc` may initialize Cargo and nvm for interactive shells:
+The imported `.profile` initializes user-local PATH and login-shell toolchain
+environment:
 
 ```sh
+case ":$PATH:" in
+    *":$HOME/.local/bin:"*) ;;
+    *) PATH="$HOME/.local/bin:$PATH" ;;
+esac
+export PATH
+
 [ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+```
+
+The imported `.bashrc` may initialize interactive shell integrations such as
+NVM Bash completion:
+
+```sh
+export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && . "$NVM_DIR/bash_completion"
 ```
 
@@ -842,6 +914,9 @@ adwaita-icon-theme-full
 desktop-file-utils
 libfontconfig1-dev
 libfreetype6-dev
+wl-clipboard
+xclip
+libqt6printsupport6
 ```
 
 `desktop-file-utils` is included because the Neovide feature validates and
@@ -854,6 +929,17 @@ libfontconfig1-dev
 libfreetype6-dev
 ```
 
+Neovide/Neovim clipboard integration requires clipboard helper packages:
+
+```text
+wl-clipboard
+xclip
+```
+
+Double Commander's Qt6 portable build requires Qt6 runtime libraries from the
+system. `libqt6printsupport6` is installed because APT pulls in the matching
+Qt6 Core, GUI, and Widgets libraries as dependencies.
+
 Removal must be more conservative than installation. The feature may install
 shared desktop/system dependencies, but removal must only remove packages listed
 in a dedicated removable package list. The initial removable list is:
@@ -863,9 +949,10 @@ keepassxc
 meld
 ```
 
-Shared dependencies such as `desktop-file-utils`, icon themes, and development
-libraries must not be removed by `debian-gui-packages`, because removing them
-can cause APT to remove Ubuntu desktop packages that depend on them.
+Shared dependencies such as `desktop-file-utils`, icon themes, development
+libraries, and Qt runtime libraries must not be removed by
+`debian-gui-packages`, because removing them can cause APT to remove Ubuntu
+desktop packages that depend on them.
 
 Before adding or changing APT package removal behavior, check whether the
 package is a shared desktop/system dependency and warn before implementing
@@ -1139,6 +1226,13 @@ depends:
   - debian-gui-packages
 ```
 
+The upstream Qt6 portable archive is not fully self-contained on Ubuntu. The
+feature relies on `debian-gui-packages` to install `libqt6printsupport6`, which
+pulls in the required Qt6 runtime libraries such as Qt6 Core, GUI, Widgets, and
+PrintSupport. The Double Commander feature-specific container test must check
+the installed binary with `ldd` and fail if any shared library is reported as
+`not found`.
+
 Update behavior should repeat the latest-release installation flow.
 
 Removal should remove only docpunct-owned install paths:
@@ -1344,8 +1438,11 @@ host.
 
 Host-safe smoke tests include a regression that runs the Neovide install script
 with a fake Cargo binary exposed only through `$HOME/.cargo/env`. This verifies
-that Neovide and future Cargo-using features do not depend on `.bashrc` or a
-new shell session for Cargo availability.
+that Neovide and future Cargo-using features do not depend on `.profile`,
+`.bashrc`, or a new shell session for Cargo availability.
+
+Host-safe smoke tests also include a regression that sources `.profile` with a
+fake NVM installation and verifies that `node` is available through `PATH`.
 
 Disposable Ubuntu container integration tests are explicit:
 

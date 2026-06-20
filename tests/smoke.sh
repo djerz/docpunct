@@ -316,6 +316,15 @@ fake_cache="$tmpdir/fake-cache"
 mkdir -p "$fake_cache/state/installed"
 DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$fake_cache" "$repo_root/bin/docpunct" install child >/dev/null
 
+write_feature "$fake_features" installed-parent missing-dependency
+printf 'feature=installed-parent\n' >"$fake_cache/state/installed/installed-parent"
+installed_output="$(
+  DOCPUNCT_FEATURES_DIR="$fake_features" \
+    DOCPUNCT_CACHE_DIR="$fake_cache" \
+    "$repo_root/bin/docpunct" install installed-parent
+)"
+assert_contains "$installed_output" "installed-parent already installed"
+
 assert_fails_with \
   "cannot remove base; installed feature(s) depend on it: child" \
   env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$fake_cache" "$repo_root/bin/docpunct" remove base
@@ -333,6 +342,41 @@ env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$update_cache" "$
 assert_fails_with \
   "dependency cycle detected" \
   env DOCPUNCT_FEATURES_DIR="$fake_features" DOCPUNCT_CACHE_DIR="$tmpdir/cycle-cache" "$repo_root/bin/docpunct" install cycle-a
+
+rollback_features="$tmpdir/rollback-features"
+rollback_cache="$tmpdir/rollback-cache"
+rollback_artifact="$tmpdir/rollback-artifact"
+write_feature "$rollback_features" failing-install
+cat >"$rollback_features/failing-install/install.sh" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+touch "$rollback_artifact"
+exit 1
+EOF
+cat >"$rollback_features/failing-install/remove.sh" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+rm -f -- "$rollback_artifact"
+EOF
+chmod +x \
+  "$rollback_features/failing-install/install.sh" \
+  "$rollback_features/failing-install/remove.sh"
+
+assert_fails_with \
+  "Cleaning up failed install: failing-install" \
+  env DOCPUNCT_FEATURES_DIR="$rollback_features" DOCPUNCT_CACHE_DIR="$rollback_cache" "$repo_root/bin/docpunct" install failing-install
+[[ ! -e "$rollback_artifact" ]] || {
+  printf 'expected failed install rollback to remove its artifact\n' >&2
+  exit 1
+}
+[[ ! -e "$rollback_cache/state/installed/failing-install" ]] || {
+  printf 'expected failed install to remain unmarked\n' >&2
+  exit 1
+}
+compgen -G "$rollback_cache/log/*-install-failing-install.log" >/dev/null || {
+  printf 'expected failed install to retain its error log\n' >&2
+  exit 1
+}
 
 stdin_features="$tmpdir/stdin-features"
 write_feature "$stdin_features" stdin-parent "stdin-reader stdin-sibling"

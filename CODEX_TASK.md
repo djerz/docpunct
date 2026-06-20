@@ -4,7 +4,7 @@ You are working in the `docpunct` Git repository.
 
 Read these documents first:
 
-- `docpunct_v3.md`
+- `arch/docpunct_arch.md`
 - `HOWTO.md`
 
 Implement the project described there.
