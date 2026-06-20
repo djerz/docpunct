@@ -8,7 +8,9 @@
 - `docpunct_v12.md` is the latest spec and records decisions made through the current session.
 - `HOWTO.md` has been updated to match the v12 feature set and implemented behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
-- `debian-cli-packages` is unchanged and accepted as the current CLI package list.
+- `debian-cli-packages` includes `libicu-dev` so Git Credential Manager's
+  bundled .NET runtime can start on fresh Ubuntu installations, including
+  Ubuntu 26.04.
 - `debian-gui-packages` contains distro-repository GUI packages plus
   `desktop-file-utils`, `libfontconfig1-dev`, `libfreetype6-dev`, and
   `wl-clipboard`, `xclip`, and `libqt6printsupport6` for Neovide desktop entry
@@ -56,6 +58,11 @@
   `ubuntu-desktop-minimal`, `gdm3`, `gnome-control-center`, or `nautilus`.
 
 ## Done
+
+- Added `libicu-dev` to `debian-cli-packages`, made the Git Credential Manager
+  installer ensure it is present for failed-install retries, and added a
+  container assertion after a fresh Ubuntu 26.04 core install exposed Git
+  Credential Manager's ICU runtime dependency.
 
 - Added Bash CLI at `bin/docpunct`.
 - Added `justfile` convenience commands.
@@ -266,6 +273,9 @@
   after moving PATH-related shell setup from `.bashrc` to `.profile`.
 - `git diff --check` after updating `TODO.md` and creating `docpunct_v12.md`.
 - `git diff --check` after aligning `HOWTO.md` with the `.profile` split.
+- Host `shellcheck`, `./bin/docpunct test-smoke`, and
+  `./bin/docpunct test-container 26.04` after adding Git Credential Manager's
+  ICU runtime dependency.
 
 ## Pending clarification
 

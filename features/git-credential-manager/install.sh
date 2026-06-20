@@ -38,6 +38,11 @@ fi
 package_path="$download_dir/$(basename "$asset_url")"
 curl -fL "$asset_url" -o "$package_path"
 
+if ! dpkg-query -W -f='${Status}' libicu-dev 2>/dev/null | grep -q 'install ok installed'; then
+  sudo apt-get update
+  sudo apt-get install -y libicu-dev
+fi
+
 if ! sudo dpkg -i "$package_path"; then
   sudo apt-get install -f -y
 fi

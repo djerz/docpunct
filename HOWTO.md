@@ -171,6 +171,13 @@ python-uv
 
 `debian-cli-packages` installs common command-line packages with APT.
 
+It includes `libicu-dev` so the bundled .NET runtime in Git Credential Manager
+has the release-specific ICU runtime it needs. Using the unversioned development
+package keeps this dependency portable across supported Ubuntu releases.
+The Git Credential Manager installer also checks this package directly so a
+retry repairs systems where an earlier installation failed before ICU was
+added to the package recipe.
+
 `fd-find` installs Ubuntu/Debian's `fd-find` package and creates the upstream
 recommended compatibility link:
 
