@@ -306,6 +306,9 @@
 - Consider signature/checksum validation for Nerd Fonts release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
   `features/dotfiles/reconcile.sh` after existing machines have migrated.
+- Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
+  from `features/dotfiles/shell-hooks.sh` after existing machines have migrated
+  to additive shell blocks.
 
 ## Known issues
 
@@ -330,3 +333,5 @@
    Double Commander, and Nerd Fonts release assets.
 3. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
+4. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+   logic after existing machines have migrated to additive shell blocks.
