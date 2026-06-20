@@ -59,6 +59,8 @@
 
 ## Done
 
+- Added `AIHANDOVER.md` with a concise prompt that directs new sessions to the
+  authoritative specification, usage, task, and TODO documents.
 - Added `libicu-dev` to `debian-cli-packages`, made the Git Credential Manager
   installer ensure it is present for failed-install retries, and added a
   container assertion after a fresh Ubuntu 26.04 core install exposed Git

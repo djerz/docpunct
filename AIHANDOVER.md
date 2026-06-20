@@ -1,5 +1,7 @@
 # AI-assisted coding session handover
 
+Last reviewed at session close: 2026-06-20.
+
 Use this prompt to resume work in a new AI-assisted coding session:
 
 ```text
