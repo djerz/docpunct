@@ -1,0 +1,5 @@
+description: Install the epel local mail workflow.
+depends:
+  - debian-mail-packages
+  - neovim
+  - dotfiles

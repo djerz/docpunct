@@ -1,0 +1,12 @@
+# Mail synchronization, indexing, and sending.
+isync
+notmuch
+msmtp
+
+# Immutable snapshot backups and desktop-keyring access.
+rsync
+libsecret-tools
+util-linux
+
+# Optional HTML mail rendering used by notmuch.nvim.
+w3m

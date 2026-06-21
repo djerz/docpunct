@@ -1,0 +1,9 @@
+[Unit]
+Description=Create an epel mail snapshot after login
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/epel backup
+
+[Install]
+WantedBy=default.target

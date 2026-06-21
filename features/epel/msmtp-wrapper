@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# notmuch.nvim currently hardcodes `msmtp -t --read-envelope-from`.
+# The private Neovim PATH points that invocation here so epel can honor its
+# immediate/queued send mode. epel itself invokes /usr/bin/msmtp directly.
+if [[ "$#" -ne 2 || "$1" != -t || "$2" != --read-envelope-from ]]; then
+  printf '%s\n' 'epel msmtp wrapper: unsupported invocation' >&2
+  exit 2
+fi
+exec "$HOME/.local/bin/epel" submit

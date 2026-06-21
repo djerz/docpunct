@@ -312,7 +312,8 @@ shellcheck_scripts() {
     -v "$ROOT_DIR:/usr/src:ro" \
     --workdir /usr/src \
     ghcr.io/djerz/shellcheck:latest \
-    shellcheck bin/docpunct features/*/*.sh tests/*.sh tests/container/*.sh
+    shellcheck bin/docpunct features/*/*.sh features/epel/epel \
+      features/epel/msmtp-wrapper tests/*.sh tests/container/*.sh
 }
 
 run_smoke_tests() {

@@ -1,0 +1,10 @@
+# >>> docpunct epel PassCmd support >>>
+/{,usr/}bin/dash Cx -> epel_secret_helpers,
+
+profile epel_secret_helpers {
+  include <abstractions/base>
+
+  /{,usr/}bin/dash mr,
+  /usr/bin/secret-tool PUx,
+}
+# <<< docpunct epel PassCmd support <<<

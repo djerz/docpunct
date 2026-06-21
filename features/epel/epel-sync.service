@@ -1,0 +1,6 @@
+[Unit]
+Description=Synchronize and index mail with epel
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/epel sync

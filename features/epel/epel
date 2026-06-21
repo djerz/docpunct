@@ -1,0 +1,348 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+STATE_HOME="${XDG_STATE_HOME:-$HOME/.local/state}"
+DATA_HOME="${XDG_DATA_HOME:-$HOME/.local/share}"
+CONFIG_FILE="${EPEL_CONFIG_FILE:-$CONFIG_HOME/epel/config}"
+STATE_DIR="${EPEL_STATE_DIR:-$STATE_HOME/epel}"
+DATA_DIR="${EPEL_DATA_DIR:-$DATA_HOME/epel}"
+QUEUE_DIR="$DATA_DIR/queue"
+
+EPEL_MAIL_ROOT="${EPEL_MAIL_ROOT:-$HOME/Mail}"
+EPEL_BACKUP_ROOT="${EPEL_BACKUP_ROOT:-$HOME/backup/mail}"
+EPEL_MSMTP_BIN="${EPEL_MSMTP_BIN:-/usr/bin/msmtp}"
+EPEL_MBSYNC_BIN="${EPEL_MBSYNC_BIN:-mbsync}"
+EPEL_NOTMUCH_BIN="${EPEL_NOTMUCH_BIN:-notmuch}"
+EPEL_RSYNC_BIN="${EPEL_RSYNC_BIN:-rsync}"
+EPEL_SYSTEMCTL_BIN="${EPEL_SYSTEMCTL_BIN:-systemctl}"
+
+if [[ -f "$CONFIG_FILE" ]]; then
+  # This is an explicitly user-owned shell configuration file.
+  # shellcheck source=/dev/null
+  . "$CONFIG_FILE"
+fi
+
+usage() {
+  cat <<'EOF'
+Usage: epel COMMAND
+
+Configuration:
+  help                 Show this help.
+  config               Show configuration guidance and paths.
+
+Mail synchronization:
+  sync                 Run mbsync --all, then notmuch new.
+  sync-enable          Enable the 15-minute user timer.
+  sync-disable         Disable the user timer.
+  sync-status          Show timer state and the last successful sync.
+
+Sending:
+  submit               Submit an RFC 5322 message read from stdin.
+  send                 Flush the outgoing queue in FIFO order.
+  send-immediate       Send submitted messages immediately.
+  send-queued          Queue submitted messages for later delivery.
+  send-status          Show send mode and queued message count.
+
+Backups:
+  backup               Snapshot the complete mail tree.
+  backup-enable        Enable backup when the systemd user manager starts.
+  backup-disable       Disable automatic backup.
+  backup-status        Show automatic-backup state and last success.
+  sync-backup          Sync, then back up only if sync succeeds.
+EOF
+}
+
+die() {
+  printf 'epel: %s\n' "$*" >&2
+  exit 1
+}
+
+usage_error() {
+  printf 'epel: %s\n' "$*" >&2
+  usage >&2
+  exit 2
+}
+
+ensure_dirs() {
+  mkdir -p "$STATE_DIR" "$QUEUE_DIR"
+  chmod 0700 "$STATE_DIR" "$DATA_DIR" "$QUEUE_DIR"
+}
+
+record_success() {
+  local operation="$1"
+  date --iso-8601=seconds >"$STATE_DIR/last-$operation"
+  rm -f -- "$STATE_DIR/last-error"
+}
+
+record_error() {
+  local operation="$1" message="$2"
+  printf '%s operation=%s error=%s\n' "$(date --iso-8601=seconds)" "$operation" "$message" >"$STATE_DIR/last-error"
+}
+
+require_command() {
+  local command="$1"
+  command -v "$command" >/dev/null 2>&1 || die "required command not found: $command"
+}
+
+with_lock() {
+  local operation="$1"
+  shift
+  local lock_file="$STATE_DIR/$operation.lock"
+  (
+    flock -n 9 || {
+      printf 'epel: %s is already running\n' "$operation" >&2
+      exit 75
+    }
+    "$@"
+  ) 9>"$lock_file"
+}
+
+sync_mail_locked() {
+  if ! "$EPEL_MBSYNC_BIN" --all; then
+    record_error sync 'mbsync failed'
+    return 1
+  fi
+  if ! "$EPEL_NOTMUCH_BIN" new; then
+    record_error sync 'notmuch new failed'
+    return 1
+  fi
+  record_success sync
+}
+
+sync_mail() {
+  require_command "$EPEL_MBSYNC_BIN"
+  require_command "$EPEL_NOTMUCH_BIN"
+  with_lock mail sync_mail_locked
+}
+
+systemctl_user() {
+  "$EPEL_SYSTEMCTL_BIN" --user "$@"
+}
+
+enabled_state() {
+  local unit="$1"
+  if systemctl_user is-enabled "$unit" >/dev/null 2>&1; then
+    printf 'enabled\n'
+  else
+    printf 'disabled\n'
+  fi
+}
+
+show_timestamp() {
+  local path="$1"
+  if [[ -f "$path" ]]; then
+    cat "$path"
+  else
+    printf 'never\n'
+  fi
+}
+
+send_mode() {
+  if [[ -f "$STATE_DIR/send-mode" ]]; then
+    cat "$STATE_DIR/send-mode"
+  else
+    printf 'immediate\n'
+  fi
+}
+
+extract_sender() {
+  local message="$1" from
+  from="$(awk '
+    /^[[:space:]]*$/ { exit }
+    tolower($0) ~ /^from:[[:space:]]*/ {
+      line=$0
+      sub(/^[^:]*:[[:space:]]*/, "", line)
+      print line
+      exit
+    }
+  ' "$message")"
+  if [[ "$from" == *'<'*'>'* ]]; then
+    from="${from##*<}"
+    from="${from%%>*}"
+  fi
+  from="${from#"${from%%[![:space:]]*}"}"
+  from="${from%"${from##*[![:space:]]}"}"
+  [[ "$from" =~ ^[^[:space:]@]+@[^[:space:]@]+$ ]] || return 1
+  printf '%s\n' "$from"
+}
+
+deliver_message() {
+  local message="$1" sender
+  sender="$(extract_sender "$message")" || {
+    printf 'epel: message has no valid From address\n' >&2
+    return 1
+  }
+  [[ -x "$EPEL_MSMTP_BIN" ]] || {
+    printf 'epel: msmtp executable not found: %s\n' "$EPEL_MSMTP_BIN" >&2
+    return 1
+  }
+  "$EPEL_MSMTP_BIN" --account="$sender" -t --read-envelope-from <"$message"
+}
+
+submit_message_locked() {
+  local tmp mode destination
+  tmp="$(mktemp "$QUEUE_DIR/.submit.XXXXXX")"
+  chmod 0600 "$tmp"
+  cat >"$tmp"
+  extract_sender "$tmp" >/dev/null || {
+    rm -f -- "$tmp"
+    record_error submit 'message has no valid From address'
+    die 'message has no valid From address'
+  }
+
+  mode="$(send_mode)"
+  case "$mode" in
+    immediate)
+      if deliver_message "$tmp"; then
+        rm -f -- "$tmp"
+        record_success send
+      else
+        rm -f -- "$tmp"
+        record_error submit 'msmtp failed'
+        return 1
+      fi
+      ;;
+    queued)
+      destination="$QUEUE_DIR/$(date -u +%Y%m%dT%H%M%S.%N)-$$.eml"
+      mv -- "$tmp" "$destination"
+      printf 'queued: %s\n' "$destination"
+      ;;
+    *)
+      rm -f -- "$tmp"
+      die "invalid send mode: $mode"
+      ;;
+  esac
+}
+
+submit_message() {
+  with_lock queue submit_message_locked
+}
+
+flush_queue_locked() {
+  local message
+  local messages=()
+  mapfile -t messages < <(find "$QUEUE_DIR" -maxdepth 1 -type f -name '*.eml' -print | sort)
+  if [[ "${#messages[@]}" -eq 0 ]]; then
+    printf 'queue is empty\n'
+    return 0
+  fi
+  for message in "${messages[@]}"; do
+    if deliver_message "$message"; then
+      rm -- "$message"
+      printf 'sent: %s\n' "$(basename "$message")"
+    else
+      record_error send "failed queue item $(basename "$message")"
+      return 1
+    fi
+  done
+  record_success send
+}
+
+flush_queue() {
+  with_lock queue flush_queue_locked
+}
+
+backup_mail_locked() {
+  [[ -d "$EPEL_MAIL_ROOT" ]] || {
+    record_error backup "mail root does not exist: $EPEL_MAIL_ROOT"
+    die "mail root does not exist: $EPEL_MAIL_ROOT"
+  }
+
+  local timestamp snapshot partial latest link_dest=()
+  timestamp="$(date -u +%Y-%m-%dT%H%M%S.%N)"
+  snapshot="$EPEL_BACKUP_ROOT/$timestamp"
+  partial="$EPEL_BACKUP_ROOT/.partial-$timestamp-$$"
+  latest="$EPEL_BACKUP_ROOT/latest"
+  mkdir -p "$EPEL_BACKUP_ROOT" "$partial/Mail"
+
+  if [[ -L "$latest" && -d "$latest/Mail" ]]; then
+    link_dest=(--link-dest="$latest/Mail")
+  fi
+
+  if ! "$EPEL_RSYNC_BIN" -a --checksum "${link_dest[@]}" "$EPEL_MAIL_ROOT/" "$partial/Mail/"; then
+    rm -rf -- "$partial"
+    record_error backup 'rsync failed'
+    return 1
+  fi
+
+  mv -- "$partial" "$snapshot"
+  ln -sfn -- "$snapshot" "$latest"
+  record_success backup
+  printf 'snapshot: %s\n' "$snapshot"
+}
+
+backup_mail() {
+  require_command "$EPEL_RSYNC_BIN"
+  with_lock mail backup_mail_locked
+}
+
+show_config() {
+  local script_dir
+  script_dir="$(cd -- "$(dirname -- "$(readlink -f -- "${BASH_SOURCE[0]}")")" && pwd)"
+  cat <<EOF
+epel does not write account configuration or credentials.
+
+Runtime configuration: $CONFIG_FILE
+mbsync configuration:  $HOME/.mbsyncrc
+msmtp configuration:   $HOME/.msmtprc
+notmuch configuration: $HOME/.notmuch-config
+mail root:             $EPEL_MAIL_ROOT
+backup root:           $EPEL_BACKUP_ROOT
+
+See $script_dir/HOWTO.md for Gmail, Orange, keyring, systemd, and troubleshooting guidance.
+EOF
+}
+
+main() {
+  local command="${1:-help}"
+  shift || true
+  [[ "$#" -eq 0 ]] || usage_error "$command takes no arguments"
+
+  case "$command" in
+    help|-h|--help) usage; return ;;
+    config) show_config; return ;;
+  esac
+
+  ensure_dirs
+  case "$command" in
+    sync) sync_mail ;;
+    sync-enable)
+      systemctl_user daemon-reload
+      systemctl_user enable --now epel-sync.timer
+      ;;
+    sync-disable) systemctl_user disable --now epel-sync.timer ;;
+    sync-status)
+      printf 'automatic sync: %s\n' "$(enabled_state epel-sync.timer)"
+      printf 'last successful sync: %s\n' "$(show_timestamp "$STATE_DIR/last-sync")"
+      ;;
+    submit) submit_message ;;
+    send) flush_queue ;;
+    send-immediate) printf 'immediate\n' >"$STATE_DIR/send-mode" ;;
+    send-queued) printf 'queued\n' >"$STATE_DIR/send-mode" ;;
+    send-status)
+      printf 'send mode: %s\n' "$(send_mode)"
+      printf 'queued messages: %s\n' "$(find "$QUEUE_DIR" -maxdepth 1 -type f -name '*.eml' | wc -l)"
+      ;;
+    backup) backup_mail ;;
+    backup-enable)
+      systemctl_user daemon-reload
+      systemctl_user enable epel-backup.service
+      ;;
+    backup-disable) systemctl_user disable --now epel-backup.service ;;
+    backup-status)
+      printf 'automatic backup: %s\n' "$(enabled_state epel-backup.service)"
+      printf 'last successful backup: %s\n' "$(show_timestamp "$STATE_DIR/last-backup")"
+      ;;
+    sync-backup)
+      if ! sync_mail; then
+        printf '%s\n' 'epel: sync failed; no backup was made. Run epel backup if the current local mail tree should still be protected.' >&2
+        exit 1
+      fi
+      backup_mail
+      ;;
+    *) usage_error "unknown command: $command" ;;
+  esac
+}
+
+main "$@"
