@@ -371,6 +371,10 @@
 
 ## Remaining work
 
+- Run `./bin/docpunct update dotfiles` on the current host to migrate the
+  legacy whole-file `~/.gitconfig` symlink to the additive include block. The
+  symlink still points at the former tracked `dotfiles/.gitconfig` path, which
+  moved to `dotfiles/.config/docpunct/gitconfig` in commit `8a35839`.
 - Complete the resumed initial Gmail synchronization for
   `chris.welmelinger@gmail.com`. The latest 2026-06-21 retry progressed from
   57,279 to 85,867 local mail files before Gmail again returned `OVERQUOTA`;
@@ -406,6 +410,9 @@
 
 ## Known issues
 
+- Until `./bin/docpunct update dotfiles` runs on the current host, its legacy
+  `~/.gitconfig` symlink points at the removed pre-migration repository path;
+  Git commands that need global identity or settings may not find them.
 - Existing users with the legacy `git-credential-manager` installed must
   initialize GPG/pass and complete the documented explicit `gcm-gpg` migration;
   existing credentials are not copied automatically and authentication may be
@@ -433,16 +440,18 @@
 
 ## Next steps
 
-1. After Gmail's command/bandwidth quota resets, resume the incomplete initial
+1. Run `./bin/docpunct update dotfiles` on the current host to migrate
+   `~/.gitconfig` and restore Git's global settings.
+2. After Gmail's command/bandwidth quota resets, resume the incomplete initial
    synchronization with `epel sync`; mbsync will continue from its saved state.
-2. Manually validate provider Sent synchronization before enabling epel's
+3. Manually validate provider Sent synchronization before enabling epel's
    systemd timer.
-3. Decide whether to import the empty `.gitconfig-private`.
-4. Consider independent publisher-signature validation for Git Credential
+4. Decide whether to import the empty `.gitconfig-private`.
+5. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, and Nerd Fonts release assets.
-5. Remove the deprecated Neovim file-level symlink migration logic after
+6. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
-6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+7. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
-7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+8. Remove the legacy whole-file `.gitconfig` symlink migration logic after
    existing machines have migrated to the additive include block.
