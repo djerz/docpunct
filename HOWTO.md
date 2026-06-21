@@ -192,9 +192,11 @@ recommended compatibility link:
 `debian-cli-packages` depends on `fd-find` so the link is available whenever
 the common CLI package set is installed.
 
-`debian-mail-packages` installs `isync`, `notmuch`, `msmtp`, `rsync`,
-`libsecret-tools`, `util-linux`, and `w3m` for the epel mail workflow. Its
-removal is intentionally conservative and leaves these packages installed.
+`debian-mail-packages` installs `isync`, `notmuch`, `libnotmuch-dev`, `msmtp`,
+`rsync`, `libsecret-tools`, `util-linux`, and `w3m` for the epel mail workflow.
+The development package supplies the unversioned `libnotmuch.so` loader name
+required by notmuch.nvim. Removal is intentionally conservative and leaves
+these packages installed.
 
 `epel` provides local Maildir synchronization, indexing, sending, queue,
 backup, and systemd user-service commands. Detailed configuration and

@@ -16,6 +16,8 @@ credentials remain user-owned and are never written by docpunct.
 This installs the separate `debian-mail-packages` dependency, Neovim and
 managed dotfiles when needed, the `epel` command, and systemd user unit files.
 Automatic synchronization and backup remain disabled until explicitly enabled.
+The package dependency includes `libnotmuch-dev`, which supplies the
+unversioned `libnotmuch.so` name loaded by notmuch.nvim.
 
 Run:
 

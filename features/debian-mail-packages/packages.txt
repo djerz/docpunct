@@ -1,6 +1,7 @@
 # Mail synchronization, indexing, and sending.
 isync
 notmuch
+libnotmuch-dev
 msmtp
 
 # Immutable snapshot backups and desktop-keyring access.
@@ -8,5 +9,5 @@ rsync
 libsecret-tools
 util-linux
 
-# Optional HTML mail rendering used by notmuch.nvim.
+# Shared-library loader support and optional HTML rendering used by notmuch.nvim.
 w3m

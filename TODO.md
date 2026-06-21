@@ -56,6 +56,9 @@
 - `debian-mail-packages` and `epel` provide the package, CLI, queue, systemd
   user-unit, snapshot backup, and notmuch.nvim integration layers for the local
   Maildir workflow. Detailed instructions live in `features/epel/HOWTO.md`.
+- `debian-mail-packages` includes `libnotmuch-dev` because notmuch.nvim loads
+  the unversioned `libnotmuch.so` name, which the runtime package does not
+  provide.
 - Git HTTPS credentials are now opt-in: `gpg` provides instructional
   GPG/pass setup and `gcm-gpg` configures GCM with encrypted GPG storage.
   `core` and `dotfiles` do not select a credential helper.
@@ -78,6 +81,10 @@
 
 ## Done
 
+- Added `libnotmuch-dev` to `debian-mail-packages` so notmuch.nvim can load
+  the unversioned `libnotmuch.so` name, with supported-release container
+  coverage. Also isolated the GCM smoke test's cache so it remains deterministic
+  when invoked through `docpunct test-smoke`.
 - Added standalone `gpg` and `gcm-gpg` features, including pass/key readiness
   checks, headless pinentry instructions, a separate managed Git include, and
   an explicit migration path from the deprecated implicit GCM feature.
@@ -342,6 +349,10 @@
   26.04 container installs after adding `gpg` and `gcm-gpg`. Container tests
   generate an isolated no-passphrase key, initialize pass, install the current
   verified GCM package, and assert the encrypted backend configuration.
+- Host Bash/ShellCheck, `./bin/docpunct test-smoke`, `git diff --check`, and
+  Ubuntu 22.04, 24.04, and 26.04 container tests after adding
+  `libnotmuch-dev`. A headless Neovim FFI load of `notmuch` also passed on the
+  host after updating `debian-mail-packages`.
 
 ## Pending clarification
 

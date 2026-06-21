@@ -197,12 +197,13 @@ The `justfile` is a convenience layer.
 
 All actual logic must reside in `bin/docpunct` and feature scripts.
 
-The `debian-mail-packages` feature installs epel's Ubuntu package dependencies
-and deliberately leaves them installed during removal. The `epel` feature
-depends on `debian-mail-packages`, `neovim`, and `dotfiles`. It preserves mail,
-configuration, credentials, state, queued messages, and snapshots during
-removal. Its detailed architecture and operating instructions live in
-`arch/epel_arch.md` and `features/epel/HOWTO.md`.
+The `debian-mail-packages` feature installs epel's Ubuntu package dependencies,
+including `libnotmuch-dev` for notmuch.nvim's unversioned `libnotmuch.so`
+loader name, and deliberately leaves them installed during removal. The `epel`
+feature depends on `debian-mail-packages`, `neovim`, and `dotfiles`. It
+preserves mail, configuration, credentials, state, queued messages, and
+snapshots during removal. Its detailed architecture and operating instructions
+live in `arch/epel_arch.md` and `features/epel/HOWTO.md`.
 
 ---
 

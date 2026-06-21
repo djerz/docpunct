@@ -43,8 +43,9 @@ sudo -u docpunct-test \
     grep -F "credentialStore = gpg" \
       "$HOME/.config/docpunct/git-credential-manager.gitconfig"
     ./bin/docpunct install debian-mail-packages
-    for package in isync notmuch msmtp rsync libsecret-tools util-linux w3m; do
+    for package in isync notmuch libnotmuch-dev msmtp rsync libsecret-tools util-linux w3m; do
       dpkg-query -W -f="\${Status}\n" "$package" | grep -qx "install ok installed"
     done
+    dpkg-query -L libnotmuch-dev | grep -Eq "/libnotmuch\.so$"
     ./bin/docpunct update debian-mail-packages
   '

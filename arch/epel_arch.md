@@ -6,9 +6,10 @@ Approved architecture.
 
 The v1 implementation is provided by two docpunct features:
 
-* `debian-mail-packages` installs `isync`, `notmuch`, `msmtp`, `rsync`,
-  `libsecret-tools`, `util-linux`, and `w3m` and leaves them installed during
-  removal.
+* `debian-mail-packages` installs `isync`, `notmuch`, `libnotmuch-dev`,
+  `msmtp`, `rsync`, `libsecret-tools`, `util-linux`, and `w3m` and leaves them
+  installed during removal. `libnotmuch-dev` supplies the unversioned
+  `libnotmuch.so` loader name required by notmuch.nvim.
 * `epel` depends on `debian-mail-packages`, `neovim`, and `dotfiles`; it owns
   the command, private notmuch.nvim send wrapper, and systemd user units.
 

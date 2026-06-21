@@ -87,6 +87,7 @@ env HOME="$test_home" PATH="$fake_bin:$PATH" \
   "$repo_root/features/gpg/check-readiness.sh"
 
 env HOME="$test_home" PATH="$fake_bin:$PATH" \
+  DOCPUNCT_CACHE_DIR="$migration_cache" \
   "$repo_root/features/gcm-gpg/configure.sh" >/dev/null
 
 managed_config="$test_home/.config/docpunct/git-credential-manager.gitconfig"
@@ -107,6 +108,7 @@ assert_contains "$(cat "$managed_config")" "helper = $fake_bin/git-credential-ma
 
 # Configuration is idempotent and does not duplicate the include.
 env HOME="$test_home" PATH="$fake_bin:$PATH" \
+  DOCPUNCT_CACHE_DIR="$migration_cache" \
   "$repo_root/features/gcm-gpg/configure.sh" >/dev/null
 [[ "$(env HOME="$test_home" PATH="$fake_bin:$PATH" git config --global --get-all include.path | wc -l)" -eq 1 ]] || {
   printf 'expected exactly one managed GCM include\n' >&2
