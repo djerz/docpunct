@@ -37,9 +37,15 @@ sudo -u docpunct-test \
     gpg_fingerprint="$(gpg --batch --with-colons --list-secret-keys \
       "docpunct@example.invalid" | awk -F: '\''$1 == "fpr" { print $10; exit }'\'')"
     pass init "$gpg_fingerprint"
+    git config --global credential.helper store
     ./bin/docpunct install gcm-gpg
-    git config --global --get-all include.path | grep -Fx \
-      "$HOME/.config/docpunct/git-credential-manager.gitconfig"
+    mapfile -t credential_helpers < <(
+      git config --global --includes --get-all credential.helper
+    )
+    test "${#credential_helpers[@]}" -eq 3
+    test "${credential_helpers[0]}" = store
+    test -z "${credential_helpers[1]}"
+    test "${credential_helpers[2]}" = /usr/local/bin/git-credential-manager
     grep -F "credentialStore = gpg" \
       "$HOME/.config/docpunct/git-credential-manager.gitconfig"
     ./bin/docpunct install debian-mail-packages

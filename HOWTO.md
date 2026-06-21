@@ -342,9 +342,12 @@ are documented in `features/gpg/HOWTO.md`.
 `gcm-gpg` depends on `gpg`. It requires an initialized pass store backed by an
 encryption-capable secret key, then downloads and verifies the latest upstream
 GCM Debian package and configures GCM with `credentialStore = gpg` in a
-separate docpunct-managed Git include. It supports GCM's provider-specific
-authentication and generic HTTPS servers using a username plus password or
-personal access token.
+separate docpunct-managed Git include. A marked include block is kept at the
+end of `~/.gitconfig`, so its empty helper reset and GCM helper override earlier
+host helpers such as `store` without deleting those user-owned settings. The
+feature fails closed if another global helper remains active after GCM. It
+supports GCM's provider-specific authentication and generic HTTPS servers
+using a username plus password or personal access token.
 
 The old `git-credential-manager` feature is deprecated. Existing installations
 migrate explicitly, without deleting stored credentials:

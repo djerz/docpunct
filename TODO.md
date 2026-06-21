@@ -52,6 +52,9 @@
 - Git settings now live in a managed include fragment, with `.gitconfig` using
   an additive marked block so existing host Git configuration is preserved and
   takes precedence.
+- The current host has completed the additive `.gitconfig` migration. Its
+  global config is a regular file with one docpunct include block, and the
+  managed fragment link and included Git configuration parse successfully.
 - Git Credential Manager and Double Commander downloads are now verified
   against SHA-256 digests in the GitHub release API before installation or
   extraction. Nerd Fonts archives are verified against the upstream release's
@@ -65,6 +68,9 @@
 - Git HTTPS credentials are now opt-in: `gpg` provides instructional
   GPG/pass setup and `gcm-gpg` configures GCM with encrypted GPG storage.
   `core` and `dotfiles` do not select a credential helper.
+- `gcm-gpg` owns an end-of-file marked include in `~/.gitconfig`, so its helper
+  reset follows preserved host helpers. Configuration fails closed unless GCM
+  with GPG storage is the only effective global credential helper.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -91,6 +97,9 @@
 - Added standalone `gpg` and `gcm-gpg` features, including pass/key readiness
   checks, headless pinentry instructions, a separate managed Git include, and
   an explicit migration path from the deprecated implicit GCM feature.
+- Fixed `gcm-gpg` include ordering so later host helpers such as `store` cannot
+  remain active. Existing unmanaged GCM includes migrate to an ordered marked
+  block without deleting the preserved host helper settings.
 - Removed implicit GCM dependencies from `core` and `dotfiles`; the base Git
   configuration no longer chooses persistent credential storage.
 - Added conservative `debian-mail-packages` and the `epel` feature, including
@@ -359,6 +368,12 @@
   Ubuntu 22.04, 24.04, and 26.04 container tests after adding
   `libnotmuch-dev`. A headless Neovim FFI load of `notmuch` also passed on the
   host after updating `debian-mail-packages`.
+- Validated the current host's completed additive `.gitconfig` migration:
+  marker counts, include path, managed fragment link, and included global Git
+  configuration all passed.
+- `bash -n`, host `shellcheck`, `./tests/gcm-gpg-smoke.sh`, the complete
+  `./bin/docpunct test-smoke` suite, `git diff --check`, and current-host helper
+  ordering after fixing and migrating the `gcm-gpg` include.
 - `bash -n`, host `shellcheck`, Git configuration parsing,
   `./bin/docpunct test-smoke`, and `git diff --check` after replacing the
   whole-file `.gitconfig` symlink with an additive managed include. The
@@ -371,10 +386,6 @@
 
 ## Remaining work
 
-- Run `./bin/docpunct update dotfiles` on the current host to migrate the
-  legacy whole-file `~/.gitconfig` symlink to the additive include block. The
-  symlink still points at the former tracked `dotfiles/.gitconfig` path, which
-  moved to `dotfiles/.config/docpunct/gitconfig` in commit `8a35839`.
 - Complete the resumed initial Gmail synchronization for
   `chris.welmelinger@gmail.com`. The latest 2026-06-21 retry progressed from
   57,279 to 85,867 local mail files before Gmail again returned `OVERQUOTA`;
@@ -397,6 +408,9 @@
   currently documents them without installing.
 - Remove the deprecated `git-credential-manager` feature after existing users
   have migrated to `gcm-gpg` and the documented migration window has closed.
+- Remove the deprecated unmanaged `gcm-gpg` include migration from
+  `features/gcm-gpg/git-hooks.sh` after existing machines have updated
+  `gcm-gpg` and gained the ordered marked include block.
 - Consider independent publisher-signature validation for Git Credential
   Manager, Double Commander, and Nerd Fonts release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
@@ -410,9 +424,6 @@
 
 ## Known issues
 
-- Until `./bin/docpunct update dotfiles` runs on the current host, its legacy
-  `~/.gitconfig` symlink points at the removed pre-migration repository path;
-  Git commands that need global identity or settings may not find them.
 - Existing users with the legacy `git-credential-manager` installed must
   initialize GPG/pass and complete the documented explicit `gcm-gpg` migration;
   existing credentials are not copied automatically and authentication may be
@@ -440,17 +451,17 @@
 
 ## Next steps
 
-1. Run `./bin/docpunct update dotfiles` on the current host to migrate
-   `~/.gitconfig` and restore Git's global settings.
-2. After Gmail's command/bandwidth quota resets, resume the incomplete initial
+1. After Gmail's command/bandwidth quota resets, resume the incomplete initial
    synchronization with `epel sync`; mbsync will continue from its saved state.
-3. Manually validate provider Sent synchronization before enabling epel's
+2. Manually validate provider Sent synchronization before enabling epel's
    systemd timer.
-4. Decide whether to import the empty `.gitconfig-private`.
-5. Consider independent publisher-signature validation for Git Credential
+3. Decide whether to import the empty `.gitconfig-private`.
+4. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, and Nerd Fonts release assets.
-6. Remove the deprecated Neovim file-level symlink migration logic after
+5. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
+6. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
+   machines have updated to the ordered marked include block.
 7. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
 8. Remove the legacy whole-file `.gitconfig` symlink migration logic after

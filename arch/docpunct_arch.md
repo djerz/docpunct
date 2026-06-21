@@ -968,15 +968,21 @@ Installation behavior:
        credentialStore = gpg
    ```
 
-7. Ensure the global Git configuration includes that managed fragment without
-   replacing unrelated configuration.
+7. Remove the deprecated unmanaged include written by earlier `gcm-gpg`
+   versions and append an owned marked include block at the end of
+   `~/.gitconfig`. Its ordering makes the managed empty helper reset occur
+   after preserved host helpers such as `store`.
+8. Fail closed unless applying Git's empty-helper reset semantics leaves the
+   installed GCM executable as the only effective global helper, with
+   `credentialStore = gpg`.
 
 Update behavior should repeat the latest-release installation flow.
 
-Removal deletes only the managed fragment and a GCM package originally
-installed by `gcm-gpg`. It preserves pre-existing packages, GPG keys, pass
-data, and the harmless include entry. It refuses removal while the legacy
-feature marker remains so migration ordering stays explicit.
+Removal deletes only the marked include block, managed fragment, and a GCM
+package originally installed by `gcm-gpg`. It preserves pre-existing packages,
+GPG keys, pass data, and host Git settings; preserved host credential helpers
+become active again. It refuses removal while the legacy feature marker remains
+so migration ordering stays explicit.
 
 The downloaded package is verified against the SHA-256 digest in GitHub's
 release API before installation. This detects a corrupted or mismatched
