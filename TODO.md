@@ -349,10 +349,12 @@
 
 ## Remaining work
 
-- Resume the initial Gmail synchronization for
-  `chris.welmelinger@gmail.com` after Google's IMAP command/bandwidth quota
-  resets. The existing mbsync state is resumable; do not restart the download
-  from scratch.
+- Complete the resumed initial Gmail synchronization for
+  `chris.welmelinger@gmail.com`. At session close on 2026-06-21, `epel sync`
+  had progressed beyond the earlier quota rejection and was still downloading;
+  the local account tree had reached at least 32,751 message/state files. If
+  the process is no longer running, use `epel sync` to continue from mbsync's
+  saved state rather than restarting from scratch.
 - Decide whether to import the empty `.gitconfig-private`.
 - Improve epel credential security beyond command-based `secret-tool` lookup,
   including explicit OAuth/token lifecycle support.
@@ -404,9 +406,9 @@
 
 ## Next steps
 
-1. Resume the throttled initial Gmail synchronization for
-   `chris.welmelinger@gmail.com` with `epel sync`; mbsync will continue from
-   its saved state.
+1. Let the active initial Gmail synchronization finish, or resume it with
+   `epel sync` if it is no longer running; mbsync will continue from its saved
+   state.
 2. Manually validate provider Sent synchronization before enabling epel's
    systemd timer.
 3. Decide whether to import the empty `.gitconfig-private`.
