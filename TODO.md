@@ -20,7 +20,9 @@
   `wl-clipboard`, `xclip`, and `libqt6printsupport6` for Neovide desktop entry
   support, Neovide Cargo link-time requirements, Neovide clipboard integration,
   and the Double Commander Qt6 runtime.
-- Third-party APT repository packages are modeled as separate features: `brave-browser`, `visual-studio-code`, `google-chrome`, and `docker`.
+- Third-party APT repository packages are modeled as separate features:
+  `brave-browser`, `visual-studio-code`, `google-chrome`, `github-cli`, and
+  `docker`.
 - Docker was installed with docpunct in the previous session, the sibling `../dockerfiles` ShellCheck image was usable, and this repository now has a repeatable `just shellcheck` target.
 - A first testing architecture is in place:
   - `just test-smoke` runs host-safe Bash smoke tests with temporary home/cache directories.
@@ -156,6 +158,7 @@
   - `brave-browser`
   - `visual-studio-code`
   - `google-chrome`
+  - `github-cli`
   - `doublecmd`
 - Added install/update/remove scripts where needed.
 - Added dependency resolution for install/update.
@@ -182,6 +185,10 @@
 - Added dependency cycle detection before install/update traversal.
 - Updated `debian-gui-packages/packages.txt` to install `keepassxc`, `meld`, `gnome-icon-theme`, `adwaita-icon-theme-full`, and retained `desktop-file-utils` for Neovide.
 - Added third-party APT repository features for Brave Browser, Visual Studio Code, and Google Chrome. Each feature owns its package, source file, and signing key.
+- Added a standalone `github-cli` feature using GitHub CLI's official APT
+  repository, with a pinned official keyring checksum, architecture guards,
+  and conservative removal that preserves user authentication and
+  configuration.
 - Changed `docpunct update FEATURE` to fail when `FEATURE` is not installed.
   Later behavior was reworked so newly introduced dependencies are installed
   during update.
@@ -376,6 +383,10 @@
 - `bash -n`, host `shellcheck`, `./tests/gcm-gpg-smoke.sh`, the complete
   `./bin/docpunct test-smoke` suite, `git diff --check`, and current-host helper
   ordering after fixing and migrating the `gcm-gpg` include.
+- `bash -n`, full host `shellcheck`, `./bin/docpunct test-smoke`,
+  `git diff --check`, and a real Ubuntu 24.04 container install/update/remove
+  lifecycle for `github-cli`. The container verified `gh` 2.95.0, owned APT
+  cleanup, and preservation of `~/.config/gh`.
 - `bash -n`, host `shellcheck`, Git configuration parsing,
   `./bin/docpunct test-smoke`, and `git diff --check` after replacing the
   whole-file `.gitconfig` symlink with an additive managed include. The

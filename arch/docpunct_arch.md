@@ -7,6 +7,10 @@ split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
 user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
 binary are available in non-interactive login Bash shells.
 
+Version 18 adds a standalone `github-cli` feature backed by GitHub CLI's
+official APT repository, with a pinned official keyring checksum, architecture
+guards, conservative removal, and real Ubuntu container coverage.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -181,6 +185,7 @@ docpunct/
 │   ├── brave-browser/
 │   ├── visual-studio-code/
 │   ├── google-chrome/
+│   ├── github-cli/
 │   ├── docker/
 │   ├── doublecmd/
 │   ├── nerdfonts/
@@ -1076,6 +1081,7 @@ Initial third-party APT package features:
 brave-browser
 visual-studio-code
 google-chrome
+github-cli
 docker
 ```
 
@@ -1189,6 +1195,20 @@ Google's official APT repository and owns:
 
 The Google Chrome APT repository uses a distro-independent `stable` suite and
 supports the `amd64` Debian architecture.
+
+The `github-cli` feature installs the `gh` package from GitHub CLI's official
+APT repository and owns:
+
+```text
+/etc/apt/sources.list.d/github-cli.list
+/etc/apt/keyrings/githubcli-archive-keyring.gpg
+```
+
+The repository uses a distro-independent `stable` suite and publishes `i386`,
+`amd64`, `armhf`, and `arm64`. The downloaded keyring must match the SHA-256
+published in GitHub CLI's official installation documentation before
+installation. Removal preserves user authentication and configuration under
+`~/.config/gh`.
 
 The `docker` feature installs Docker Engine from Docker's official APT
 repository. Before installing, it removes conflicting Ubuntu/distro packages
@@ -1644,7 +1664,7 @@ The first implementation must support:
 - dotfile backup and restore
 - Debian CLI package management
 - Debian GUI package management
-- third-party APT repository package management for Brave Browser, Visual Studio Code, Google Chrome, and Docker
+- third-party APT repository package management for Brave Browser, Visual Studio Code, Google Chrome, GitHub CLI, and Docker
 - `fd-find` with `~/.local/bin/fd -> /usr/bin/fdfind`
 - desktop app meta-feature grouping
 - Double Commander latest-release installation

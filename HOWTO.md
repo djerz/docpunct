@@ -136,6 +136,7 @@ desktop-apps
 brave-browser
 visual-studio-code
 google-chrome
+github-cli
 docker
 doublecmd
 gpg
@@ -257,6 +258,7 @@ Third-party APT repository packages are managed by separate features, not by
 brave-browser
 visual-studio-code
 google-chrome
+github-cli
 docker
 ```
 
@@ -275,7 +277,13 @@ Each third-party package feature owns its package, APT source file, and signing
 key. Removing one of these features removes the package, source file, and key
 owned by that feature.
 
-Brave Browser, Visual Studio Code, and Google Chrome use upstream APT
+`github-cli` installs the `gh` package from GitHub CLI's official APT
+repository. It supports `i386`, `amd64`, `armhf`, and `arm64`. Removal
+preserves user authentication and configuration under `~/.config/gh`. The
+downloaded archive keyring is checked against the SHA-256 published in GitHub
+CLI's official installation documentation before it is installed.
+
+Brave Browser, Visual Studio Code, Google Chrome, and GitHub CLI use upstream APT
 repositories with distro-independent `stable` suites, so the same source
 configuration is used on Ubuntu 22.04, 24.04, 26.04, and later supported
 Ubuntu versions. Their install scripts check the local Debian architecture

@@ -5,6 +5,7 @@ apt-get update
 apt-get install -y --no-install-recommends \
   bash \
   ca-certificates \
+  git \
   shellcheck \
   sudo
 rm -rf /var/lib/apt/lists/*
@@ -28,6 +29,17 @@ sudo -u docpunct-test \
     test -L "$HOME/.local/bin/fd"
     test "$(readlink "$HOME/.local/bin/fd")" = "/usr/bin/fdfind"
     ./bin/docpunct update debian-cli-packages
+    ./bin/docpunct install github-cli
+    gh --version
+    test -f /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    test -f /etc/apt/sources.list.d/github-cli.list
+    ./bin/docpunct update github-cli
+    mkdir -p "$HOME/.config/gh"
+    touch "$HOME/.config/gh/hosts.yml"
+    ./bin/docpunct remove github-cli
+    test ! -e /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    test ! -e /etc/apt/sources.list.d/github-cli.list
+    test -f "$HOME/.config/gh/hosts.yml"
     ./bin/docpunct install gpg
     for package in gnupg pass pinentry-curses; do
       dpkg-query -W -f="\${Status}\n" "$package" | grep -qx "install ok installed"
