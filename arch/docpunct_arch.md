@@ -7,6 +7,11 @@ split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
 user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
 binary are available in non-interactive login Bash shells.
 
+Version 17 replaces whole-file `.gitconfig` management with an additive marked
+include of a managed Git settings fragment. Existing host settings are
+preserved and take precedence, while legacy docpunct-owned symlinks migrate by
+restoring their saved backup when available.
+
 Version 15 records the addition of the `debian-mail-packages` and `epel`
 features. Epel owns a conservative local Maildir workflow, systemd user units,
 an outgoing queue, immutable timestamped rsync snapshots, and integration with
@@ -645,9 +650,9 @@ Removal must avoid deleting unrelated user data.
 
 ## Dotfiles
 
-Most dotfiles are managed through symbolic links. `.profile` and `.bashrc` are
-managed additively because existing installations may already contain complex
-shell configuration that docpunct must preserve.
+Most dotfiles are managed through symbolic links. `.profile`, `.bashrc`, and
+`.gitconfig` are managed additively because existing installations may already
+contain configuration that docpunct must preserve.
 
 Example file-level symlink:
 
@@ -690,6 +695,15 @@ Installation behavior:
 6. When migrating old docpunct-owned whole-file `.profile` or `.bashrc`
    symlinks, restore the saved original when available before inserting the
    marked block. Create a minimal regular entrypoint when no backup exists.
+7. Reconcile Git configuration separately:
+   - link the tracked settings as `~/.config/docpunct/gitconfig`
+   - insert one canonical marked include block near the top of `.gitconfig`
+   - preserve all content outside the block, with later host settings taking
+     precedence over the included docpunct defaults
+   - refuse foreign `.gitconfig` symlinks and malformed or duplicate markers
+8. When migrating an old docpunct-owned whole-file `.gitconfig` symlink,
+   restore the saved original when available before inserting the include
+   block. Create a minimal regular `.gitconfig` when no backup exists.
 
 Backups are stored under:
 
@@ -701,8 +715,8 @@ Removal behavior:
 
 1. Remove the symlink.
 2. Restore the original backup if one exists.
-3. Remove only docpunct's marked blocks from `.profile` and `.bashrc`; do not
-   remove the regular entrypoint files or other content.
+3. Remove only docpunct's marked blocks from `.profile`, `.bashrc`, and
+   `.gitconfig`; do not remove the regular files or other content.
 
 The command:
 
@@ -759,7 +773,7 @@ installs.
 Managed dotfiles may include:
 
 ```text
-.gitconfig
+.config/docpunct/gitconfig
 .config/docpunct/session-env.sh
 .config/docpunct/bash-ext.sh
 .config/nvim
@@ -770,18 +784,29 @@ The dotfile feature should support extending this list over time.
 The managed dotfiles are:
 
 ```text
-.gitconfig
+.config/docpunct/gitconfig
 .config/docpunct/session-env.sh
 .config/docpunct/bash-ext.sh
 .config/nvim
 ```
 
-The imported `.gitconfig` must not select a credential helper. It includes an
-optional feature-owned fragment instead:
+The imported Git settings fragment must not select a credential helper. It
+includes an optional feature-owned fragment instead:
 
 ```ini
 [include]
     path = ~/.config/docpunct/git-credential-manager.gitconfig
+```
+
+Docpunct adds the settings fragment to `~/.gitconfig` through this marked block
+near the top of the file, so existing settings later in the file override the
+docpunct defaults:
+
+```ini
+# >>> docpunct git setup >>>
+[include]
+    path = ~/.config/docpunct/gitconfig
+# <<< docpunct git setup <<<
 ```
 
 Private files such as `.gitconfig-private` must not be imported without an

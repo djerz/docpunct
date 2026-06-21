@@ -5,6 +5,7 @@ files_list="$DOCPUNCT_FEATURE_DIR/files.txt"
 dotfiles_dir="$DOCPUNCT_ROOT/dotfiles"
 
 "$DOCPUNCT_FEATURE_DIR/shell-hooks.sh" remove
+"$DOCPUNCT_FEATURE_DIR/git-hooks.sh" remove
 
 while IFS= read -r relpath || [[ -n "$relpath" ]]; do
   relpath="${relpath%%#*}"

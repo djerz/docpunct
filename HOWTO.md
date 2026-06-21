@@ -162,7 +162,8 @@ python-uv
 
 `core` and `dotfiles` deliberately do not select a Git credential helper.
 Encrypted HTTPS credential storage is available as the explicit `gcm-gpg`
-feature. The tracked `.gitconfig` only includes its optional managed fragment:
+feature. The tracked Git settings fragment only includes its optional managed
+credential fragment:
 
 ```ini
 [include]
@@ -412,8 +413,9 @@ It also generates a desktop entry from the repository template and writes it to:
 
 ## Dotfiles
 
-Most dotfiles are managed as symbolic links. Shell entrypoint files are handled
-additively so docpunct does not replace an existing complex shell setup.
+Most dotfiles are managed as symbolic links. Shell entrypoint files and
+`.gitconfig` are handled additively so docpunct does not replace existing host
+configuration.
 
 Example:
 
@@ -434,6 +436,23 @@ and malformed or duplicated marker blocks are refused rather than rewritten.
 Updating an older docpunct installation migrates its whole-file `.profile` and
 `.bashrc` symlinks. The original backups are restored when available, then the
 additive blocks are inserted.
+
+Git settings are linked as `~/.config/docpunct/gitconfig`. Docpunct adds a
+marked include block near the top of the regular `~/.gitconfig`, creating that
+file when necessary:
+
+```ini
+# >>> docpunct git setup >>>
+[include]
+    path = ~/.config/docpunct/gitconfig
+# <<< docpunct git setup <<<
+```
+
+Existing Git settings remain after the block and therefore override conflicting
+docpunct defaults. Install, update, and relink keep one canonical block;
+removal deletes only that block and the managed fragment link. Updating an
+older installation restores its `.gitconfig` backup before migrating the old
+whole-file docpunct symlink.
 
 Neovim config is managed as a directory-level symlink:
 
@@ -469,7 +488,7 @@ If the repository moves, run:
 The managed dotfiles are:
 
 ```text
-.gitconfig
+.config/docpunct/gitconfig
 .config/docpunct/session-env.sh
 .config/docpunct/bash-ext.sh
 .config/nvim

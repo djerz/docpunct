@@ -1,7 +1,7 @@
 # Paths are relative to $HOME and map to dotfiles/<same path>.
 # Example:
 # .bashrc
-.gitconfig
+.config/docpunct/gitconfig
 .config/docpunct/session-env.sh
 .config/docpunct/bash-ext.sh
 .config/nvim

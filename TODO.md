@@ -49,6 +49,9 @@
   `.profile` and `.bashrc` using additive marked blocks so existing host shell
   configuration is preserved. `bash-ext.sh` owns personal Bash aliases and NVM
   completion.
+- Git settings now live in a managed include fragment, with `.gitconfig` using
+  an additive marked block so existing host Git configuration is preserved and
+  takes precedence.
 - Git Credential Manager and Double Commander downloads are now verified
   against SHA-256 digests in the GitHub release API before installation or
   extraction. Nerd Fonts archives are verified against the upstream release's
@@ -238,10 +241,13 @@
   non-interactive login Bash shells.
 - Added a smoke regression proving `.profile` makes an NVM-provided `node`
   available on `PATH`.
+- Replaced the whole-file `.gitconfig` symlink with an additive managed include,
+  including legacy symlink migration, host-setting precedence, conservative
+  removal, and smoke coverage.
 
 ## Imported dotfiles
 
-- `.gitconfig`
+- `.config/docpunct/gitconfig`
 - `.config/docpunct/session-env.sh`
 - `.config/docpunct/bash-ext.sh`
 - `.config/nvim`
@@ -353,6 +359,11 @@
   Ubuntu 22.04, 24.04, and 26.04 container tests after adding
   `libnotmuch-dev`. A headless Neovim FFI load of `notmuch` also passed on the
   host after updating `debian-mail-packages`.
+- `bash -n`, host `shellcheck`, Git configuration parsing,
+  `./bin/docpunct test-smoke`, and `git diff --check` after replacing the
+  whole-file `.gitconfig` symlink with an additive managed include. The
+  project-level `./bin/docpunct test` remained blocked by the documented Docker
+  socket permission issue.
 
 ## Pending clarification
 
@@ -389,6 +400,9 @@
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
   from `features/dotfiles/shell-hooks.sh` after existing machines have migrated
   to additive shell blocks.
+- Remove the legacy whole-file `.gitconfig` symlink migration logic from
+  `features/dotfiles/git-hooks.sh` after existing machines have migrated to the
+  additive include block.
 
 ## Known issues
 
@@ -430,3 +444,5 @@
    existing machines have migrated.
 6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
+7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+   existing machines have migrated to the additive include block.

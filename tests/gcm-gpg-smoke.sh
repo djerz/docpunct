@@ -33,7 +33,7 @@ if grep -q 'git-credential-manager' "$repo_root/features/core/feature.yml" "$rep
   printf 'core and dotfiles must not depend on Git Credential Manager\n' >&2
   exit 1
 fi
-if grep -Eq '^[[:space:]]*helper[[:space:]]*=' "$repo_root/dotfiles/.gitconfig"; then
+if grep -Eq '^[[:space:]]*helper[[:space:]]*=' "$repo_root/dotfiles/.config/docpunct/gitconfig"; then
   printf 'base dotfiles must not configure a credential helper\n' >&2
   exit 1
 fi

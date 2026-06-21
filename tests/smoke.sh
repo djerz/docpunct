@@ -91,9 +91,11 @@ ln -s "$repo_root/features/dotfiles/update.sh" "$dotfiles_features/dotfiles/upda
 ln -s "$repo_root/features/dotfiles/remove.sh" "$dotfiles_features/dotfiles/remove.sh"
 ln -s "$repo_root/features/dotfiles/reconcile.sh" "$dotfiles_features/dotfiles/reconcile.sh"
 ln -s "$repo_root/features/dotfiles/shell-hooks.sh" "$dotfiles_features/dotfiles/shell-hooks.sh"
+ln -s "$repo_root/features/dotfiles/git-hooks.sh" "$dotfiles_features/dotfiles/git-hooks.sh"
 
 printf 'host bashrc\n' >"$test_home/.bashrc"
 printf 'host profile\n' >"$test_home/.profile"
+printf '[user]\n    email = host@example.com\n' >"$test_home/.gitconfig"
 
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct install dotfiles >/dev/null
 [[ -f "$test_home/.bashrc" && ! -L "$test_home/.bashrc" ]] || {
@@ -108,6 +110,12 @@ assert_contains "$(cat "$test_home/.bashrc")" "host bashrc"
 assert_contains "$(cat "$test_home/.bashrc")" ". \"\$HOME/.config/docpunct/bash-ext.sh\""
 assert_contains "$(cat "$test_home/.profile")" "host profile"
 assert_contains "$(cat "$test_home/.profile")" ". \"\$HOME/.config/docpunct/session-env.sh\""
+[[ -f "$test_home/.gitconfig" && ! -L "$test_home/.gitconfig" ]] || {
+  printf 'expected dotfiles install to preserve .gitconfig as a regular file\n' >&2
+  exit 1
+}
+assert_contains "$(cat "$test_home/.gitconfig")" '# >>> docpunct git setup >>>'
+assert_contains "$(cat "$test_home/.gitconfig")" 'email = host@example.com'
 [[ -L "$test_home/.config/docpunct/session-env.sh" ]] || {
   printf 'expected dotfiles install to link session-env.sh\n' >&2
   exit 1
@@ -126,15 +134,18 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct relink >/dev/null
   printf 'expected relink to keep one .bashrc shell block\n' >&2
   exit 1
 }
-printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/nvim\n.gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
-printf 'host gitconfig\n' >"$test_home/.gitconfig"
-DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct update dotfiles >/dev/null
-[[ -L "$test_home/.gitconfig" ]] || {
-  printf 'expected dotfiles update to link newly added dotfile\n' >&2
+[[ "$(grep -Fc '# >>> docpunct git setup >>>' "$test_home/.gitconfig")" -eq 1 ]] || {
+  printf 'expected relink to keep one .gitconfig block\n' >&2
   exit 1
 }
-[[ "$(cat "$test_cache/backups/dotfiles/.gitconfig")" == "host gitconfig" ]] || {
-  printf 'expected dotfiles update to back up replaced host file\n' >&2
+printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/nvim\n.config/docpunct/gitconfig\n' >"$dotfiles_features/dotfiles/files.txt"
+DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct update dotfiles >/dev/null
+[[ -L "$test_home/.config/docpunct/gitconfig" ]] || {
+  printf 'expected dotfiles update to link newly added git config fragment\n' >&2
+  exit 1
+}
+[[ "$(env HOME="$test_home" git config --global --get user.email)" == "host@example.com" ]] || {
+  printf 'expected host git setting to override the docpunct fragment\n' >&2
   exit 1
 }
 DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/null
@@ -144,6 +155,14 @@ DOCPUNCT_FEATURES_DIR="$dotfiles_features" run_docpunct remove dotfiles >/dev/nu
 }
 [[ "$(cat "$test_home/.profile")" == "host profile" ]] || {
   printf 'expected dotfiles remove to preserve original .profile content\n' >&2
+  exit 1
+}
+[[ "$(cat "$test_home/.gitconfig")" == $'[user]\n    email = host@example.com' ]] || {
+  printf 'expected dotfiles remove to preserve original .gitconfig content\n' >&2
+  exit 1
+}
+[[ ! -e "$test_home/.config/docpunct/gitconfig" ]] || {
+  printf 'expected dotfiles remove to remove git config fragment symlink\n' >&2
   exit 1
 }
 [[ ! -e "$test_home/.config/docpunct/session-env.sh" ]] || {
@@ -219,24 +238,81 @@ assert_fails_with \
     DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
     "$repo_root/features/dotfiles/shell-hooks.sh" install
 
+rm -f -- "$hook_test_home/.gitconfig"
+printf 'foreign gitconfig\n' >"$tmpdir/foreign-gitconfig"
+ln -s "$tmpdir/foreign-gitconfig" "$hook_test_home/.gitconfig"
+assert_fails_with \
+  "refusing to edit foreign git config symlink" \
+  env \
+    HOME="$hook_test_home" \
+    DOCPUNCT_ROOT="$repo_root" \
+    DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
+    "$repo_root/features/dotfiles/git-hooks.sh" install
+
+new_git_home="$tmpdir/new-git-home"
+mkdir -p "$new_git_home"
+env \
+  HOME="$new_git_home" \
+  DOCPUNCT_ROOT="$repo_root" \
+  DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
+  "$repo_root/features/dotfiles/git-hooks.sh" install
+[[ -f "$new_git_home/.gitconfig" && ! -L "$new_git_home/.gitconfig" ]] || {
+  printf 'expected git hook install to create a regular .gitconfig\n' >&2
+  exit 1
+}
+[[ "$(grep -Fc '# >>> docpunct git setup >>>' "$new_git_home/.gitconfig")" -eq 1 ]] || {
+  printf 'expected new .gitconfig to contain one managed block\n' >&2
+  exit 1
+}
+env \
+  HOME="$new_git_home" \
+  DOCPUNCT_ROOT="$repo_root" \
+  DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
+  "$repo_root/features/dotfiles/git-hooks.sh" remove
+[[ -f "$new_git_home/.gitconfig" && ! -s "$new_git_home/.gitconfig" ]] || {
+  printf 'expected git hook removal to retain an empty regular .gitconfig\n' >&2
+  exit 1
+}
+[[ "$(cat "$tmpdir/foreign-gitconfig")" == "foreign gitconfig" ]] || {
+  printf 'expected foreign .gitconfig symlink target to remain untouched\n' >&2
+  exit 1
+}
+
+rm -- "$hook_test_home/.gitconfig"
+printf '%s\n%s\n%s\n%s\n' \
+  '# >>> docpunct git setup >>>' \
+  '# >>> docpunct git setup >>>' \
+  '# <<< docpunct git setup <<<' \
+  '# <<< docpunct git setup <<<' >"$hook_test_home/.gitconfig"
+assert_fails_with \
+  "markers are malformed or duplicated" \
+  env \
+    HOME="$hook_test_home" \
+    DOCPUNCT_ROOT="$repo_root" \
+    DOCPUNCT_DOTFILES_BACKUP_DIR="$hook_test_cache/backups/dotfiles" \
+    "$repo_root/features/dotfiles/git-hooks.sh" install
+
 migration_features="$tmpdir/migration-features"
 migration_cache="$tmpdir/migration-cache"
 migration_home="$tmpdir/migration-home"
 mkdir -p "$migration_features/dotfiles" "$migration_home/.config/nvim/lua/plugins" "$migration_cache/state/installed"
 printf 'description: Test dotfiles migration\n' >"$migration_features/dotfiles/feature.yml"
-printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/nvim\n' >"$migration_features/dotfiles/files.txt"
+printf '.config/docpunct/session-env.sh\n.config/docpunct/bash-ext.sh\n.config/docpunct/gitconfig\n.config/nvim\n' >"$migration_features/dotfiles/files.txt"
 ln -s "$repo_root/features/dotfiles/install.sh" "$migration_features/dotfiles/install.sh"
 ln -s "$repo_root/features/dotfiles/update.sh" "$migration_features/dotfiles/update.sh"
 ln -s "$repo_root/features/dotfiles/reconcile.sh" "$migration_features/dotfiles/reconcile.sh"
 ln -s "$repo_root/features/dotfiles/shell-hooks.sh" "$migration_features/dotfiles/shell-hooks.sh"
+ln -s "$repo_root/features/dotfiles/git-hooks.sh" "$migration_features/dotfiles/git-hooks.sh"
 printf 'feature=dotfiles\n' >"$migration_cache/state/installed/dotfiles"
 ln -s "$repo_root/dotfiles/.config/nvim/init.lua" "$migration_home/.config/nvim/init.lua"
 ln -s "$repo_root/dotfiles/.config/nvim/lua/plugins/init.lua" "$migration_home/.config/nvim/lua/plugins/init.lua"
 mkdir -p "$migration_cache/backups/dotfiles"
 printf 'restored bashrc\n' >"$migration_cache/backups/dotfiles/.bashrc"
 printf 'restored profile\n' >"$migration_cache/backups/dotfiles/.profile"
+printf '[user]\n    email = restored@example.com\n' >"$migration_cache/backups/dotfiles/.gitconfig"
 ln -s "$repo_root/dotfiles/.bashrc" "$migration_home/.bashrc"
 ln -s "$repo_root/dotfiles/.profile" "$migration_home/.profile"
+ln -s "$repo_root/dotfiles/.gitconfig" "$migration_home/.gitconfig"
 
 env \
   HOME="$migration_home" \
@@ -258,6 +334,16 @@ env \
 assert_contains "$(cat "$migration_home/.bashrc")" "restored bashrc"
 assert_contains "$(cat "$migration_home/.bashrc")" ". \"\$HOME/.config/docpunct/bash-ext.sh\""
 assert_contains "$(cat "$migration_home/.profile")" "restored profile"
+[[ ! -L "$migration_home/.gitconfig" ]] || {
+  printf 'expected dotfiles update to migrate legacy .gitconfig symlink\n' >&2
+  exit 1
+}
+assert_contains "$(cat "$migration_home/.gitconfig")" "restored@example.com"
+assert_contains "$(cat "$migration_home/.gitconfig")" '# >>> docpunct git setup >>>'
+[[ "$(env HOME="$migration_home" git config --global --get user.email)" == "restored@example.com" ]] || {
+  printf 'expected restored git setting to override the docpunct fragment\n' >&2
+  exit 1
+}
 
 neovide_home="$tmpdir/neovide-home"
 mkdir -p "$neovide_home/.cargo/bin"
