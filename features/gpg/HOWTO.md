@@ -22,6 +22,58 @@ gpg --full-generate-key
 Choose the identity, expiration, and a strong passphrase deliberately. Record
 the complete primary-key fingerprint, not a short key ID.
 
+## Publish the public key (optional)
+
+Publishing a key allows other people and services to retrieve the public key
+and verify signatures. Upload it to the configured keyserver with the complete
+fingerprint:
+
+```sh
+gpg --send-keys FULL_GPG_FINGERPRINT
+```
+
+Keyserver publication exposes the key's user IDs, including email addresses,
+and may not be practically reversible. Alternatively, export an ASCII-armored
+public key and upload it only to the services that need it:
+
+```sh
+gpg --armor --export you@example.com >public.asc
+```
+
+Public keys can be added to:
+
+- [GitHub GPG keys settings](https://github.com/settings/keys)
+- [GitLab GPG keys settings](https://gitlab.com/-/user_settings/gpg_keys)
+
+The exported `public.asc` contains only public key material. Never export or
+upload the private key.
+
+## Use the key with Git
+
+List secret keys and find the complete signing-key fingerprint:
+
+```sh
+gpg --list-secret-keys --keyid-format=long
+```
+
+Configure Git to sign commits with that key:
+
+```sh
+git config --global user.signingkey FULL_GPG_FINGERPRINT
+git config --global commit.gpgsign true
+git config --global gpg.program gpg
+```
+
+Test signing in a repository that has a staged test change:
+
+```sh
+git commit -S -m "Signed commit"
+git log --show-signature -1
+```
+
+The first command creates a real commit. Use a disposable repository if the
+commit should not become part of an existing project.
+
 ## Initialize pass
 
 Initialize the password store with that fingerprint:

@@ -68,6 +68,8 @@
 - Git HTTPS credentials are now opt-in: `gpg` provides instructional
   GPG/pass setup and `gcm-gpg` configures GCM with encrypted GPG storage.
   `core` and `dotfiles` do not select a credential helper.
+- The GPG HOWTO also documents optional public-key publication and Git commit
+  signing with the selected full key fingerprint.
 - `gcm-gpg` owns an end-of-file marked include in `~/.gitconfig`, so its helper
   reset follows preserved host helpers. Configuration fails closed unless GCM
   with GPG storage is the only effective global credential helper.
@@ -387,9 +389,10 @@
 ## Remaining work
 
 - Complete the resumed initial Gmail synchronization for
-  `chris.welmelinger@gmail.com`. The latest 2026-06-21 retry progressed from
-  57,279 to 85,867 local mail files before Gmail again returned `OVERQUOTA`;
-  mbsync reported 28,574 new local messages across 15 folders. Wait for the
+  `chris.welmelinger@gmail.com`. The latest 2026-06-21 retry ended at 22:07
+  local time when Gmail again returned `OVERQUOTA`; mbsync reported 28,793 new
+  local messages across 15 folders. The account now has 143,380 local Maildir
+  files, while notmuch still reports 28,483 indexed messages. Wait for the
   provider command/bandwidth quota to reset, then use `epel sync` to continue
   from mbsync's saved state rather than restarting from scratch. Because epel
   only runs `notmuch new` after a successful mbsync run, the newly downloaded
