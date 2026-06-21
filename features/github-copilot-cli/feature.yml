@@ -1,0 +1,3 @@
+description: Install the latest standalone GitHub Copilot CLI release.
+depends:
+  - debian-cli-packages

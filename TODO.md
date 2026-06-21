@@ -15,6 +15,8 @@
 - `debian-cli-packages` includes `libicu-dev` so Git Credential Manager's
   bundled .NET runtime can start on fresh Ubuntu installations, including
   Ubuntu 26.04.
+- `debian-cli-packages` includes `git-crypt` for repository encryption
+  workflows that share the common CLI package set.
 - `debian-gui-packages` contains distro-repository GUI packages plus
   `desktop-file-utils`, `libfontconfig1-dev`, `libfreetype6-dev`, and
   `wl-clipboard`, `xclip`, and `libqt6printsupport6` for Neovide desktop entry
@@ -37,6 +39,9 @@
     binary for unresolved shared libraries with `ldd`.
   - `just test-obsidian-feature ubuntu=VERSION` runs a real official Obsidian
     Debian package install/update/remove lifecycle in a separate
+    non-privileged container.
+  - `just test-github-copilot-cli-feature ubuntu=VERSION` runs the standalone
+    GitHub Copilot CLI install/update/remove lifecycle in a separate
     non-privileged container.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
 - `docpunct update FEATURE` requires the requested feature to be installed and
@@ -142,6 +147,8 @@
   installer ensure it is present for failed-install retries, and added a
   container assertion after a fresh Ubuntu 26.04 core install exposed Git
   Credential Manager's ICU runtime dependency.
+- Added `git-crypt` to `debian-cli-packages` and covered it in the container
+  smoke test for the shared CLI package set.
 
 - Added Bash CLI at `bin/docpunct`.
 - Added `justfile` convenience commands.
@@ -162,6 +169,7 @@
   - `visual-studio-code`
   - `google-chrome`
   - `github-cli`
+  - `github-copilot-cli`
   - `doublecmd`
   - `obsidian`
 - Added install/update/remove scripts where needed.
@@ -213,6 +221,9 @@
 - Added an `amd64` `obsidian` feature for the latest official Debian release
   package, made it a dependency of `desktop-apps`, and added fail-closed digest
   verification plus feature-specific container coverage.
+- Added a standalone `github-copilot-cli` feature for GitHub's official
+  `amd64` and `arm64` Linux release assets, with fail-closed digest verification
+  and conservative removal that preserves `~/.copilot` state.
 - Fixed Docker feature user selection so `sudo -u USER` contexts do not incorrectly target `root` through `SUDO_USER=root`.
 - Added `util-linux-extra` as an optional `debian-cli-packages` package because Ubuntu 22.04 does not provide it; `ripgrep` was already present.
 - Moved `fd-find` into a separate feature that installs the package and links `~/.local/bin/fd` to `fdfind`; `debian-cli-packages` depends on it.
@@ -398,6 +409,10 @@
   `git diff --check`, and a real Ubuntu 24.04 Obsidian Debian package
   install/update/remove lifecycle. The container verified the executable,
   dependency repair, and preservation of configuration and vault data.
+- `bash -n`, full host `shellcheck`, `./bin/docpunct test-smoke`,
+  `git diff --check`, and a real Ubuntu 24.04 standalone GitHub Copilot CLI
+  install/update/remove lifecycle. The container verified Copilot CLI 1.0.63,
+  the managed binary link, and preservation of `~/.copilot`.
 - `bash -n`, host `shellcheck`, Git configuration parsing,
   `./bin/docpunct test-smoke`, and `git diff --check` after replacing the
   whole-file `.gitconfig` symlink with an additive managed include. The
@@ -437,7 +452,8 @@
   `features/gcm-gpg/git-hooks.sh` after existing machines have updated
   `gcm-gpg` and gained the ordered marked include block.
 - Consider independent publisher-signature validation for Git Credential
-  Manager, Double Commander, Nerd Fonts, and Obsidian release assets.
+  Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
+  release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
   `features/dotfiles/reconcile.sh` after existing machines have migrated.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
@@ -461,9 +477,9 @@
   and reached a completed snapshot. Its default backup root may be on the same
   physical disk and therefore is not protection against disk loss.
 - Independent publisher-signature validation is not implemented for Git
-  Credential Manager, Double Commander, Nerd Fonts, or Obsidian release assets.
-  Their SHA-256 checksums come from the same GitHub release trust boundary as
-  the downloads.
+  Credential Manager, Double Commander, Nerd Fonts, Obsidian, or GitHub Copilot
+  CLI release assets. Their SHA-256 checksums come from the same GitHub release
+  trust boundary as the downloads.
 - Neovim removal currently removes the user binary/runtime path but leaves the source checkout under `~/.cache/docpunct/src/neovim`.
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
@@ -482,7 +498,8 @@
    systemd timer.
 3. Decide whether to import the empty `.gitconfig-private`.
 4. Consider independent publisher-signature validation for Git Credential
-   Manager, Double Commander, Nerd Fonts, and Obsidian release assets.
+   Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
+   release assets.
 5. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
 6. Remove the deprecated unmanaged `gcm-gpg` include migration after existing

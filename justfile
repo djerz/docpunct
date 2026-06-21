@@ -36,6 +36,9 @@ test-docker-feature ubuntu="24.04":
 test-doublecmd-feature ubuntu="24.04":
     {{docpunct}} test-doublecmd-feature {{ubuntu}}
 
+test-github-copilot-cli-feature ubuntu="24.04":
+    {{docpunct}} test-github-copilot-cli-feature {{ubuntu}}
+
 test-obsidian-feature ubuntu="24.04":
     {{docpunct}} test-obsidian-feature {{ubuntu}}
 

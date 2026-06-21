@@ -4,6 +4,7 @@ cmake
 curl
 gettext
 git
+git-crypt
 htop
 jq
 libicu-dev

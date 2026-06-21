@@ -137,6 +137,7 @@ brave-browser
 visual-studio-code
 google-chrome
 github-cli
+github-copilot-cli
 docker
 doublecmd
 obsidian
@@ -184,6 +185,8 @@ package keeps this dependency portable across supported Ubuntu releases.
 The Git Credential Manager installer also checks this package directly so a
 retry repairs systems where an earlier installation failed before ICU was
 added to the package recipe.
+It also includes `git-crypt` for repositories that rely on shared command-line
+encryption tooling.
 
 `fd-find` installs Ubuntu/Debian's `fd-find` package and creates the upstream
 recommended compatibility link:
@@ -284,6 +287,16 @@ repository. It supports `i386`, `amd64`, `armhf`, and `arm64`. Removal
 preserves user authentication and configuration under `~/.config/gh`. The
 downloaded archive keyring is checked against the SHA-256 published in GitHub
 CLI's official installation documentation before it is installed.
+
+`github-copilot-cli` installs GitHub's latest standalone `copilot` binary for
+`amd64` or `arm64` under `~/.local/share/docpunct/github-copilot-cli` and links
+it from `~/.local/bin`. Release downloads require a valid GitHub API SHA-256
+digest. The feature refuses to overwrite a foreign `copilot` path and preserves
+`~/.copilot` authentication, configuration, and sessions during removal.
+
+An eligible GitHub Copilot subscription is required. Start `copilot` and use
+`/login`, or provide a user-owned `GH_TOKEN` or `GITHUB_TOKEN`; docpunct never
+creates or stores the credential.
 
 Brave Browser, Visual Studio Code, Google Chrome, and GitHub CLI use upstream APT
 repositories with distro-independent `stable` suites, so the same source
@@ -861,6 +874,13 @@ The Obsidian feature has a separate non-privileged container test target:
 ```sh
 just test-obsidian-feature ubuntu=24.04
 ./bin/docpunct test-obsidian-feature 24.04
+```
+
+The GitHub Copilot CLI feature has a separate non-privileged container test:
+
+```sh
+just test-github-copilot-cli-feature ubuntu=24.04
+./bin/docpunct test-github-copilot-cli-feature 24.04
 ```
 
 ---

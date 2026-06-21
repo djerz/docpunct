@@ -15,6 +15,10 @@ Version 19 adds an `amd64` `obsidian` feature that installs the latest official
 Debian release package with fail-closed GitHub digest verification and makes it
 a dependency of the `desktop-apps` meta-feature.
 
+Version 20 adds a standalone `github-copilot-cli` feature for GitHub's official
+self-contained Linux release on `amd64` and `arm64`, with fail-closed digest
+verification, conservative binary ownership, and preserved user state.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -190,6 +194,7 @@ docpunct/
 │   ├── visual-studio-code/
 │   ├── google-chrome/
 │   ├── github-cli/
+│   ├── github-copilot-cli/
 │   ├── docker/
 │   ├── doublecmd/
 │   ├── obsidian/
@@ -278,6 +283,7 @@ docpunct test-smoke
 docpunct test-container [22.04|24.04|26.04]
 docpunct test-containers
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
+docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
 docpunct test-obsidian-feature [22.04|24.04|26.04]
 docpunct test-docker-feature [22.04|24.04|26.04]
 docpunct test-neovide-feature [22.04|24.04|26.04]
@@ -1217,6 +1223,21 @@ published in GitHub CLI's official installation documentation before
 installation. Removal preserves user authentication and configuration under
 `~/.config/gh`.
 
+The `github-copilot-cli` feature installs the latest standalone GitHub Copilot
+CLI release for glibc Linux:
+
+```text
+amd64 -> copilot-linux-x64.tar.gz
+arm64 -> copilot-linux-arm64.tar.gz
+```
+
+It requires the release API's SHA-256 digest, installs the executable under
+`~/.local/share/docpunct/github-copilot-cli`, and owns only a matching
+`~/.local/bin/copilot` symlink. It refuses to replace a foreign path. Removal
+preserves authentication, configuration, and sessions under `~/.copilot`.
+Using the CLI requires an eligible GitHub Copilot subscription and interactive
+`/login` or a user-provided token; docpunct does not configure credentials.
+
 The `docker` feature installs Docker Engine from Docker's official APT
 repository. Before installing, it removes conflicting Ubuntu/distro packages
 when present:
@@ -1610,6 +1631,7 @@ Feature-specific container tests:
 
 ```sh
 ./bin/docpunct test-doublecmd-feature 24.04
+./bin/docpunct test-github-copilot-cli-feature 24.04
 ./bin/docpunct test-docker-feature 24.04
 ./bin/docpunct test-neovide-feature 24.04
 ./bin/docpunct test-obsidian-feature 24.04

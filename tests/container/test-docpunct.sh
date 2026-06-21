@@ -25,6 +25,7 @@ sudo -u docpunct-test \
     ./tests/smoke.sh
     ./bin/docpunct install debian-cli-packages
     dpkg-query -W -f="\${Status}\n" libicu-dev | grep -qx "install ok installed"
+    dpkg-query -W -f="\${Status}\n" git-crypt | grep -qx "install ok installed"
     test -x /usr/bin/fdfind
     test -L "$HOME/.local/bin/fd"
     test "$(readlink "$HOME/.local/bin/fd")" = "/usr/bin/fdfind"
