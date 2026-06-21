@@ -361,11 +361,13 @@
 ## Remaining work
 
 - Complete the resumed initial Gmail synchronization for
-  `chris.welmelinger@gmail.com`. The 2026-06-21 retry progressed to 57,279
-  local mail files before Gmail again returned `OVERQUOTA`; that run added
-  16,657 files from its first monitored checkpoint. Wait for the provider
-  command/bandwidth quota to reset, then use `epel sync` to continue from
-  mbsync's saved state rather than restarting from scratch.
+  `chris.welmelinger@gmail.com`. The latest 2026-06-21 retry progressed from
+  57,279 to 85,867 local mail files before Gmail again returned `OVERQUOTA`;
+  mbsync reported 28,574 new local messages across 15 folders. Wait for the
+  provider command/bandwidth quota to reset, then use `epel sync` to continue
+  from mbsync's saved state rather than restarting from scratch. Because epel
+  only runs `notmuch new` after a successful mbsync run, the newly downloaded
+  mail remains unindexed until a sync completes or indexing is run separately.
 - Decide whether to import the empty `.gitconfig-private`.
 - Improve epel credential security beyond command-based `secret-tool` lookup,
   including explicit OAuth/token lifecycle support.
