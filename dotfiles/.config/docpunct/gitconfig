@@ -1,8 +1,6 @@
 [user]
     name = Chris Welmelinger
     email = chris.welmelinger@gmail.com
-[includeIf "gitdir:~/private/"]
-    path = ~/.gitconfig-private
 [push]
     default = simple
     recurseSubmodules = check
@@ -38,8 +36,6 @@
     aliases = config --get-regexp ^alias\\.
 [credential]
 	useHttpPath = false
-[include]
-    path = ~/.config/docpunct/git-credential-manager.gitconfig
 [diff]
     tool = meld
 [difftool]
