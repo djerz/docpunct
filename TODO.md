@@ -170,6 +170,7 @@
   - `google-chrome`
   - `github-cli`
   - `github-copilot-cli`
+  - `devcontainer-cli`
   - `doublecmd`
   - `obsidian`
 - Added install/update/remove scripts where needed.
@@ -224,6 +225,11 @@
 - Added a standalone `github-copilot-cli` feature for GitHub's official
   `amd64` and `arm64` Linux release assets, with fail-closed digest verification
   and conservative removal that preserves `~/.copilot` state.
+- Added a `devcontainer-cli` feature that installs `@devcontainers/cli` with
+  the default NVM-managed Node.js version and removes only that global npm
+  package.
+- Added a disposable Ubuntu lifecycle test for `devcontainer-cli` covering
+  install, update, package-scoped removal, and preservation of Node.js/npm.
 - Fixed Docker feature user selection so `sudo -u USER` contexts do not incorrectly target `root` through `SUDO_USER=root`.
 - Added `util-linux-extra` as an optional `debian-cli-packages` package because Ubuntu 22.04 does not provide it; `ripgrep` was already present.
 - Moved `fd-find` into a separate feature that installs the package and links `~/.local/bin/fd` to `fdfind`; `debian-cli-packages` depends on it.

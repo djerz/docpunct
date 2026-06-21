@@ -19,6 +19,10 @@ Version 20 adds a standalone `github-copilot-cli` feature for GitHub's official
 self-contained Linux release on `amd64` and `arm64`, with fail-closed digest
 verification, conservative binary ownership, and preserved user state.
 
+Version 21 adds a `devcontainer-cli` feature that installs the
+`@devcontainers/cli` npm package globally for the default NVM-managed Node.js
+version, with explicit NVM loading and package-scoped removal.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -195,6 +199,7 @@ docpunct/
 │   ├── google-chrome/
 │   ├── github-cli/
 │   ├── github-copilot-cli/
+│   ├── devcontainer-cli/
 │   ├── docker/
 │   ├── doublecmd/
 │   ├── obsidian/
@@ -282,6 +287,7 @@ docpunct shellcheck
 docpunct test-smoke
 docpunct test-container [22.04|24.04|26.04]
 docpunct test-containers
+docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
 docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
 docpunct test-obsidian-feature [22.04|24.04|26.04]
@@ -1456,6 +1462,20 @@ delete `~/.nvm`; it prints a manual removal note instead.
 
 ---
 
+## Dev Container CLI feature
+
+The `devcontainer-cli` feature depends on `node` and installs
+`@devcontainers/cli` globally with npm for NVM's default Node.js version. Each
+lifecycle script must source `$NVM_DIR/nvm.sh` and select the default version
+before invoking npm, because feature scripts cannot rely on shell startup
+files having initialized NVM.
+
+Update reapplies the npm installation to obtain the current package release.
+Removal uninstalls only `@devcontainers/cli`; it must preserve NVM, Node.js,
+other global npm packages, and user project data.
+
+---
+
 ## Python uv feature
 
 uv must be installed using Astral's standalone installer.
@@ -1621,6 +1641,7 @@ Disposable Ubuntu container integration tests are explicit:
 ./bin/docpunct test-container 24.04
 ./bin/docpunct test-container 26.04
 ./bin/docpunct test-containers
+./bin/docpunct test-devcontainer-cli-feature 24.04
 ```
 
 Container tests may pull Ubuntu images and run APT/network work inside

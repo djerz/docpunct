@@ -33,6 +33,9 @@ test-containers:
 test-docker-feature ubuntu="24.04":
     {{docpunct}} test-docker-feature {{ubuntu}}
 
+test-devcontainer-cli-feature ubuntu="24.04":
+    {{docpunct}} test-devcontainer-cli-feature {{ubuntu}}
+
 test-doublecmd-feature ubuntu="24.04":
     {{docpunct}} test-doublecmd-feature {{ubuntu}}
 

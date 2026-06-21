@@ -138,6 +138,7 @@ visual-studio-code
 google-chrome
 github-cli
 github-copilot-cli
+devcontainer-cli
 docker
 doublecmd
 obsidian
@@ -298,6 +299,12 @@ An eligible GitHub Copilot subscription is required. Start `copilot` and use
 `/login`, or provide a user-owned `GH_TOKEN` or `GITHUB_TOKEN`; docpunct never
 creates or stores the credential.
 
+`devcontainer-cli` installs the `@devcontainers/cli` npm package globally for
+the default NVM-managed Node.js version. Its scripts load NVM explicitly, so
+installation, update, and removal do not depend on the calling shell having
+initialized Node.js. Removal uninstalls only that npm package and preserves
+NVM, Node.js, and unrelated global packages.
+
 Brave Browser, Visual Studio Code, Google Chrome, and GitHub CLI use upstream APT
 repositories with distro-independent `stable` suites, so the same source
 configuration is used on Ubuntu 22.04, 24.04, 26.04, and later supported
@@ -423,6 +430,9 @@ and is not independent publisher-signature verification.
 `rust` installs Rust with the official `rustup` installer.
 
 `node` installs Node.js with `nvm`.
+
+`devcontainer-cli` depends on `node` and provides the `devcontainer` command
+from the `@devcontainers/cli` npm package.
 
 `python-uv` installs uv with Astral's standalone installer.
 
@@ -849,6 +859,13 @@ The Docker feature has a separate privileged-container test target:
 ```sh
 just test-docker-feature ubuntu=24.04
 ./bin/docpunct test-docker-feature 24.04
+```
+
+Run the real Dev Container CLI npm lifecycle test with:
+
+```sh
+just test-devcontainer-cli-feature ubuntu=24.04
+./bin/docpunct test-devcontainer-cli-feature 24.04
 ```
 
 This target is intentionally separate from `just test` and
