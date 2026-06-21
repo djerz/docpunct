@@ -7,6 +7,11 @@ Read these documents first:
 - `arch/docpunct_arch.md`
 - `HOWTO.md`
 
+Feature-specific epel work must also follow:
+
+- `arch/epel_arch.md`
+- `features/epel/HOWTO.md`
+
 Implement the project described there.
 
 Goals:
@@ -19,6 +24,8 @@ Goals:
    - dotfiles
    - debian-cli-packages
    - debian-gui-packages
+   - gpg
+   - gcm-gpg
    - git-credential-manager
    - rust
    - node

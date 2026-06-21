@@ -7,7 +7,9 @@ Use this prompt to resume work in a new AI-assisted coding session:
 ```text
 Continue work in the docpunct repository.
 
-Read arch/docpunct_arch.md, HOWTO.md, CODEX_TASK.md, TODO.md, and AIHANDOVER.md.
+Read arch/docpunct_arch.md, arch/epel_arch.md, HOWTO.md,
+features/gpg/HOWTO.md, features/epel/HOWTO.md, CODEX_TASK.md, TODO.md, and
+AIHANDOVER.md.
 Inspect git status and the current diff before changing anything. Treat the
 existing project documents as authoritative for repository state, constraints,
 known issues, testing expectations, and remaining work.

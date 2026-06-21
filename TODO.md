@@ -6,8 +6,9 @@
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported into `dotfiles/` and listed in
   `features/dotfiles/files.txt`.
-- `arch/docpunct_arch.md` is the single living architecture specification and
-  records decisions made through the current session.
+- `arch/docpunct_arch.md` is the main living docpunct architecture
+  specification. Epel keeps its feature-specific architecture separately in
+  `arch/epel_arch.md`.
 - `HOWTO.md` has been updated to match the living architecture and implemented
   behavior.
 - Dependency cycle detection has been added for install/update dependency graphs.
@@ -52,6 +53,12 @@
   against SHA-256 digests in the GitHub release API before installation or
   extraction. Nerd Fonts archives are verified against the upstream release's
   `SHA-256.txt` asset.
+- `debian-mail-packages` and `epel` provide the package, CLI, queue, systemd
+  user-unit, snapshot backup, and notmuch.nvim integration layers for the local
+  Maildir workflow. Detailed instructions live in `features/epel/HOWTO.md`.
+- Git HTTPS credentials are now opt-in: `gpg` provides instructional
+  GPG/pass setup and `gcm-gpg` configures GCM with encrypted GPG storage.
+  `core` and `dotfiles` do not select a credential helper.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -70,6 +77,21 @@
   `ubuntu-desktop-minimal`, `gdm3`, `gnome-control-center`, or `nautilus`.
 
 ## Done
+
+- Added standalone `gpg` and `gcm-gpg` features, including pass/key readiness
+  checks, headless pinentry instructions, a separate managed Git include, and
+  an explicit migration path from the deprecated implicit GCM feature.
+- Removed implicit GCM dependencies from `core` and `dotfiles`; the base Git
+  configuration no longer chooses persistent credential storage.
+- Added conservative `debian-mail-packages` and the `epel` feature, including
+  instructional account configuration, desktop-keyring guidance, systemd user
+  automation, FIFO queued sending, timestamped checksum-based rsync snapshots,
+  and host-safe smoke coverage.
+- Added a narrow local mbsync AppArmor extension for Ubuntu releases whose
+  packaged profile otherwise blocks keyring-backed `PassCmd` execution.
+- Added notmuch.nvim to the managed Lazy configuration with `epel sync`, HTML
+  rendering through `w3m`, and a Neovim-scoped private msmtp wrapper that
+  routes composition through `epel submit`.
 
 - Changed update behavior so only the explicitly requested feature is updated;
   dependencies are reported as ordered update/install suggestions and are not
@@ -311,6 +333,15 @@
   `./bin/docpunct test-smoke` after making update dependency handling advisory.
   Smoke coverage verifies dependency-first guidance and that a missing
   dependency is not installed automatically.
+- `bash -n`, host `shellcheck`, `jq` validation of the Lazy lockfile,
+  `./bin/docpunct test-smoke`, and `./bin/docpunct test-container` on Ubuntu
+  22.04, 24.04, and 26.04 after adding `debian-mail-packages` and `epel`.
+  Ubuntu 22.04 coverage exposed and verified the explicit noninteractive
+  msmtp package-install fix.
+- Host Bash/ShellCheck and smoke coverage plus real Ubuntu 22.04, 24.04, and
+  26.04 container installs after adding `gpg` and `gcm-gpg`. Container tests
+  generate an isolated no-passphrase key, initialize pass, install the current
+  verified GCM package, and assert the encrypted backend configuration.
 
 ## Pending clarification
 
@@ -318,7 +349,24 @@
 
 ## Remaining work
 
+- Resume the initial Gmail synchronization for
+  `chris.welmelinger@gmail.com` after Google's IMAP command/bandwidth quota
+  resets. The existing mbsync state is resumable; do not restart the download
+  from scratch.
 - Decide whether to import the empty `.gitconfig-private`.
+- Improve epel credential security beyond command-based `secret-tool` lookup,
+  including explicit OAuth/token lifecycle support.
+- Replace the notmuch.nvim private msmtp wrapper if the plugin gains a
+  configurable submission command. Alternatives are an upstream contribution,
+  a maintained patch/fork, or direct msmtp delivery that bypasses queued mode;
+  the private wrapper is the current least-invasive option.
+- Consider cron support for epel on systems without systemd user services.
+- Consider a provider-independent local Sent copy instead of relying on the
+  provider Sent folder being synchronized back through mbsync.
+- Consider adding Thunderbird and Evolution to `debian-gui-packages`; epel
+  currently documents them without installing.
+- Remove the deprecated `git-credential-manager` feature after existing users
+  have migrated to `gcm-gpg` and the documented migration window has closed.
 - Consider independent publisher-signature validation for Git Credential
   Manager, Double Commander, and Nerd Fonts release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
@@ -329,6 +377,17 @@
 
 ## Known issues
 
+- Existing users with the legacy `git-credential-manager` installed must
+  initialize GPG/pass and complete the documented explicit `gcm-gpg` migration;
+  existing credentials are not copied automatically and authentication may be
+  requested once.
+- notmuch.nvim currently hardcodes `msmtp`; epel uses a private wrapper placed
+  first on Neovim's PATH so queued mode works without patching the plugin.
+- Epel's v1 credential instructions use the desktop keyring through
+  `secret-tool`; provider OAuth and token refresh are not automated.
+- Epel can only preserve mail after it has synchronized into the local Maildir
+  and reached a completed snapshot. Its default backup root may be on the same
+  physical disk and therefore is not protection against disk loss.
 - Independent publisher-signature validation is not implemented for Git
   Credential Manager, Double Commander, or Nerd Fonts release assets. Their
   SHA-256 checksums come from the same GitHub release trust boundary as the
@@ -345,10 +404,15 @@
 
 ## Next steps
 
-1. Decide whether to import the empty `.gitconfig-private`.
-2. Consider independent publisher-signature validation for Git Credential
+1. Resume the throttled initial Gmail synchronization for
+   `chris.welmelinger@gmail.com` with `epel sync`; mbsync will continue from
+   its saved state.
+2. Manually validate provider Sent synchronization before enabling epel's
+   systemd timer.
+3. Decide whether to import the empty `.gitconfig-private`.
+4. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, and Nerd Fonts release assets.
-3. Remove the deprecated Neovim file-level symlink migration logic after
+5. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
-4. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.

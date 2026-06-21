@@ -130,6 +130,7 @@ core
 dotfiles
 fd-find
 debian-cli-packages
+debian-mail-packages
 debian-gui-packages
 desktop-apps
 brave-browser
@@ -137,6 +138,8 @@ visual-studio-code
 google-chrome
 docker
 doublecmd
+gpg
+gcm-gpg
 git-credential-manager
 nerdfonts
 rust
@@ -144,25 +147,26 @@ node
 python-uv
 neovim
 neovide
+epel
 ```
 
 `core` is a meta-feature depending on:
 
 ```text
 debian-cli-packages
-git-credential-manager
 dotfiles
 rust
 node
 python-uv
 ```
 
-`dotfiles` depends on `git-credential-manager` because the imported
-`.gitconfig` uses:
+`core` and `dotfiles` deliberately do not select a Git credential helper.
+Encrypted HTTPS credential storage is available as the explicit `gcm-gpg`
+feature. The tracked `.gitconfig` only includes its optional managed fragment:
 
 ```ini
-[credential]
-	helper = manager
+[include]
+    path = ~/.config/docpunct/git-credential-manager.gitconfig
 ```
 
 ---
@@ -187,6 +191,14 @@ recommended compatibility link:
 
 `debian-cli-packages` depends on `fd-find` so the link is available whenever
 the common CLI package set is installed.
+
+`debian-mail-packages` installs `isync`, `notmuch`, `msmtp`, `rsync`,
+`libsecret-tools`, `util-linux`, and `w3m` for the epel mail workflow. Its
+removal is intentionally conservative and leaves these packages installed.
+
+`epel` provides local Maildir synchronization, indexing, sending, queue,
+backup, and systemd user-service commands. Detailed configuration and
+operations are documented separately in `features/epel/HOWTO.md`.
 
 `debian-gui-packages` installs graphical packages with APT:
 
@@ -320,11 +332,29 @@ override the repository suite explicitly:
 DOCPUNCT_DOCKER_UBUNTU_SUITE=noble ./bin/docpunct install docker
 ```
 
-`git-credential-manager` downloads the latest upstream Linux Debian package for
-the local Debian architecture, stores it in `~/.cache/docpunct/downloads`,
-verifies its GitHub release API SHA-256 digest, installs it with
-`sudo dpkg -i`, repairs package dependencies with APT if needed, and runs
-`git-credential-manager configure`.
+`gpg` installs `gnupg`, `pass`, and `pinentry-curses` without creating or
+deleting user keys. Key selection, `pass init`, headless pinentry, and backup
+are documented in `features/gpg/HOWTO.md`.
+
+`gcm-gpg` depends on `gpg`. It requires an initialized pass store backed by an
+encryption-capable secret key, then downloads and verifies the latest upstream
+GCM Debian package and configures GCM with `credentialStore = gpg` in a
+separate docpunct-managed Git include. It supports GCM's provider-specific
+authentication and generic HTTPS servers using a username plus password or
+personal access token.
+
+The old `git-credential-manager` feature is deprecated. Existing installations
+migrate explicitly, without deleting stored credentials:
+
+```sh
+./bin/docpunct install gpg
+# Follow features/gpg/HOWTO.md and initialize pass.
+./bin/docpunct install gcm-gpg
+./bin/docpunct remove git-credential-manager
+./bin/docpunct update dotfiles
+```
+
+The provider may ask for authentication once to populate the new GPG store.
 
 `doublecmd` installs the latest Double Commander GitHub release from the
 portable Qt6 Linux tarball for the local architecture. It verifies the

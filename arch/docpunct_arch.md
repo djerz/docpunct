@@ -7,6 +7,20 @@ split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
 user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
 binary are available in non-interactive login Bash shells.
 
+Version 15 records the addition of the `debian-mail-packages` and `epel`
+features. Epel owns a conservative local Maildir workflow, systemd user units,
+an outgoing queue, immutable timestamped rsync snapshots, and integration with
+the managed notmuch.nvim configuration. Detailed mail architecture and usage
+remain in `arch/epel_arch.md` and `features/epel/HOWTO.md`.
+
+Version 16 makes Git HTTPS credential storage explicit. `core` and `dotfiles`
+no longer install a credential helper. The standalone `gpg` feature owns the
+GPG/pass command-line prerequisites and instructional key setup, while
+`gcm-gpg` requires an initialized user-owned pass store and configures Git
+Credential Manager with encrypted GPG storage. The former
+`git-credential-manager` feature remains temporarily as a deprecated migration
+source for already-installed systems.
+
 Version 11 incorporated the session that
 reworked update behavior so recipe changes can be applied without a
 remove/install loop, factored dotfile reconciliation into a shared script used
@@ -156,6 +170,7 @@ docpunct/
 │   ├── dotfiles/
 │   ├── fd-find/
 │   ├── debian-cli-packages/
+│   ├── debian-mail-packages/
 │   ├── debian-gui-packages/
 │   ├── desktop-apps/
 │   ├── brave-browser/
@@ -164,12 +179,15 @@ docpunct/
 │   ├── docker/
 │   ├── doublecmd/
 │   ├── nerdfonts/
+│   ├── gpg/
+│   ├── gcm-gpg/
 │   ├── git-credential-manager/
 │   ├── rust/
 │   ├── node/
 │   ├── python-uv/
 │   ├── neovim/
-│   └── neovide/
+│   ├── neovide/
+│   └── epel/
 ├── dotfiles/
 ├── tests/
 └── HOWTO.md
@@ -178,6 +196,13 @@ docpunct/
 The `justfile` is a convenience layer.
 
 All actual logic must reside in `bin/docpunct` and feature scripts.
+
+The `debian-mail-packages` feature installs epel's Ubuntu package dependencies
+and deliberately leaves them installed during removal. The `epel` feature
+depends on `debian-mail-packages`, `neovim`, and `dotfiles`. It preserves mail,
+configuration, credentials, state, queued messages, and snapshots during
+removal. Its detailed architecture and operating instructions live in
+`arch/epel_arch.md` and `features/epel/HOWTO.md`.
 
 ---
 
@@ -750,11 +775,12 @@ The managed dotfiles are:
 .config/nvim
 ```
 
-The imported `.gitconfig` must use Git Credential Manager:
+The imported `.gitconfig` must not select a credential helper. It includes an
+optional feature-owned fragment instead:
 
 ```ini
-[credential]
-	helper = manager
+[include]
+    path = ~/.config/docpunct/git-credential-manager.gitconfig
 ```
 
 Private files such as `.gitconfig-private` must not be imported without an
@@ -799,7 +825,6 @@ Initial dependencies:
 ```yaml
 depends:
   - debian-cli-packages
-  - git-credential-manager
   - dotfiles
   - rust
   - node
@@ -863,22 +888,18 @@ lists that are currently installed.
 
 ---
 
-## Git Credential Manager feature
+## GPG and Git Credential Manager features
 
-Git Credential Manager is required before installing dotfiles because the
-imported `.gitconfig` uses:
+The `gpg` feature installs `gnupg`, `pass`, and `pinentry-curses`. It is
+instructional: installation succeeds without a key, while key identity,
+expiration, passphrase, export, backup, revocation, and `pass init` remain
+explicit user actions documented in `features/gpg/HOWTO.md`. Removal preserves
+packages, keys, agent configuration, and password-store data.
 
-```ini
-[credential]
-	helper = manager
-```
-
-Dependencies:
-
-```yaml
-depends:
-  - debian-cli-packages
-```
+`gcm-gpg` depends on `gpg`. Before any download or Git configuration it
+requires a non-empty pass `.gpg-id` whose recipients resolve to
+encryption-capable secret keys. An incomplete setup fails with the GPG HOWTO
+path and can be retried after initialization.
 
 Installation behavior:
 
@@ -913,22 +934,37 @@ Installation behavior:
    sudo apt-get install -f -y
    ```
 
-6. Configure Git Credential Manager:
+6. Write `~/.config/docpunct/git-credential-manager.gitconfig`, resetting prior
+   helpers and selecting the installed GCM executable plus:
 
-   ```sh
-   git-credential-manager configure
+   ```ini
+   [credential]
+       credentialStore = gpg
    ```
+
+7. Ensure the global Git configuration includes that managed fragment without
+   replacing unrelated configuration.
 
 Update behavior should repeat the latest-release installation flow.
 
-Removal behavior:
-
-1. Run `git-credential-manager unconfigure` when available.
-2. Remove the Debian package named `gcm`.
+Removal deletes only the managed fragment and a GCM package originally
+installed by `gcm-gpg`. It preserves pre-existing packages, GPG keys, pass
+data, and the harmless include entry. It refuses removal while the legacy
+feature marker remains so migration ordering stays explicit.
 
 The downloaded package is verified against the SHA-256 digest in GitHub's
 release API before installation. This detects a corrupted or mismatched
 download but is not independent publisher-signature verification.
+
+The legacy `git-credential-manager` feature remains for one migration window.
+It emits a deprecation notice. `gcm-gpg` adopts its installed package; removing
+the legacy feature afterward preserves the package when `gcm-gpg` is marked
+installed. Existing users migrate in this order:
+
+```text
+install gpg -> initialize key/pass -> install gcm-gpg
+-> remove git-credential-manager -> update dotfiles
+```
 
 ---
 
