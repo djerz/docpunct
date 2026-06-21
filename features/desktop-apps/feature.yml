@@ -5,3 +5,4 @@ depends:
   - visual-studio-code
   - google-chrome
   - doublecmd
+  - obsidian

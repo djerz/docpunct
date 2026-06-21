@@ -139,6 +139,7 @@ google-chrome
 github-cli
 docker
 doublecmd
+obsidian
 gpg
 gcm-gpg
 git-credential-manager
@@ -271,6 +272,7 @@ brave-browser
 visual-studio-code
 google-chrome
 doublecmd
+obsidian
 ```
 
 Each third-party package feature owns its package, APT source file, and signing
@@ -396,6 +398,14 @@ runtime dependency chain needed by the installed binary.
 
 Removal deletes only those docpunct-owned install paths and leaves Double
 Commander user configuration/cache directories alone.
+
+`obsidian` installs the latest official `amd64` Debian package published by
+`obsidianmd/obsidian-releases`. The package is verified against the SHA-256
+digest in GitHub's release metadata before installation. Other architectures
+fail without downloading because upstream currently provides no Debian package
+for them. Removal preserves Obsidian configuration, plugins, caches, and vault
+data. The digest shares the same GitHub release trust boundary as the package
+and is not independent publisher-signature verification.
 
 `rust` installs Rust with the official `rustup` installer.
 
@@ -844,6 +854,13 @@ The Neovide feature has a separate non-privileged container test target:
 ```sh
 just test-neovide-feature ubuntu=24.04
 ./bin/docpunct test-neovide-feature 24.04
+```
+
+The Obsidian feature has a separate non-privileged container test target:
+
+```sh
+just test-obsidian-feature ubuntu=24.04
+./bin/docpunct test-obsidian-feature 24.04
 ```
 
 ---

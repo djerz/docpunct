@@ -35,6 +35,9 @@
   - `just test-doublecmd-feature ubuntu=VERSION` runs a real Double Commander
     install in a separate non-privileged container and checks the installed
     binary for unresolved shared libraries with `ldd`.
+  - `just test-obsidian-feature ubuntu=VERSION` runs a real official Obsidian
+    Debian package install/update/remove lifecycle in a separate
+    non-privileged container.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
 - `docpunct update FEATURE` requires the requested feature to be installed and
   updates only that feature. It reports dependency actions that may also be
@@ -160,6 +163,7 @@
   - `google-chrome`
   - `github-cli`
   - `doublecmd`
+  - `obsidian`
 - Added install/update/remove scripts where needed.
 - Added dependency resolution for install/update.
 - Added conservative dependency guard for removal.
@@ -206,6 +210,9 @@
 - Added a `doublecmd` feature that installs the latest Double Commander GitHub release from the portable Qt6 Linux tarball for the local architecture.
 - Added a separate non-privileged Double Commander container test target.
 - Added a `desktop-apps` meta-feature for GUI desktop applications.
+- Added an `amd64` `obsidian` feature for the latest official Debian release
+  package, made it a dependency of `desktop-apps`, and added fail-closed digest
+  verification plus feature-specific container coverage.
 - Fixed Docker feature user selection so `sudo -u USER` contexts do not incorrectly target `root` through `SUDO_USER=root`.
 - Added `util-linux-extra` as an optional `debian-cli-packages` package because Ubuntu 22.04 does not provide it; `ripgrep` was already present.
 - Moved `fd-find` into a separate feature that installs the package and links `~/.local/bin/fd` to `fdfind`; `debian-cli-packages` depends on it.
@@ -387,6 +394,10 @@
   `git diff --check`, and a real Ubuntu 24.04 container install/update/remove
   lifecycle for `github-cli`. The container verified `gh` 2.95.0, owned APT
   cleanup, and preservation of `~/.config/gh`.
+- `bash -n`, full host `shellcheck`, `./bin/docpunct test-smoke`,
+  `git diff --check`, and a real Ubuntu 24.04 Obsidian Debian package
+  install/update/remove lifecycle. The container verified the executable,
+  dependency repair, and preservation of configuration and vault data.
 - `bash -n`, host `shellcheck`, Git configuration parsing,
   `./bin/docpunct test-smoke`, and `git diff --check` after replacing the
   whole-file `.gitconfig` symlink with an additive managed include. The
@@ -426,7 +437,7 @@
   `features/gcm-gpg/git-hooks.sh` after existing machines have updated
   `gcm-gpg` and gained the ordered marked include block.
 - Consider independent publisher-signature validation for Git Credential
-  Manager, Double Commander, and Nerd Fonts release assets.
+  Manager, Double Commander, Nerd Fonts, and Obsidian release assets.
 - Remove the deprecated Neovim file-level symlink migration logic from
   `features/dotfiles/reconcile.sh` after existing machines have migrated.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
@@ -450,9 +461,9 @@
   and reached a completed snapshot. Its default backup root may be on the same
   physical disk and therefore is not protection against disk loss.
 - Independent publisher-signature validation is not implemented for Git
-  Credential Manager, Double Commander, or Nerd Fonts release assets. Their
-  SHA-256 checksums come from the same GitHub release trust boundary as the
-  downloads.
+  Credential Manager, Double Commander, Nerd Fonts, or Obsidian release assets.
+  Their SHA-256 checksums come from the same GitHub release trust boundary as
+  the downloads.
 - Neovim removal currently removes the user binary/runtime path but leaves the source checkout under `~/.cache/docpunct/src/neovim`.
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
@@ -471,7 +482,7 @@
    systemd timer.
 3. Decide whether to import the empty `.gitconfig-private`.
 4. Consider independent publisher-signature validation for Git Credential
-   Manager, Double Commander, and Nerd Fonts release assets.
+   Manager, Double Commander, Nerd Fonts, and Obsidian release assets.
 5. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
 6. Remove the deprecated unmanaged `gcm-gpg` include migration after existing

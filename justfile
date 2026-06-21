@@ -36,6 +36,9 @@ test-docker-feature ubuntu="24.04":
 test-doublecmd-feature ubuntu="24.04":
     {{docpunct}} test-doublecmd-feature {{ubuntu}}
 
+test-obsidian-feature ubuntu="24.04":
+    {{docpunct}} test-obsidian-feature {{ubuntu}}
+
 test-neovide-feature ubuntu="24.04":
     {{docpunct}} test-neovide-feature {{ubuntu}}
 

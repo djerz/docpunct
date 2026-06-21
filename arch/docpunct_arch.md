@@ -11,6 +11,10 @@ Version 18 adds a standalone `github-cli` feature backed by GitHub CLI's
 official APT repository, with a pinned official keyring checksum, architecture
 guards, conservative removal, and real Ubuntu container coverage.
 
+Version 19 adds an `amd64` `obsidian` feature that installs the latest official
+Debian release package with fail-closed GitHub digest verification and makes it
+a dependency of the `desktop-apps` meta-feature.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -188,6 +192,7 @@ docpunct/
 │   ├── github-cli/
 │   ├── docker/
 │   ├── doublecmd/
+│   ├── obsidian/
 │   ├── nerdfonts/
 │   ├── gpg/
 │   ├── gcm-gpg/
@@ -273,6 +278,7 @@ docpunct test-smoke
 docpunct test-container [22.04|24.04|26.04]
 docpunct test-containers
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
+docpunct test-obsidian-feature [22.04|24.04|26.04]
 docpunct test-docker-feature [22.04|24.04|26.04]
 docpunct test-neovide-feature [22.04|24.04|26.04]
 docpunct test
@@ -1099,6 +1105,7 @@ depends:
   - visual-studio-code
   - google-chrome
   - doublecmd
+  - obsidian
 ```
 
 The feature contains no installation logic of its own.
@@ -1371,6 +1378,26 @@ but is not independent publisher-signature verification.
 
 ---
 
+## Obsidian feature
+
+The `obsidian` feature installs the latest official Obsidian Debian package
+from `obsidianmd/obsidian-releases`. The upstream release currently provides a
+Debian package only for `amd64`; unsupported architectures fail before any
+download or package change.
+
+Installation queries the latest GitHub release, selects
+`obsidian_VERSION_amd64.deb`, requires its API-provided SHA-256 digest, verifies
+the downloaded package, and installs it with `dpkg`. APT repairs and installs
+package dependencies when needed. Downloads are cached under
+`~/.cache/docpunct/downloads`.
+
+Update repeats the latest-release flow. Removal removes only the `obsidian`
+package and preserves Obsidian configuration, caches, plugins, and vault data.
+The GitHub API digest detects a corrupted or mismatched package but is not
+independent publisher-signature verification.
+
+---
+
 ## Rust feature
 
 Rust must be installed using the official rustup installer.
@@ -1585,6 +1612,7 @@ Feature-specific container tests:
 ./bin/docpunct test-doublecmd-feature 24.04
 ./bin/docpunct test-docker-feature 24.04
 ./bin/docpunct test-neovide-feature 24.04
+./bin/docpunct test-obsidian-feature 24.04
 ```
 
 The Docker feature test runs in a privileged container. It must verify Docker
