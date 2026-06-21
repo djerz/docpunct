@@ -63,5 +63,3 @@
     #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
 [init]
 	defaultBranch = main
-[credential "https://dev.azure.com"]
-	useHttpPath = true
