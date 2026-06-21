@@ -581,4 +581,7 @@ for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-
   fi
 done
 
+"$repo_root/tests/epel-smoke.sh"
+"$repo_root/tests/gcm-gpg-smoke.sh"
+
 printf 'smoke tests passed\n'
