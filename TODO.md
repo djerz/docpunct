@@ -350,11 +350,11 @@
 ## Remaining work
 
 - Complete the resumed initial Gmail synchronization for
-  `chris.welmelinger@gmail.com`. At session close on 2026-06-21, `epel sync`
-  had progressed beyond the earlier quota rejection and was still downloading;
-  the local account tree had reached at least 32,751 message/state files. If
-  the process is no longer running, use `epel sync` to continue from mbsync's
-  saved state rather than restarting from scratch.
+  `chris.welmelinger@gmail.com`. The 2026-06-21 retry progressed to 57,279
+  local mail files before Gmail again returned `OVERQUOTA`; that run added
+  16,657 files from its first monitored checkpoint. Wait for the provider
+  command/bandwidth quota to reset, then use `epel sync` to continue from
+  mbsync's saved state rather than restarting from scratch.
 - Decide whether to import the empty `.gitconfig-private`.
 - Improve epel credential security beyond command-based `secret-tool` lookup,
   including explicit OAuth/token lifecycle support.
@@ -406,9 +406,8 @@
 
 ## Next steps
 
-1. Let the active initial Gmail synchronization finish, or resume it with
-   `epel sync` if it is no longer running; mbsync will continue from its saved
-   state.
+1. After Gmail's command/bandwidth quota resets, resume the incomplete initial
+   synchronization with `epel sync`; mbsync will continue from its saved state.
 2. Manually validate provider Sent synchronization before enabling epel's
    systemd timer.
 3. Decide whether to import the empty `.gitconfig-private`.
