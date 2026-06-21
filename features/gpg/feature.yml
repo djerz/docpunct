@@ -1,0 +1,2 @@
+description: Install GPG, pass, and terminal pinentry for user-owned encrypted stores.
+depends: []

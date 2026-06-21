@@ -38,7 +38,8 @@
     aliases = config --get-regexp ^alias\\.
 [credential]
 	useHttpPath = false
-	helper = /usr/local/bin/git-credential-manager
+[include]
+    path = ~/.config/docpunct/git-credential-manager.gitconfig
 [diff]
     tool = meld
 [difftool]

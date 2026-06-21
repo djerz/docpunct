@@ -1,0 +1,3 @@
+description: Configure Git Credential Manager with encrypted GPG/pass storage.
+depends:
+  - gpg

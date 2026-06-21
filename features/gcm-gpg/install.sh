@@ -1,12 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-printf 'NOTICE: git-credential-manager is deprecated; migrate to the gcm-gpg feature.\n' >&2
-
 repo="git-ecosystem/git-credential-manager"
 api_url="https://api.github.com/repos/$repo/releases/latest"
 download_dir="$DOCPUNCT_CACHE_DIR/downloads"
-mkdir -p "$download_dir"
+state_dir="$DOCPUNCT_CACHE_DIR/state/gcm-gpg"
+package_owned_marker="$state_dir/package-installed-by-docpunct"
+gpg_feature_dir="$(dirname "$DOCPUNCT_FEATURE_DIR")/gpg"
+
+DOCPUNCT_FEATURE_DIR="$gpg_feature_dir" "$gpg_feature_dir/check-readiness.sh"
+
+mkdir -p "$download_dir" "$state_dir"
+
+package_preexisting=false
+if dpkg-query -W -f='${Status}' gcm 2>/dev/null | grep -q 'install ok installed'; then
+  package_preexisting=true
+fi
 
 arch="$(dpkg --print-architecture)"
 case "$arch" in
@@ -61,5 +70,15 @@ if ! sudo dpkg -i "$package_path"; then
   sudo apt-get install -f -y
 fi
 
-git-credential-manager configure
+if [[ "$package_preexisting" == false ]]; then
+  touch "$package_owned_marker"
+fi
+
+"$DOCPUNCT_FEATURE_DIR/configure.sh"
 git-credential-manager --version
+
+legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
+if [[ -f "$legacy_marker" ]]; then
+  printf 'Legacy feature detected. After verifying Git authentication, run:\n'
+  printf '  docpunct remove git-credential-manager\n'
+fi

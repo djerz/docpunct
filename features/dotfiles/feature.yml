@@ -1,3 +1,2 @@
 description: Manage personal dotfiles and additive shell setup.
-depends:
-  - git-credential-manager
+depends: []

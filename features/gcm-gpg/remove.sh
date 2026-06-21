@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+config_file="$HOME/.config/docpunct/git-credential-manager.gitconfig"
+state_dir="$DOCPUNCT_CACHE_DIR/state/gcm-gpg"
+package_owned_marker="$state_dir/package-installed-by-docpunct"
+config_owned_marker="$state_dir/config-written-by-docpunct"
+legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
+installed_marker="$DOCPUNCT_CACHE_DIR/state/installed/gcm-gpg"
+
+if [[ -f "$installed_marker" && -f "$legacy_marker" ]]; then
+  printf 'Remove the legacy git-credential-manager feature before removing gcm-gpg.\n' >&2
+  exit 1
+fi
+
+if [[ -f "$config_owned_marker" ]]; then
+  rm -f -- "$config_file" "$config_owned_marker"
+fi
+
+if [[ -f "$package_owned_marker" ]]; then
+  if dpkg-query -W -f='${Status}' gcm 2>/dev/null | grep -q 'install ok installed'; then
+    sudo dpkg -r gcm
+  fi
+  rm -f -- "$package_owned_marker"
+else
+  printf 'Keeping the pre-existing shared gcm package.\n'
+fi
+
+printf 'Keeping GPG keys, pass data, and the harmless Git include entry.\n'
