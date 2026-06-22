@@ -58,6 +58,37 @@ Start with `gpt-oss:20b`. Do not load all three simultaneously. If latency is
 more important than agent quality, try `qwen3:4b` (2.5 GB, tools, 256K context)
 as a lightweight fallback.
 
+For progressively faster CPU-only experiments, consider these three Qwen3
+tiers relative to `gpt-oss:20b` on this computer class. The multipliers are
+rough engineering targets, not guarantees; prompt length, context size,
+quantization, and tool loops materially affect elapsed time:
+
+1. Around 2x faster: `qwen3:8b` (5.2 GB, tools). This is the best faster
+   alternative when useful coding and agent behavior still matter. Expect a
+   noticeable quality reduction from `gpt-oss:20b`, but it is the most
+   credible of these three for routine Codex experiments.
+2. Around 10x faster: `qwen3:1.7b` (1.4 GB, tools). Use it for short,
+   well-scoped prompts where responsiveness matters more than reasoning depth.
+   Expect weaker code understanding, planning, and multi-step tool use.
+3. Nominal 100x tier: `qwen3:0.6b` (523 MB, tools). No model this small is a
+   credible 100x-faster replacement for `gpt-oss:20b` in Codex. A more
+   realistic target is roughly 15x to 30x, with poor coding and tool-call
+   reliability; treat it as a latency experiment rather than a dependable
+   coding agent.
+
+Install and try one tier at a time:
+
+```sh
+ollama pull qwen3:8b
+ollama pull qwen3:1.7b
+ollama pull qwen3:0.6b
+
+codex --oss --local-provider ollama -m qwen3:8b
+```
+
+Current sizes and tool support are listed in the
+[Ollama Qwen3 library](https://ollama.com/library/qwen3).
+
 ## Recommendations for GPU computers
 
 GPU capacity means usable VRAM, not system RAM. These choices cover common
