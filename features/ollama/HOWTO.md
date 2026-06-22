@@ -89,6 +89,12 @@ codex --oss --local-provider ollama -m qwen3:8b
 Current sizes and tool support are listed in the
 [Ollama Qwen3 library](https://ollama.com/library/qwen3).
 
+gemma4:e4b
+phi4-mini
+phi4-mini-reasoning
+deepseek-r1:7b
+mistral-small
+
 ## Recommendations for GPU computers
 
 GPU capacity means usable VRAM, not system RAM. These choices cover common
