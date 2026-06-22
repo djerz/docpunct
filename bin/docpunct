@@ -37,6 +37,7 @@ Usage:
   docpunct test-doublecmd-feature [22.04|24.04|26.04]
   docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
   docpunct test-openai-codex-cli-feature [22.04|24.04|26.04]
+  docpunct test-ollama-feature [22.04|24.04|26.04]
   docpunct test-obsidian-feature [22.04|24.04|26.04]
   docpunct test-docker-feature [22.04|24.04|26.04]
   docpunct test-neovide-feature [22.04|24.04|26.04]
@@ -94,6 +95,20 @@ feature_description() {
   awk '
     /^[[:space:]]*description[[:space:]]*:/ {
       sub(/^[[:space:]]*description[[:space:]]*:[[:space:]]*/, "")
+      gsub(/^"|"$/, "")
+      gsub(/^'\''|'\''$/, "")
+      print
+      exit
+    }
+  ' "$manifest"
+}
+
+feature_install_notice() {
+  local manifest
+  manifest="$(manifest_path "$1")"
+  awk '
+    /^[[:space:]]*install_notice[[:space:]]*:/ {
+      sub(/^[[:space:]]*install_notice[[:space:]]*:[[:space:]]*/, "")
       gsub(/^"|"$/, "")
       gsub(/^'\''|'\''$/, "")
       print
@@ -163,7 +178,7 @@ run_feature_script() {
 }
 
 install_feature() {
-  local feature="$1" dep
+  local feature="$1" dep notice
   local deps=()
   require_feature "$feature"
 
@@ -187,6 +202,13 @@ install_feature() {
     return 1
   fi
   mark_installed "$feature"
+  notice="$(feature_install_notice "$feature")"
+  if [[ -n "$notice" ]]; then
+    printf '%s\n' "$notice"
+    if [[ -f "$(feature_dir "$feature")/HOWTO.md" ]]; then
+      printf '  %s/HOWTO.md\n' "$(feature_dir "$feature")"
+    fi
+  fi
 }
 
 install_requested_feature() {
@@ -360,6 +382,11 @@ run_openai_codex_cli_feature_test() {
   "$ROOT_DIR/tests/container/run-openai-codex-cli-feature.sh" "$ubuntu_version"
 }
 
+run_ollama_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-ollama-feature.sh" "$ubuntu_version"
+}
+
 run_obsidian_feature_test() {
   local ubuntu_version="${1:-24.04}"
   "$ROOT_DIR/tests/container/run-obsidian-feature.sh" "$ubuntu_version"
@@ -445,6 +472,10 @@ main() {
     test-openai-codex-cli-feature)
       [[ "$#" -le 1 ]] || die "test-openai-codex-cli-feature takes at most one Ubuntu version"
       run_openai_codex_cli_feature_test "${1:-24.04}"
+      ;;
+    test-ollama-feature)
+      [[ "$#" -le 1 ]] || die "test-ollama-feature takes at most one Ubuntu version"
+      run_ollama_feature_test "${1:-24.04}"
       ;;
     test-obsidian-feature)
       [[ "$#" -le 1 ]] || die "test-obsidian-feature takes at most one Ubuntu version"

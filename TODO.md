@@ -109,6 +109,12 @@
   terminal and sent draft open. The Epel HOWTO now documents closing the
   terminal with `Ctrl-\ Ctrl-n`, then `:q`, and deleting the sent draft with
   `:bdelete` to return to the prior mail buffer.
+- Added an `ollama` feature that installs the current digest-verified official
+  Linux release user-locally, manages a loopback-only systemd user service,
+  preserves models on removal, and points users to its HOWTO to install a
+  model. The HOWTO covers this host's CPU-only model choices, higher-end GPU
+  tiers, Codex CLI, Copilot CLI, the pinned CopilotChat.nvim provider API, and
+  direct HTTP clients.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -475,6 +481,12 @@
   `openai-codex-cli` install/update/remove lifecycle. The container verified
   `@openai/codex` 0.141.0, the `codex` command, package-scoped removal, retained
   Node.js/npm, and preserved `~/.codex/config.toml`.
+- Bash syntax, focused host ShellCheck, `./bin/docpunct test-smoke`,
+  `git diff --check`, current Ollama release asset/digest inspection, and a
+  generated-release Ollama install/update/remove lifecycle. The lifecycle
+  verified the executable link, managed service, post-install model guidance,
+  and preservation of `~/.ollama`. The Ubuntu container wrapper could not run
+  because the current shell still lacks usable Docker socket group access.
 
 ## Pending clarification
 

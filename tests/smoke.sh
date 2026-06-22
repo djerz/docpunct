@@ -69,6 +69,15 @@ write_feature() {
   } >"$features_dir/$feature/feature.yml"
 }
 
+notice_features="$tmpdir/notice-features"
+write_feature "$notice_features" guided
+printf 'install_notice: Install user-owned data using HOWTO.md.\n' >>"$notice_features/guided/feature.yml"
+printf '# Guided setup\n' >"$notice_features/guided/HOWTO.md"
+notice_output="$(DOCPUNCT_FEATURES_DIR="$notice_features" run_docpunct install guided)"
+assert_contains "$notice_output" "Install user-owned data using HOWTO.md."
+assert_contains "$notice_output" "$notice_features/guided/HOWTO.md"
+DOCPUNCT_FEATURES_DIR="$notice_features" run_docpunct remove guided >/dev/null
+
 list_output="$(run_docpunct list)"
 assert_contains "$list_output" "core"
 assert_contains "$list_output" "dotfiles"
@@ -669,5 +678,6 @@ done
 
 "$repo_root/tests/epel-smoke.sh"
 "$repo_root/tests/gcm-gpg-smoke.sh"
+"$repo_root/tests/ollama-smoke.sh"
 
 printf 'smoke tests passed\n'

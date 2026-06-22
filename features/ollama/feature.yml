@@ -1,0 +1,2 @@
+description: Install Ollama user-locally for private local model serving.
+install_notice: Models are not installed automatically. Choose and install models using HOWTO.md.

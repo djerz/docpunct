@@ -140,6 +140,7 @@ github-cli
 github-copilot-cli
 devcontainer-cli
 openai-codex-cli
+ollama
 docker
 doublecmd
 obsidian
@@ -209,6 +210,11 @@ these packages installed.
 `epel` provides local Maildir synchronization, indexing, sending, queue,
 backup, and systemd user-service commands. Detailed configuration and
 operations are documented separately in `features/epel/HOWTO.md`.
+
+`ollama` installs a verified official Linux runtime user-locally and manages a
+loopback-only per-user service. It deliberately installs no models or GPU
+drivers. Model selection, Codex CLI, Copilot CLI, CopilotChat.nvim, and direct
+API examples are documented in `features/ollama/HOWTO.md`.
 
 `debian-gui-packages` installs graphical packages with APT:
 
@@ -654,12 +660,15 @@ Supported properties:
 
 ```yaml
 description: Install my custom tool.
+install_notice: Complete the user-owned setup described in HOWTO.md.
 
 depends:
   - debian-cli-packages
 ```
 
-Both `description` and `depends` are optional.
+`description`, `install_notice`, and `depends` are optional. An
+`install_notice` is printed after a successful first install. If the feature
+contains `HOWTO.md`, docpunct also prints its path.
 
 A meta-feature may only contain dependencies:
 
@@ -891,6 +900,18 @@ just test-openai-codex-cli-feature ubuntu=24.04
 
 This target is intentionally separate from `just test` and
 `just test-containers`.
+
+Run the isolated Ollama release lifecycle test with:
+
+```sh
+just test-ollama-feature ubuntu=24.04
+./bin/docpunct test-ollama-feature 24.04
+```
+
+The test uses a locally generated, checksummed stand-in release archive. It
+exercises selection, installation, update, conservative removal, model-state
+preservation, and the post-install model guidance without downloading the
+large production runtime.
 
 The Double Commander feature has a separate non-privileged container test
 target:

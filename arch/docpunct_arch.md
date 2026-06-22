@@ -28,6 +28,13 @@ Version 22 adds an `openai-codex-cli` feature that installs OpenAI's official
 explicit NVM loading, package-scoped removal, preserved user state, and a real
 Ubuntu lifecycle test.
 
+Version 23 adds an `ollama` feature that installs a digest-verified official
+Linux runtime under the user's local share directory, manages a loopback-only
+systemd user service, preserves user-owned models on removal, and documents
+Codex CLI, Copilot CLI, CopilotChat.nvim, and direct API usage. It deliberately
+does not run Ollama's convenience installer because that script may install
+GPU drivers and modify system package repositories.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -206,6 +213,7 @@ docpunct/
 │   ├── github-copilot-cli/
 │   ├── devcontainer-cli/
 │   ├── openai-codex-cli/
+│   ├── ollama/
 │   ├── docker/
 │   ├── doublecmd/
 │   ├── obsidian/
@@ -409,12 +417,18 @@ Supported properties:
 ```yaml
 description: Optional human-readable description.
 
+install_notice: Optional instruction printed after a successful first install.
+
 depends:
   - another-feature
   - some-other-feature
 ```
 
 The `description` property is optional.
+
+The `install_notice` property is optional. When the feature also contains a
+`HOWTO.md`, docpunct prints its path after the notice. Use this for required
+user-owned follow-up work that the feature must not automate.
 
 The `depends` property is optional.
 
@@ -1497,6 +1511,22 @@ sessions, skills, and other state under `~/.codex`.
 
 ---
 
+## Ollama feature
+
+The `ollama` feature installs the current official `amd64` or `arm64` Linux
+release under `~/.local/share/docpunct/ollama` and links the executable into
+`~/.local/bin`. The GitHub release asset must have a valid SHA-256 digest and
+must verify before extraction.
+
+The feature owns a systemd user unit bound to loopback. It must not install or
+change GPU drivers, expose the unauthenticated API to a network, or pull models
+automatically. Models and user configuration under `~/.ollama` are user-owned
+and survive update and removal. Required model selection and client setup live
+in `features/ollama/HOWTO.md`; a successful first install prints a notice that
+points there.
+
+---
+
 ## Python uv feature
 
 uv must be installed using Astral's standalone installer.
@@ -1754,7 +1784,7 @@ The first implementation must support:
 - ShellCheck
 - host-safe smoke tests
 - disposable Ubuntu 22.04, 24.04, and 26.04 container tests
-- feature-specific Docker and Double Commander container tests
+- feature-specific Docker, Double Commander, and Ollama container tests
 - dotfile backup and restore
 - Debian CLI package management
 - Debian GUI package management

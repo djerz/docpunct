@@ -45,6 +45,9 @@ test-github-copilot-cli-feature ubuntu="24.04":
 test-openai-codex-cli-feature ubuntu="24.04":
     {{docpunct}} test-openai-codex-cli-feature {{ubuntu}}
 
+test-ollama-feature ubuntu="24.04":
+    {{docpunct}} test-ollama-feature {{ubuntu}}
+
 test-obsidian-feature ubuntu="24.04":
     {{docpunct}} test-obsidian-feature {{ubuntu}}
 
