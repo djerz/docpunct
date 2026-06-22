@@ -67,6 +67,10 @@ message() {
   printf 'From: Test User <%s>\nTo: receiver@example.net\nSubject: %s\n\nbody\n' "$sender" "$subject"
 }
 
+config_output="$(run_epel config)"
+grep -Fq 'notmuch new.ignore:     .mbsyncstate and .uidvalidity' <<<"$config_output"
+grep -Fqx 'ignore=.mbsyncstate;.uidvalidity' "$repo_root/features/epel/HOWTO.md"
+
 run_epel sync
 grep -qx 'mbsync --all' "$command_log"
 grep -qx 'notmuch new' "$command_log"

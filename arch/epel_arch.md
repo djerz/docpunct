@@ -473,6 +473,12 @@ Meaning:
 * `notmuch new` indexes newly arrived Maildir messages
 * notmuch tags and searches only after mail exists locally
 
+The notmuch `new.ignore` list should contain `.mbsyncstate` and `.uidvalidity`.
+mbsync deliberately stores these synchronization and UID-validity metadata
+files in each Maildir when `SyncState *` and the native Maildir UID scheme are
+used. Ignoring their exact basenames prevents harmless per-folder `Ignoring
+non-mail file` notes without excluding messages.
+
 notmuch itself does not receive mail. It may run hooks, but the preferred architecture is an explicit wrapper script because it is easier to debug, easier to trigger manually, and easier to expose through a future GUI button.
 
 Manual trigger:

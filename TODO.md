@@ -83,6 +83,29 @@
 - `gcm-gpg` owns an end-of-file marked include in `~/.gitconfig`, so its helper
   reset follows preserved host helpers. Configuration fails closed unless GCM
   with GPG storage is the only effective global credential helper.
+- The resumed initial Gmail synchronization completed successfully on
+  2026-06-22. `epel sync` processed all 15 folders without `OVERQUOTA`, and
+  notmuch indexing completed with 67,937 indexed messages. The account had
+  152,104 messages in Maildir `cur` and `new` directories after the run.
+- Epel's notmuch guidance now ignores mbsync's exact `.mbsyncstate` and
+  `.uidvalidity` metadata basenames, preventing harmless per-folder non-mail
+  notes during indexing without excluding messages.
+- Provider Sent synchronization was validated read-only on 2026-06-22 for the
+  configured Gmail account. The provider Sent Maildir contained 3,277 indexed
+  messages, including 3,276 from the configured sender; its newest self-sent
+  message was dated 2026-06-22 19:38:28 UTC, and two provider-Sent files were
+  synchronized during the completed June 22 run. The epel timer remains
+  disabled pending an explicit decision to enable it.
+- A manual end-to-end Gmail round trip was completed on 2026-06-22. A message
+  containing `This is a test!` was sent to the configured account, received,
+  replied to from notmuch.nvim with `R`, and submitted with `Ctrl-g Ctrl-g`.
+  After synchronization, notmuch showed one two-message thread with both
+  messages present in the provider Sent folder and INBOX; the thread carried
+  the `replied` tag.
+- The current pinned notmuch.nvim send workflow leaves both its temporary send
+  terminal and sent draft open. The Epel HOWTO now documents closing the
+  terminal with `Ctrl-\ Ctrl-n`, then `:q`, and deleting the sent draft with
+  `:bdelete` to return to the prior mail buffer.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -424,6 +447,20 @@
   whole-file `.gitconfig` symlink with an additive managed include. The
   project-level `./bin/docpunct test` remained blocked by the documented Docker
   socket permission issue.
+- A real current-host `epel sync` completed successfully on 2026-06-22 after
+  resuming the provider-limited initial Gmail synchronization. mbsync processed
+  all 15 folders, and `notmuch new` completed normally.
+- Bash syntax, focused host ShellCheck, `./bin/docpunct test-smoke`,
+  `git diff --check`, and a live `notmuch new` after adding the mbsync metadata
+  ignore guidance. The live index pass completed with `No new mail` and no
+  non-mail metadata notes.
+- Read-only current-host provider Sent validation on 2026-06-22. The Gmail
+  provider Sent path had 3,277 indexed messages, including a self-sent message
+  dated 2026-06-22 19:38:28 UTC, and the epel sync timer remained disabled.
+- Manual current-host Gmail send, receive, reply, and provider-Sent round-trip
+  validation on 2026-06-22. The resulting notmuch thread contained two
+  messages, with both represented in INBOX and the provider Sent folder, and
+  was tagged `replied`.
 
 ## Pending clarification
 
@@ -431,15 +468,6 @@
 
 ## Remaining work
 
-- Complete the resumed initial Gmail synchronization for
-  `chris.welmelinger@gmail.com`. The latest 2026-06-21 retry ended at 22:07
-  local time when Gmail again returned `OVERQUOTA`; mbsync reported 28,793 new
-  local messages across 15 folders. The account now has 143,380 local Maildir
-  files, while notmuch still reports 28,483 indexed messages. Wait for the
-  provider command/bandwidth quota to reset, then use `epel sync` to continue
-  from mbsync's saved state rather than restarting from scratch. Because epel
-  only runs `notmuch new` after a successful mbsync run, the newly downloaded
-  mail remains unindexed until a sync completes or indexing is run separately.
 - Decide whether to import the empty `.gitconfig-private`.
 - Improve epel credential security beyond command-based `secret-tool` lookup,
   including explicit OAuth/token lifecycle support.
@@ -498,19 +526,17 @@
 
 ## Next steps
 
-1. After Gmail's command/bandwidth quota resets, resume the incomplete initial
-   synchronization with `epel sync`; mbsync will continue from its saved state.
-2. Manually validate provider Sent synchronization before enabling epel's
-   systemd timer.
-3. Decide whether to import the empty `.gitconfig-private`.
-4. Consider independent publisher-signature validation for Git Credential
+1. Decide whether to enable epel's systemd sync timer now that provider Sent
+   synchronization has been validated.
+2. Decide whether to import the empty `.gitconfig-private`.
+3. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
    release assets.
-5. Remove the deprecated Neovim file-level symlink migration logic after
+4. Remove the deprecated Neovim file-level symlink migration logic after
    existing machines have migrated.
-6. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
+5. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
    machines have updated to the ordered marked include block.
-7. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
-8. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
    existing machines have migrated to the additive include block.

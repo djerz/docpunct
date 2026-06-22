@@ -133,13 +133,19 @@ other_email=work@example.org
 
 [new]
 tags=unread;inbox;
-ignore=
+ignore=.mbsyncstate;.uidvalidity
 ```
 
 Replace `/home/USER` with the actual home directory; notmuch configuration
 does not expand every shell expression consistently. Workflow tags such as
 `todo`, `waiting`, `review`, `gps`, and `reference` can then be managed from
 notmuch or Neovim.
+
+The ignore list names mbsync's per-mailbox synchronization state and Maildir
+UID-validity metadata. Without it, `notmuch new` safely rejects those files as
+non-mail but prints an `Ignoring non-mail file` note for every synchronized
+folder. The entries match only those exact basenames anywhere below the mail
+root; they do not exclude messages.
 
 Test indexing:
 
@@ -210,6 +216,13 @@ continue to use the system msmtp binary.
 Sent messages rely on the provider's Sent folder being synchronized back by
 mbsync. Epel v1 does not create a separate local sent copy. Confirm this
 behavior for every configured provider.
+
+With the currently pinned notmuch.nvim version, sending does not automatically
+close the draft or its temporary send terminal. After confirming a send with
+`Ctrl-g Ctrl-g`, wait for the success notification. In the send terminal,
+press `Ctrl-\` followed by `Ctrl-n`, then run `:q`. Back in the sent draft,
+run `:bdelete` to delete that temporary buffer and return to the previous mail
+or thread buffer.
 
 ## Backups
 
