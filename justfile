@@ -42,6 +42,9 @@ test-doublecmd-feature ubuntu="24.04":
 test-github-copilot-cli-feature ubuntu="24.04":
     {{docpunct}} test-github-copilot-cli-feature {{ubuntu}}
 
+test-openai-codex-cli-feature ubuntu="24.04":
+    {{docpunct}} test-openai-codex-cli-feature {{ubuntu}}
+
 test-obsidian-feature ubuntu="24.04":
     {{docpunct}} test-obsidian-feature {{ubuntu}}
 

@@ -139,6 +139,7 @@ google-chrome
 github-cli
 github-copilot-cli
 devcontainer-cli
+openai-codex-cli
 docker
 doublecmd
 obsidian
@@ -305,6 +306,13 @@ installation, update, and removal do not depend on the calling shell having
 initialized Node.js. Removal uninstalls only that npm package and preserves
 NVM, Node.js, and unrelated global packages.
 
+`openai-codex-cli` installs OpenAI's official `@openai/codex` npm package for
+the default NVM-managed Node.js version and provides the `codex` command.
+Removal uninstalls only that package and preserves NVM, Node.js, unrelated
+global packages, and user-owned Codex state under `~/.codex`. After
+installation, run `codex` and sign in with ChatGPT or configure a user-owned
+OpenAI API key; docpunct does not create or store credentials.
+
 Brave Browser, Visual Studio Code, Google Chrome, and GitHub CLI use upstream APT
 repositories with distro-independent `stable` suites, so the same source
 configuration is used on Ubuntu 22.04, 24.04, 26.04, and later supported
@@ -433,6 +441,9 @@ and is not independent publisher-signature verification.
 
 `devcontainer-cli` depends on `node` and provides the `devcontainer` command
 from the `@devcontainers/cli` npm package.
+
+`openai-codex-cli` depends on `node` and provides the `codex` command from
+OpenAI's official `@openai/codex` npm package.
 
 `python-uv` installs uv with Astral's standalone installer.
 
@@ -866,6 +877,16 @@ Run the real Dev Container CLI npm lifecycle test with:
 ```sh
 just test-devcontainer-cli-feature ubuntu=24.04
 ./bin/docpunct test-devcontainer-cli-feature 24.04
+```
+
+This target is intentionally separate from `just test` and
+`just test-containers`.
+
+Run the real OpenAI Codex CLI npm lifecycle test with:
+
+```sh
+just test-openai-codex-cli-feature ubuntu=24.04
+./bin/docpunct test-openai-codex-cli-feature 24.04
 ```
 
 This target is intentionally separate from `just test` and

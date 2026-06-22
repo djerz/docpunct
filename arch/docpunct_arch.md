@@ -23,6 +23,11 @@ Version 21 adds a `devcontainer-cli` feature that installs the
 `@devcontainers/cli` npm package globally for the default NVM-managed Node.js
 version, with explicit NVM loading and package-scoped removal.
 
+Version 22 adds an `openai-codex-cli` feature that installs OpenAI's official
+`@openai/codex` npm package for the default NVM-managed Node.js version, with
+explicit NVM loading, package-scoped removal, preserved user state, and a real
+Ubuntu lifecycle test.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -200,6 +205,7 @@ docpunct/
 │   ├── github-cli/
 │   ├── github-copilot-cli/
 │   ├── devcontainer-cli/
+│   ├── openai-codex-cli/
 │   ├── docker/
 │   ├── doublecmd/
 │   ├── obsidian/
@@ -290,6 +296,7 @@ docpunct test-containers
 docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
 docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
+docpunct test-openai-codex-cli-feature [22.04|24.04|26.04]
 docpunct test-obsidian-feature [22.04|24.04|26.04]
 docpunct test-docker-feature [22.04|24.04|26.04]
 docpunct test-neovide-feature [22.04|24.04|26.04]
@@ -1476,6 +1483,20 @@ other global npm packages, and user project data.
 
 ---
 
+## OpenAI Codex CLI feature
+
+The `openai-codex-cli` feature depends on `node` and installs OpenAI's official
+`@openai/codex` package globally with npm for NVM's default Node.js version.
+Each lifecycle script must source `$NVM_DIR/nvm.sh` and select the default
+version before invoking npm.
+
+Update reapplies the npm installation to obtain the current package release.
+Removal uninstalls only `@openai/codex`; it must preserve NVM, Node.js, other
+global npm packages, and user-owned Codex authentication, configuration,
+sessions, skills, and other state under `~/.codex`.
+
+---
+
 ## Python uv feature
 
 uv must be installed using Astral's standalone installer.
@@ -1642,6 +1663,7 @@ Disposable Ubuntu container integration tests are explicit:
 ./bin/docpunct test-container 26.04
 ./bin/docpunct test-containers
 ./bin/docpunct test-devcontainer-cli-feature 24.04
+./bin/docpunct test-openai-codex-cli-feature 24.04
 ```
 
 Container tests may pull Ubuntu images and run APT/network work inside
@@ -1653,6 +1675,7 @@ Feature-specific container tests:
 ```sh
 ./bin/docpunct test-doublecmd-feature 24.04
 ./bin/docpunct test-github-copilot-cli-feature 24.04
+./bin/docpunct test-openai-codex-cli-feature 24.04
 ./bin/docpunct test-docker-feature 24.04
 ./bin/docpunct test-neovide-feature 24.04
 ./bin/docpunct test-obsidian-feature 24.04

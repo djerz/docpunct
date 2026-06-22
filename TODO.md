@@ -43,6 +43,9 @@
   - `just test-github-copilot-cli-feature ubuntu=VERSION` runs the standalone
     GitHub Copilot CLI install/update/remove lifecycle in a separate
     non-privileged container.
+  - `just test-openai-codex-cli-feature ubuntu=VERSION` runs the official
+    OpenAI Codex CLI npm install/update/remove lifecycle in a separate
+    non-privileged container.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
 - `docpunct update FEATURE` requires the requested feature to be installed and
   updates only that feature. It reports dependency actions that may also be
@@ -253,6 +256,12 @@
   package.
 - Added a disposable Ubuntu lifecycle test for `devcontainer-cli` covering
   install, update, package-scoped removal, and preservation of Node.js/npm.
+- Added an `openai-codex-cli` feature that installs OpenAI's official
+  `@openai/codex` npm package with the default NVM-managed Node.js version,
+  removes only that package, and preserves user-owned `~/.codex` state.
+- Added a disposable Ubuntu lifecycle test for `openai-codex-cli` covering
+  install, update, package-scoped removal, preservation of Node.js/npm, and
+  preservation of `~/.codex` configuration.
 - Fixed Docker feature user selection so `sudo -u USER` contexts do not incorrectly target `root` through `SUDO_USER=root`.
 - Added `util-linux-extra` as an optional `debian-cli-packages` package because Ubuntu 22.04 does not provide it; `ripgrep` was already present.
 - Moved `fd-find` into a separate feature that installs the package and links `~/.local/bin/fd` to `fdfind`; `debian-cli-packages` depends on it.
@@ -461,6 +470,11 @@
   validation on 2026-06-22. The resulting notmuch thread contained two
   messages, with both represented in INBOX and the provider Sent folder, and
   was tagged `replied`.
+- Bash syntax, full host ShellCheck, `./bin/docpunct test-smoke`, CLI routing
+  checks, `git diff --check`, and a real Ubuntu 24.04
+  `openai-codex-cli` install/update/remove lifecycle. The container verified
+  `@openai/codex` 0.141.0, the `codex` command, package-scoped removal, retained
+  Node.js/npm, and preserved `~/.codex/config.toml`.
 
 ## Pending clarification
 
