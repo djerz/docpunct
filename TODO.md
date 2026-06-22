@@ -127,6 +127,10 @@
   expected CPU-only latency. Ollama updates explicitly restart an already
   active service after reloading its unit so changed environment settings take
   effect.
+- The Ollama HOWTO now documents faster CPU-only Qwen3 experiment tiers for
+  this computer class: `qwen3:8b`, `qwen3:1.7b`, and `qwen3:0.6b`. Their speed
+  multipliers are explicitly presented as estimates, with the smallest model
+  treated as a latency experiment rather than a dependable coding agent.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -573,6 +577,9 @@
   fallback.
 - APT/container-heavy tests were not rerun for the `.profile` change because
   the behavior is covered by host-safe smoke tests.
+- The documented Qwen3 speed-tier multipliers have not been benchmarked on the
+  current host; actual Codex latency and reliability depend on prompt length,
+  context size, quantization, and tool use.
 
 ## Next steps
 
