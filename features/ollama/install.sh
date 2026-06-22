@@ -110,6 +110,7 @@ ExecStart=%h/.local/share/docpunct/ollama/bin/ollama serve
 Restart=on-failure
 RestartSec=3
 Environment=OLLAMA_HOST=127.0.0.1:11434
+Environment=OLLAMA_CONTEXT_LENGTH=65536
 
 [Install]
 WantedBy=default.target
@@ -117,5 +118,6 @@ EOF
 
 if command -v systemctl >/dev/null 2>&1 && systemctl --user show-environment >/dev/null 2>&1; then
   systemctl --user daemon-reload
-  systemctl --user enable --now ollama.service
+  systemctl --user enable ollama.service
+  systemctl --user restart ollama.service
 fi

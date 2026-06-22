@@ -10,6 +10,7 @@ cache="$tmpdir/cache"
 release_dir="$tmpdir/release"
 payload_dir="$release_dir/payload"
 fake_bin="$tmpdir/bin"
+systemctl_log="$tmpdir/systemctl.log"
 arch="$(dpkg --print-architecture)"
 archive="$release_dir/ollama-linux-${arch}.tar.zst"
 mkdir -p "$home" "$cache" "$payload_dir/bin" "$payload_dir/lib/ollama" "$fake_bin"
@@ -29,7 +30,8 @@ EOF
 
 cat >"$fake_bin/systemctl" <<'EOF'
 #!/usr/bin/env bash
-exit 1
+set -euo pipefail
+printf '%s\n' "$*" >>"$SYSTEMCTL_LOG"
 EOF
 chmod +x "$fake_bin/systemctl"
 
@@ -37,6 +39,7 @@ run_docpunct() {
   env \
     HOME="$home" \
     PATH="$fake_bin:$PATH" \
+    SYSTEMCTL_LOG="$systemctl_log" \
     DOCPUNCT_CACHE_DIR="$cache" \
     DOCPUNCT_OLLAMA_RELEASE_API_URL="file://$release_dir/release.json" \
     "$repo_root/bin/docpunct" "$@"
@@ -50,10 +53,18 @@ install_output="$(run_docpunct install ollama)"
 "$home/.local/bin/ollama" --version >/dev/null
 grep -qxF '# Managed by docpunct ollama feature' \
   "$home/.config/systemd/user/ollama.service"
+grep -qxF 'Environment=OLLAMA_HOST=127.0.0.1:11434' \
+  "$home/.config/systemd/user/ollama.service"
+grep -qxF 'Environment=OLLAMA_CONTEXT_LENGTH=65536' \
+  "$home/.config/systemd/user/ollama.service"
+grep -qxF -- '--user daemon-reload' "$systemctl_log"
+grep -qxF -- '--user enable ollama.service' "$systemctl_log"
+grep -qxF -- '--user restart ollama.service' "$systemctl_log"
 
 mkdir -p "$home/.ollama/models"
 printf 'preserve me\n' >"$home/.ollama/models/test-model"
 run_docpunct update ollama >/dev/null
+[[ "$(grep -cFx -- '--user restart ollama.service' "$systemctl_log")" -eq 2 ]]
 run_docpunct remove ollama >/dev/null
 [[ ! -e "$home/.local/bin/ollama" ]]
 [[ ! -e "$home/.local/share/docpunct/ollama" ]]

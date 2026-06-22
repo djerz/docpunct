@@ -120,6 +120,13 @@
   model. The HOWTO covers this host's CPU-only model choices, higher-end GPU
   tiers, Codex CLI, Copilot CLI, the pinned CopilotChat.nvim provider API, and
   direct HTTP clients.
+- Ollama's managed service now defaults to a 65,536-token context. A live Codex
+  `gpt-oss:20b` session exposed that Ollama's 4K default was consumed by 4,095
+  initial instruction tokens, leaving only one output token and no visible
+  answer. The HOWTO documents the default, systemd drop-in overrides, and
+  expected CPU-only latency. Ollama updates explicitly restart an already
+  active service after reloading its unit so changed environment settings take
+  effect.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -497,6 +504,13 @@
   `openai-codex-cli` state marker is installed, standalone artifacts and their
   `.bashrc` PATH block are absent, and `~/.codex` authentication,
   configuration, sessions, and skills remain present.
+- Bash syntax, focused host ShellCheck, the isolated Ollama lifecycle smoke
+  test, the complete host-safe smoke suite, `git diff --check`, and the Ubuntu
+  24.04 Ollama container lifecycle after setting the managed service's 64K
+  context default. The container asserts both the loopback binding and context
+  environment setting. The current host was updated and restarted; Ollama
+  loaded `gpt-oss:20b` with a 65,536-token context, and Codex returned `hello`
+  successfully after processing 6,711 tokens on the CPU-only host.
 
 ## Pending clarification
 

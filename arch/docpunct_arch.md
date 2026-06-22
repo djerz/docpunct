@@ -1523,7 +1523,10 @@ change GPU drivers, expose the unauthenticated API to a network, or pull models
 automatically. Models and user configuration under `~/.ollama` are user-owned
 and survive update and removal. Required model selection and client setup live
 in `features/ollama/HOWTO.md`; a successful first install prints a notice that
-points there.
+points there. The managed service sets `OLLAMA_CONTEXT_LENGTH=65536`, because
+the default 4K context can be exhausted by a coding agent's initial
+instructions before it can produce a response. Users may override the context
+with a systemd drop-in when local memory constraints require it.
 
 ---
 

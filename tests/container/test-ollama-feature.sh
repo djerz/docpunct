@@ -59,6 +59,10 @@ sudo -u docpunct-test \
     "$HOME/.local/bin/ollama" --version
     grep -qxF "# Managed by docpunct ollama feature" \
       "$HOME/.config/systemd/user/ollama.service"
+    grep -qxF "Environment=OLLAMA_HOST=127.0.0.1:11434" \
+      "$HOME/.config/systemd/user/ollama.service"
+    grep -qxF "Environment=OLLAMA_CONTEXT_LENGTH=65536" \
+      "$HOME/.config/systemd/user/ollama.service"
     mkdir -p "$HOME/.ollama/models"
     printf "preserve me\n" >"$HOME/.ollama/models/test-model"
     ./bin/docpunct update ollama

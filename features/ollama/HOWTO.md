@@ -31,9 +31,11 @@ ollama ps
 
 Only use models advertising tool/function calling for coding agents. Codex and
 Copilot CLI also need large context windows; both upstream integrations
-recommend at least 64K tokens. A large context consumes additional memory, so
-increase it deliberately after confirming the model fits. See Ollama's
-[context-length documentation](https://docs.ollama.com/context-length).
+recommend at least 64K tokens. The managed service therefore sets
+`OLLAMA_CONTEXT_LENGTH=65536`. Without that setting, Ollama's 4K default can be
+consumed entirely by Codex's initial instructions, causing a prompt to finish
+without a visible answer. A large context consumes additional memory; see
+Ollama's [context-length documentation](https://docs.ollama.com/context-length).
 
 ## Recommendations for this computer class
 
@@ -98,6 +100,37 @@ ollama serve
 The managed service listens only on loopback. Do not expose Ollama directly to
 an untrusted network: its local API has no authentication by default.
 
+The service defaults to a 65,536-token context so coding agents have room for
+their instructions, repository context, tool calls, and responses. Check the
+active context after a model is loaded:
+
+```sh
+ollama ps
+```
+
+To use a different value, create a systemd drop-in instead of editing the
+docpunct-managed unit:
+
+```sh
+systemctl --user edit ollama.service
+```
+
+For example, a lower-memory machine can use:
+
+```ini
+[Service]
+Environment=OLLAMA_CONTEXT_LENGTH=32768
+```
+
+Then apply it:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user restart ollama.service
+```
+
+Reducing the context below 64K is not recommended for Codex or Copilot CLI.
+
 ## Codex CLI
 
 The simplest setup lets Ollama create a temporary Codex profile and refresh
@@ -112,6 +145,9 @@ Or invoke Codex's built-in local provider directly:
 ```sh
 codex --oss --local-provider ollama -m gpt-oss:20b
 ```
+
+On CPU-only systems, the first response can take several minutes because Codex
+sends a substantial initial instruction prompt before the user's message.
 
 Use `ollama launch codex --config` to generate the Ollama-backed Codex profile
 without starting Codex, and `ollama launch codex --restore` to remove that
@@ -205,6 +241,9 @@ Update the Ollama runtime without changing models:
 ```sh
 ./bin/docpunct update ollama
 ```
+
+Update reloads the managed unit and restarts the user service so service
+environment changes take effect. Running models are unloaded during restart.
 
 Remove the managed runtime and service:
 

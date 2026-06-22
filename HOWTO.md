@@ -214,7 +214,9 @@ operations are documented separately in `features/epel/HOWTO.md`.
 `ollama` installs a verified official Linux runtime user-locally and manages a
 loopback-only per-user service. It deliberately installs no models or GPU
 drivers. Model selection, Codex CLI, Copilot CLI, CopilotChat.nvim, and direct
-API examples are documented in `features/ollama/HOWTO.md`.
+API examples are documented in `features/ollama/HOWTO.md`. The managed service
+uses a 65,536-token context by default so coding-agent instructions do not
+consume Ollama's smaller default context before a response can be generated.
 
 `debian-gui-packages` installs graphical packages with APT:
 
