@@ -109,6 +109,11 @@
   terminal and sent draft open. The Epel HOWTO now documents closing the
   terminal with `Ctrl-\ Ctrl-n`, then `:q`, and deleting the sent draft with
   `:bdelete` to return to the prior mail buffer.
+- The current host's standalone Codex CLI installation was removed and
+  replaced with the committed `openai-codex-cli` feature on 2026-06-22.
+  `codex` now resolves through NVM's global `@openai/codex` package, while
+  authentication, configuration, sessions, skills, and other user-owned state
+  under `~/.codex` were preserved.
 - Added an `ollama` feature that installs the current digest-verified official
   Linux release user-locally, manages a loopback-only systemd user service,
   preserves models on removal, and points users to its HOWTO to install a
@@ -487,6 +492,11 @@
   verified the executable link, managed service, post-install model guidance,
   and preservation of `~/.ollama`. The Ubuntu container wrapper could not run
   because the current shell still lacks usable Docker socket group access.
+- Read-only current-host validation after migrating Codex CLI to docpunct. The
+  active command resolves to NVM's global `@openai/codex@0.141.0`, the
+  `openai-codex-cli` state marker is installed, standalone artifacts and their
+  `.bashrc` PATH block are absent, and `~/.codex` authentication,
+  configuration, sessions, and skills remain present.
 
 ## Pending clarification
 
