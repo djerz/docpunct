@@ -146,6 +146,7 @@ doublecmd
 obsidian
 gpg
 gcm-gpg
+debug-gcm-curl
 git-credential-manager
 nerdfonts
 rust
@@ -175,6 +176,11 @@ credential fragment:
 [include]
     path = ~/.config/docpunct/git-credential-manager.gitconfig
 ```
+
+`debug-gcm-curl` is a temporary diagnostic feature for corporate proxy
+failures. It reproduces the Git Credential Manager GitHub release metadata and
+asset download flow without installing anything, then writes a sanitized log to
+`~/.cache/docpunct/log/debug-gcm-curl-latest.log`.
 
 ---
 

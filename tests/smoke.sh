@@ -88,6 +88,161 @@ assert_contains "$status_output" "available    core"
 neovide_manifest="$(cat "$repo_root/features/neovide/feature.yml")"
 assert_contains "$neovide_manifest" "  - nerdfonts"
 
+debug_gcm_home="$tmpdir/debug-gcm-home"
+debug_gcm_cache="$tmpdir/debug-gcm-cache"
+debug_gcm_bin="$tmpdir/debug-gcm-bin"
+mkdir -p "$debug_gcm_home" "$debug_gcm_cache" "$debug_gcm_bin"
+cat >"$debug_gcm_bin/dpkg" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == "--print-architecture" ]]; then
+  printf 'amd64\n'
+  exit 0
+fi
+exit 1
+EOF
+cat >"$debug_gcm_bin/jq" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+args="$*"
+if [[ "${1:-}" == "--version" ]]; then
+  printf 'jq-9.9.9\n'
+elif [[ "$args" == *".tag_name"* ]]; then
+  printf 'v9.9.9\n'
+elif [[ "$args" == *".assets[].name"* ]]; then
+  printf 'gcm-linux-x64-9.9.9.deb\n'
+else
+  digest="$(printf 'fake package\n' | sha256sum | awk '{print $1}')"
+  printf 'gcm-linux-x64-9.9.9.deb\thttps://objects.example.invalid/gcm-linux-x64-9.9.9.deb?token=asset-secret\tsha256:%s\n' "$digest"
+fi
+EOF
+cat >"$debug_gcm_bin/curl" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == "--help" ]]; then
+  printf ' --fail-with-body\n'
+  exit 0
+fi
+if [[ "${1:-}" == "--version" ]]; then
+  printf 'curl 9.9.9 fake\n'
+  exit 0
+fi
+
+headers=""
+trace=""
+output=""
+url=""
+while [[ "$#" -gt 0 ]]; do
+  case "$1" in
+    -D)
+      headers="$2"
+      shift 2
+      ;;
+    --trace-ascii)
+      trace="$2"
+      shift 2
+      ;;
+    -w|-A|-H|-o)
+      if [[ "$1" == "-o" ]]; then
+        output="$2"
+      fi
+      shift 2
+      ;;
+    -*)
+      shift
+      ;;
+    *)
+      url="$1"
+      shift
+      ;;
+  esac
+done
+
+printf 'HTTP/2 200\nset-cookie: private-cookie\n' >"$headers"
+printf '=> Send header\nAuthorization: Bearer fake-token\nProxy-Authorization: Basic fake-proxy\nGET %s\n' "$url" >"$trace"
+printf 'http_code=200\neffective_url=%s\nsize_download=13\n' "$url"
+
+case "$url" in
+  https://api.github.com/*)
+    if [[ "${DEBUG_GCM_CURL_FAIL_STAGE:-}" == api ]]; then
+      printf 'HTTP/2 403\n' >"$headers"
+      printf 'curl: (22) The requested URL returned error: 403\n' >&2
+      exit 22
+    fi
+    printf '{"tag_name":"v9.9.9","assets":[{"name":"gcm-linux-x64-9.9.9.deb","browser_download_url":"https://objects.example.invalid/gcm-linux-x64-9.9.9.deb?token=asset-secret","digest":"sha256:%s"}]}\n' \
+      "$(printf 'fake package\n' | sha256sum | awk '{print $1}')" >"$output"
+    ;;
+  *)
+    if [[ "${DEBUG_GCM_CURL_FAIL_STAGE:-}" == asset ]]; then
+      printf 'HTTP/2 403\n' >"$headers"
+      printf 'curl: (22) The requested URL returned error: 403\n' >&2
+      exit 22
+    fi
+    printf 'fake package\n' >"$output"
+    ;;
+esac
+EOF
+chmod +x "$debug_gcm_bin/curl" "$debug_gcm_bin/dpkg" "$debug_gcm_bin/jq"
+
+env \
+  HOME="$debug_gcm_home" \
+  PATH="$debug_gcm_bin:$PATH" \
+  HTTPS_PROXY="http://proxy-user:proxy-pass@proxy.example.invalid:8080" \
+  GITHUB_TOKEN="github-secret-token" \
+  DOCPUNCT_ROOT="$repo_root" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/debug-gcm-curl" \
+  DOCPUNCT_CACHE_DIR="$debug_gcm_cache" \
+  DOCPUNCT_STATE_DIR="$debug_gcm_cache/state" \
+  DOCPUNCT_LOG_DIR="$debug_gcm_cache/log" \
+  "$repo_root/features/debug-gcm-curl/install.sh" >/dev/null 2>&1
+debug_gcm_log="$debug_gcm_cache/log/debug-gcm-curl-latest.log"
+[[ -L "$debug_gcm_log" ]] || {
+  printf 'expected debug-gcm-curl to maintain a latest log symlink\n' >&2
+  exit 1
+}
+debug_gcm_log_content="$(cat "$debug_gcm_log")"
+assert_contains "$debug_gcm_log_content" "HTTPS_PROXY=<present redacted>"
+assert_contains "$debug_gcm_log_content" "github_api_token=<present redacted>"
+assert_contains "$debug_gcm_log_content" "checksum=ok"
+assert_contains "$debug_gcm_log_content" "Authorization: <redacted>"
+assert_contains "$debug_gcm_log_content" "Proxy-Authorization: <redacted>"
+assert_contains "$debug_gcm_log_content" "token=<redacted>"
+assert_not_contains "$debug_gcm_log_content" "proxy-pass"
+assert_not_contains "$debug_gcm_log_content" "github-secret-token"
+assert_not_contains "$debug_gcm_log_content" "asset-secret"
+
+debug_gcm_fail_cache="$tmpdir/debug-gcm-fail-cache"
+mkdir -p "$debug_gcm_fail_cache"
+assert_fails_with \
+  "GitHub API release metadata failed" \
+  env \
+    HOME="$debug_gcm_home" \
+    PATH="$debug_gcm_bin:$PATH" \
+    DEBUG_GCM_CURL_FAIL_STAGE=api \
+    DOCPUNCT_ROOT="$repo_root" \
+    DOCPUNCT_FEATURE_DIR="$repo_root/features/debug-gcm-curl" \
+    DOCPUNCT_CACHE_DIR="$debug_gcm_fail_cache" \
+    DOCPUNCT_STATE_DIR="$debug_gcm_fail_cache/state" \
+    DOCPUNCT_LOG_DIR="$debug_gcm_fail_cache/log" \
+    "$repo_root/features/debug-gcm-curl/install.sh"
+assert_contains "$(cat "$debug_gcm_fail_cache/log/debug-gcm-curl-latest.log")" "stage=GitHub API release metadata"
+
+debug_gcm_asset_fail_cache="$tmpdir/debug-gcm-asset-fail-cache"
+mkdir -p "$debug_gcm_asset_fail_cache"
+assert_fails_with \
+  "GitHub release asset download failed" \
+  env \
+    HOME="$debug_gcm_home" \
+    PATH="$debug_gcm_bin:$PATH" \
+    DEBUG_GCM_CURL_FAIL_STAGE=asset \
+    DOCPUNCT_ROOT="$repo_root" \
+    DOCPUNCT_FEATURE_DIR="$repo_root/features/debug-gcm-curl" \
+    DOCPUNCT_CACHE_DIR="$debug_gcm_asset_fail_cache" \
+    DOCPUNCT_STATE_DIR="$debug_gcm_asset_fail_cache/state" \
+    DOCPUNCT_LOG_DIR="$debug_gcm_asset_fail_cache/log" \
+    "$repo_root/features/debug-gcm-curl/install.sh"
+assert_contains "$(cat "$debug_gcm_asset_fail_cache/log/debug-gcm-curl-latest.log")" "stage=GitHub release asset download"
+
 dotfiles_features="$tmpdir/dotfiles-features"
 mkdir -p "$dotfiles_features/dotfiles"
 printf 'description: Test dotfiles\n' >"$dotfiles_features/dotfiles/feature.yml"

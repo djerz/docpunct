@@ -134,6 +134,11 @@
 - Removed the deprecated Neovim file-level symlink migration special case from
   dotfiles reconciliation. Existing directories are now handled by the normal
   backup-and-replace path before creating the managed directory symlink.
+- Added a temporary `debug-gcm-curl` feature for diagnosing corporate proxy
+  failures in the Git Credential Manager curl path. It performs the same
+  GitHub release API lookup and asset download as `gcm-gpg`, installs nothing,
+  and writes a sanitized latest log at
+  `~/.cache/docpunct/log/debug-gcm-curl-latest.log`.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -160,6 +165,8 @@
 - Added standalone `gpg` and `gcm-gpg` features, including pass/key readiness
   checks, headless pinentry instructions, a separate managed Git include, and
   an explicit migration path from the deprecated implicit GCM feature.
+- Added temporary `debug-gcm-curl` feature diagnostics for reproducing and
+  logging GCM GitHub release curl failures behind corporate proxies.
 - Fixed `gcm-gpg` include ordering so later host helpers such as `store` cannot
   remain active. Existing unmanaged GCM includes migrate to an ordered marked
   block without deleting the preserved host helper settings.
@@ -550,6 +557,8 @@
 - Consider independent publisher-signature validation for Git Credential
   Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
   release assets.
+- Remove the temporary `debug-gcm-curl` feature after the corporate proxy curl
+  failure has been diagnosed and the permanent download behavior is fixed.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
   from `features/dotfiles/shell-hooks.sh` after existing machines have migrated
   to additive shell blocks.
@@ -595,9 +604,11 @@
 3. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
    release assets.
-4. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
+4. Run `./bin/docpunct install debug-gcm-curl` on the corporate proxy machine
+   and inspect `~/.cache/docpunct/log/debug-gcm-curl-latest.log`.
+5. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
    machines have updated to the ordered marked include block.
-5. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
-6. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
    existing machines have migrated to the additive include block.

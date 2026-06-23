@@ -40,6 +40,11 @@ file-level symlink layout. Existing target directories are now preserved by the
 normal dotfile backup path before docpunct creates the managed directory-level
 symlink.
 
+Version 25 adds a temporary `debug-gcm-curl` feature that reproduces the
+Git Credential Manager GitHub release API and asset download flow without
+installing anything, writing a sanitized curl/proxy diagnostic log under
+`~/.cache/docpunct/log`.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -225,6 +230,7 @@ docpunct/
 │   ├── nerdfonts/
 │   ├── gpg/
 │   ├── gcm-gpg/
+│   ├── debug-gcm-curl/
 │   ├── git-credential-manager/
 │   ├── rust/
 │   ├── node/

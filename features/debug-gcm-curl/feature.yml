@@ -1,0 +1,2 @@
+description: Temporary Git Credential Manager curl proxy diagnostics.
+install_notice: "Temporary diagnostic feature: inspect the latest log at ~/.cache/docpunct/log/debug-gcm-curl-latest.log."
