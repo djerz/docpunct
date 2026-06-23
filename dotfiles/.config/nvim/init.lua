@@ -1,7 +1,7 @@
 -- Font settings
 --vim.opt.guifont = "SauceCodePro NF:h10" -- Set the GUI font to "SauceCodePro NF" with a size of 10
 --vim.opt.guifont = "Noto Mono:h12" -- Set the GUI font to "Noto Mono" with a size of 12
-vim.opt.guifont = "FiraCode Nerd Font:h10" -- Set the GUI font to "FiraCode Nerd Font" with a size of 10
+vim.opt.guifont = "FiraCode Nerd Font:h12" -- Set the GUI font to "FiraCode Nerd Font" with a size of 10
 
 -- Theme settings
 vim.cmd.colorscheme("peachpuff") -- Set the colorscheme to "peachpuff"
