@@ -497,6 +497,8 @@ Docpunct inserts a small marked block near the top of `.profile` that sources
 `session-env.sh`, and another near the top of `.bashrc` that sources
 `bash-ext.sh`. Existing content remains in place. `bash-ext.sh` sources the
 shared environment before adding interactive aliases and NVM completion.
+`session-env.sh` also exports `GPG_TTY` when the shell has a real terminal, so
+GPG/pass-backed Git Credential Manager prompts can use terminal pinentry.
 
 Install and update replace only docpunct's marked blocks. Removal deletes only
 those blocks and the managed fragment links. Foreign shell-entrypoint symlinks

@@ -95,13 +95,20 @@ DOCPUNCT_FEATURE_DIR="$PWD/features/gpg" features/gpg/check-readiness.sh
 
 ## Terminal and SSH sessions
 
-GCM uses `SSH_TTY` automatically in SSH sessions. For other terminal-only
-sessions, add this guarded setup to the appropriate shell profile:
+GCM uses `SSH_TTY` automatically in SSH sessions. The docpunct `dotfiles`
+feature also adds this guarded setup through the managed shared shell
+environment:
 
 ```sh
 if tty_path="$(tty 2>/dev/null)"; then
     export GPG_TTY="$tty_path"
 fi
+```
+
+After updating dotfiles, open a new shell or source the managed environment:
+
+```sh
+. "$HOME/.config/docpunct/session-env.sh"
 ```
 
 If the agent attempts to use a graphical prompt on a command-line-only host,

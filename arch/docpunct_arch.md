@@ -802,7 +802,8 @@ instead of:
 The managed shell fragments keep login and interactive shell setup separate:
 
 - `session-env.sh` owns shared environment such as `PATH`, Cargo env loading,
-  `NVM_DIR`, and `nvm.sh` loading for `node` availability.
+  guarded `GPG_TTY` setup for terminal pinentry, `NVM_DIR`, and `nvm.sh`
+  loading for `node` availability.
 - `bash-ext.sh` sources `session-env.sh`, then owns personal interactive Bash
   aliases and NVM Bash completion.
 - Existing `.profile` and `.bashrc` files retain ownership of all other host
@@ -875,6 +876,10 @@ esac
 export PATH
 
 [ -s "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
+
+if tty_path="$(tty 2>/dev/null)" && [ -n "$tty_path" ] && [ "$tty_path" != "not a tty" ]; then
+    export GPG_TTY="$tty_path"
+fi
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"

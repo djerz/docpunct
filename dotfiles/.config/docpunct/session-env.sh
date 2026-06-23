@@ -12,6 +12,10 @@ if [ -s "$HOME/.cargo/env" ]; then
     . "$HOME/.cargo/env"
 fi
 
+if tty_path="$(tty 2>/dev/null)" && [ -n "$tty_path" ] && [ "$tty_path" != "not a tty" ]; then
+    export GPG_TTY="$tty_path"
+fi
+
 export NVM_DIR="$HOME/.nvm"
 if [ -s "$NVM_DIR/nvm.sh" ] && ! command -v nvm >/dev/null 2>&1; then
     # shellcheck disable=SC1091

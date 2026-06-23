@@ -361,6 +361,13 @@ profile_node_path="$(
   printf 'expected .profile to make nvm node available on PATH, got: %s\n' "$profile_node_path" >&2
   exit 1
 }
+profile_gpg_tty="$(
+  env -i HOME="$profile_home" PATH=/usr/bin:/bin sh -c ". \"\$HOME/.config/docpunct/session-env.sh\"; printf '%s' \"\${GPG_TTY-}\""
+)"
+[[ -z "$profile_gpg_tty" ]] || {
+  printf 'expected non-tty session-env.sh source to leave GPG_TTY unset, got: %s\n' "$profile_gpg_tty" >&2
+  exit 1
+}
 bash_ext_output="$(
   # shellcheck disable=SC2016
   env -i HOME="$profile_home" PATH=/usr/bin:/bin \

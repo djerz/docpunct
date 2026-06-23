@@ -62,6 +62,8 @@
   `.profile` and `.bashrc` using additive marked blocks so existing host shell
   configuration is preserved. `bash-ext.sh` owns personal Bash aliases and NVM
   completion.
+- `session-env.sh` now exports `GPG_TTY` when `tty` reports a real terminal, so
+  GPG/pass-backed Git Credential Manager prompts can use terminal pinentry.
 - Git settings now live in a managed include fragment, with `.gitconfig` using
   an additive marked block so existing host Git configuration is preserved and
   takes precedence.
@@ -167,6 +169,8 @@
   an explicit migration path from the deprecated implicit GCM feature.
 - Added temporary `debug-gcm-curl` feature diagnostics for reproducing and
   logging GCM GitHub release curl failures behind corporate proxies.
+- Added guarded `GPG_TTY` setup to the managed shared shell environment for
+  GPG/pass-backed Git Credential Manager terminal prompts.
 - Fixed `gcm-gpg` include ordering so later host helpers such as `store` cannot
   remain active. Existing unmanaged GCM includes migrate to an ordered marked
   block without deleting the preserved host helper settings.
