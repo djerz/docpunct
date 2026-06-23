@@ -524,11 +524,7 @@ Neovim config is managed as a directory-level symlink:
 ```
 
 This keeps Neovim, Telescope, language servers, and plugin tooling looking at a
-single coherent config tree. `./bin/docpunct update dotfiles` can migrate an
-older file-level Neovim symlink layout when the existing directory contains
-only docpunct-owned symlinks and directories. If local files are present,
-docpunct refuses the migration instead of deleting them. This migration support
-is deprecated and should be removed after existing machines have been updated.
+single coherent config tree.
 
 If a target file already exists and is not already managed by docpunct,
 docpunct makes a one-time backup before replacing it with a symlink.

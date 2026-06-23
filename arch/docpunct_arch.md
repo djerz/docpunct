@@ -35,6 +35,11 @@ Codex CLI, Copilot CLI, CopilotChat.nvim, and direct API usage. It deliberately
 does not run Ollama's convenience installer because that script may install
 GPU drivers and modify system package repositories.
 
+Version 24 removes the deprecated special-case migration for the old Neovim
+file-level symlink layout. Existing target directories are now preserved by the
+normal dotfile backup path before docpunct creates the managed directory-level
+symlink.
+
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
 preserved and take precedence, while legacy docpunct-owned symlinks migrate by
@@ -725,27 +730,23 @@ Installation behavior:
 3. If already managed by docpunct:
    - leave the backup untouched
    - update the symlink if necessary
-4. If `~/.config/nvim` exists as an old file-level docpunct symlink layout:
-   - replace it with the directory-level symlink only when it contains only
-     docpunct-owned symlinks and directories
-   - refuse the migration when local files or non-docpunct symlinks are present
-5. Reconcile shell entrypoints separately:
+4. Reconcile shell entrypoints separately:
    - insert one canonical marked block near the top of `.profile` that sources
      `~/.config/docpunct/session-env.sh`
    - insert one canonical marked block near the top of `.bashrc` that sources
      `~/.config/docpunct/bash-ext.sh`
    - preserve all content outside those blocks
    - refuse foreign entrypoint symlinks and malformed or duplicate markers
-6. When migrating old docpunct-owned whole-file `.profile` or `.bashrc`
+5. When migrating old docpunct-owned whole-file `.profile` or `.bashrc`
    symlinks, restore the saved original when available before inserting the
    marked block. Create a minimal regular entrypoint when no backup exists.
-7. Reconcile Git configuration separately:
+6. Reconcile Git configuration separately:
    - link the tracked settings as `~/.config/docpunct/gitconfig`
    - insert one canonical marked include block near the top of `.gitconfig`
    - preserve all content outside the block, with later host settings taking
      precedence over the included docpunct defaults
    - refuse foreign `.gitconfig` symlinks and malformed or duplicate markers
-8. When migrating an old docpunct-owned whole-file `.gitconfig` symlink,
+7. When migrating an old docpunct-owned whole-file `.gitconfig` symlink,
    restore the saved original when available before inserting the include
    block. Create a minimal regular `.gitconfig` when no backup exists.
 
@@ -776,10 +777,7 @@ The command:
 docpunct update dotfiles
 ```
 
-must also run the dotfiles install/relink logic. This allows existing machines
-to migrate from the old Neovim file-level symlink layout without uninstalling
-`dotfiles` or its dependents. The old Neovim file-level migration logic is
-deprecated and should be removed after existing machines have migrated.
+must also run the dotfiles install/relink logic.
 
 Dotfiles must never contain hardcoded usernames.
 

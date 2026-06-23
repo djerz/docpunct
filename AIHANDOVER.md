@@ -15,8 +15,9 @@ existing project documents as authoritative for repository state, constraints,
 known issues, testing expectations, and remaining work.
 
 First summarize the current repo state, known issues, and the next recommended
-step from TODO.md. Then continue from the existing work without discarding
-unrelated working-tree changes.
+step from TODO.md. Do not start working on a TODO item until I explicitly
+confirm which item to do next. Continue from the existing work without
+discarding unrelated working-tree changes.
 
 After completing the requested work, propose concrete next steps based on
 TODO.md and ask me what I want to do next.

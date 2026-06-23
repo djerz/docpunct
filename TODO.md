@@ -131,6 +131,9 @@
   this computer class: `qwen3:8b`, `qwen3:1.7b`, and `qwen3:0.6b`. Their speed
   multipliers are explicitly presented as estimates, with the smallest model
   treated as a latency experiment rather than a dependable coding agent.
+- Removed the deprecated Neovim file-level symlink migration special case from
+  dotfiles reconciliation. Existing directories are now handled by the normal
+  backup-and-replace path before creating the managed directory symlink.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -311,6 +314,8 @@
   migration path for existing docpunct-owned file symlinks.
 - Marked the old Neovim file-level symlink migration path as deprecated; remove
   it after existing machines have run `docpunct update dotfiles`.
+- Removed the deprecated Neovim file-level symlink migration logic from
+  `features/dotfiles/reconcile.sh`.
 - Added `features/neovide/neovide.ico` as the Neovide desktop entry icon; the
   Neovide install script copies it to a user-local icon path and the remove
   script removes only that copied icon.
@@ -421,6 +426,9 @@
   host `shellcheck`, `./bin/docpunct test-smoke`, and `git diff --check`
   after moving PATH-related shell setup from `.bashrc` to `.profile`.
 - `git diff --check` after updating `TODO.md` and the architecture document.
+- Bash syntax, full host ShellCheck, `./bin/docpunct test-smoke`, and
+  `git diff --check` after removing the deprecated Neovim file-level symlink
+  migration logic.
 - `git diff --check` after aligning `HOWTO.md` with the `.profile` split.
 - Host `shellcheck`, `./bin/docpunct test-smoke`, and
   `./bin/docpunct test-container 26.04` after adding Git Credential Manager's
@@ -542,8 +550,6 @@
 - Consider independent publisher-signature validation for Git Credential
   Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
   release assets.
-- Remove the deprecated Neovim file-level symlink migration logic from
-  `features/dotfiles/reconcile.sh` after existing machines have migrated.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
   from `features/dotfiles/shell-hooks.sh` after existing machines have migrated
   to additive shell blocks.
@@ -589,11 +595,9 @@
 3. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
    release assets.
-4. Remove the deprecated Neovim file-level symlink migration logic after
-   existing machines have migrated.
-5. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
+4. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
    machines have updated to the ordered marked include block.
-6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+5. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
-7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+6. Remove the legacy whole-file `.gitconfig` symlink migration logic after
    existing machines have migrated to the additive include block.

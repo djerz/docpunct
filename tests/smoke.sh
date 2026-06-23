@@ -329,11 +329,15 @@ env \
   DOCPUNCT_CACHE_DIR="$migration_cache" \
   "$repo_root/bin/docpunct" update dotfiles >/dev/null
 [[ -L "$migration_home/.config/nvim" ]] || {
-  printf 'expected dotfiles update to migrate nvim file symlinks to directory symlink\n' >&2
+  printf 'expected dotfiles update to replace nvim directory with directory symlink\n' >&2
   exit 1
 }
 [[ "$(readlink "$migration_home/.config/nvim")" == "$repo_root/dotfiles/.config/nvim" ]] || {
-  printf 'expected migrated nvim symlink to point at dotfiles nvim directory\n' >&2
+  printf 'expected nvim symlink to point at dotfiles nvim directory\n' >&2
+  exit 1
+}
+[[ -L "$migration_cache/backups/dotfiles/.config/nvim/init.lua" ]] || {
+  printf 'expected previous nvim directory to be preserved in dotfiles backup\n' >&2
   exit 1
 }
 [[ ! -L "$migration_home/.bashrc" ]] || {
