@@ -57,5 +57,9 @@
     # Choose one of these two lines (not both!) explained below.
     cmd = meld "$LOCAL" "$MERGED" "$REMOTE" --output "$MERGED"
     #cmd = meld "$LOCAL" "$BASE" "$REMOTE" --output "$MERGED"
+[difftool "bc"]
+        cmd = 'C:/Program Files/Beyond Compare 5/BComp.exe' $LOCAL $REMOTE
+[mergetool "bc"]
+        cmd = 'C:/Program Files/Beyond Compare 5/BComp.exe' $LOCAL $REMOTE $BASE $MERGED
 [init]
 	defaultBranch = main
