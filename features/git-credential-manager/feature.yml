@@ -1,3 +1,0 @@
-description: Deprecated legacy Git Credential Manager feature; migrate to gcm-gpg.
-depends:
-  - debian-cli-packages

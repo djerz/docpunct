@@ -146,8 +146,7 @@ doublecmd
 obsidian
 gpg
 gcm-gpg
-debug-gcm-curl
-git-credential-manager
+debug-corpo-proxy
 nerdfonts
 rust
 node
@@ -177,10 +176,11 @@ credential fragment:
     path = ~/.config/docpunct/git-credential-manager.gitconfig
 ```
 
-`debug-gcm-curl` is a temporary diagnostic feature for corporate proxy
-failures. It reproduces the Git Credential Manager GitHub release metadata and
-asset download flow without installing anything, then writes a sanitized log to
-`~/.cache/docpunct/log/debug-gcm-curl-latest.log`.
+`debug-corpo-proxy` is a temporary diagnostic feature for corporate proxy
+failures. Its current probe reproduces the Git Credential Manager GitHub
+release metadata and asset download flow without installing anything, then
+writes a sanitized curl/proxy log to
+`~/.cache/docpunct/log/debug-corpo-proxy-latest.log`.
 
 ---
 
@@ -401,17 +401,6 @@ feature fails closed if another global helper remains active after GCM. It
 supports GCM's provider-specific authentication and generic HTTPS servers
 using a username plus password or personal access token.
 
-The old `git-credential-manager` feature is deprecated. Existing installations
-migrate explicitly, without deleting stored credentials:
-
-```sh
-./bin/docpunct install gpg
-# Follow features/gpg/HOWTO.md and initialize pass.
-./bin/docpunct install gcm-gpg
-./bin/docpunct remove git-credential-manager
-./bin/docpunct update dotfiles
-```
-
 The provider may ask for authentication once to populate the new GPG store.
 
 `doublecmd` installs the latest Double Commander GitHub release from the
@@ -561,9 +550,8 @@ The managed dotfiles are:
 .config/nvim
 ```
 
-Private files such as `.gitconfig-private` are not imported without an explicit
-decision. The initially supplied `.gitconfig-private` was empty and was left out
-because its name indicates private data.
+Private Git configuration remains outside docpunct scope and is not imported
+into the managed dotfiles.
 
 Dotfiles should not hardcode usernames.
 

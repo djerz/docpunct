@@ -40,10 +40,10 @@ file-level symlink layout. Existing target directories are now preserved by the
 normal dotfile backup path before docpunct creates the managed directory-level
 symlink.
 
-Version 25 adds a temporary `debug-gcm-curl` feature that reproduces the
-Git Credential Manager GitHub release API and asset download flow without
-installing anything, writing a sanitized curl/proxy diagnostic log under
-`~/.cache/docpunct/log`.
+Version 25 adds a temporary `debug-corpo-proxy` feature for analyzing corporate
+proxy setup issues. Its current probe reproduces the Git Credential Manager
+GitHub release API and asset download flow without installing anything,
+writing a sanitized curl/proxy diagnostic log under `~/.cache/docpunct/log`.
 
 Version 17 replaces whole-file `.gitconfig` management with an additive marked
 include of a managed Git settings fragment. Existing host settings are
@@ -61,8 +61,8 @@ no longer install a credential helper. The standalone `gpg` feature owns the
 GPG/pass command-line prerequisites and instructional key setup, while
 `gcm-gpg` requires an initialized user-owned pass store and configures Git
 Credential Manager with encrypted GPG storage. The former
-`git-credential-manager` feature remains temporarily as a deprecated migration
-source for already-installed systems.
+the deprecated `git-credential-manager` feature has now been removed after its
+migration window.
 
 Version 11 incorporated the session that
 reworked update behavior so recipe changes can be applied without a
@@ -230,8 +230,7 @@ docpunct/
 │   ├── nerdfonts/
 │   ├── gpg/
 │   ├── gcm-gpg/
-│   ├── debug-gcm-curl/
-│   ├── git-credential-manager/
+│   ├── debug-corpo-proxy/
 │   ├── rust/
 │   ├── node/
 │   ├── python-uv/
@@ -858,9 +857,8 @@ docpunct defaults:
 # <<< docpunct git setup <<<
 ```
 
-Private files such as `.gitconfig-private` must not be imported without an
-explicit decision. The initially supplied `.gitconfig-private` was empty and
-was left out because its name indicates private data.
+Private Git configuration remains outside docpunct scope and must not be
+imported into the managed dotfiles.
 
 Machine-specific paths must be removed when safe. The initial Neovim Copilot
 configuration had a hardcoded Node path and the override was removed.
@@ -1034,22 +1032,17 @@ Update behavior should repeat the latest-release installation flow.
 Removal deletes only the marked include block, managed fragment, and a GCM
 package originally installed by `gcm-gpg`. It preserves pre-existing packages,
 GPG keys, pass data, and host Git settings; preserved host credential helpers
-become active again. It refuses removal while the legacy feature marker remains
-so migration ordering stays explicit.
+become active again.
 
 The downloaded package is verified against the SHA-256 digest in GitHub's
 release API before installation. This detects a corrupted or mismatched
 download but is not independent publisher-signature verification.
 
-The legacy `git-credential-manager` feature remains for one migration window.
-It emits a deprecation notice. `gcm-gpg` adopts its installed package; removing
-the legacy feature afterward preserves the package when `gcm-gpg` is marked
-installed. Existing users migrate in this order:
-
-```text
-install gpg -> initialize key/pass -> install gcm-gpg
--> remove git-credential-manager -> update dotfiles
-```
+The deprecated `git-credential-manager` feature was removed after its migration
+window. `gcm-gpg` is the only docpunct feature that installs and configures
+the Git Credential Manager package. When updated on a machine with a stale
+legacy installed-state marker, `gcm-gpg` adopts package ownership and removes
+that marker.
 
 ---
 

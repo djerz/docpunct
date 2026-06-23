@@ -4,10 +4,10 @@ set -euo pipefail
 repo="git-ecosystem/git-credential-manager"
 api_url="${DOCPUNCT_GCM_RELEASE_API_URL:-https://api.github.com/repos/$repo/releases/latest}"
 download_dir="$DOCPUNCT_CACHE_DIR/downloads"
-state_dir="$DOCPUNCT_STATE_DIR/debug-gcm-curl"
+state_dir="$DOCPUNCT_STATE_DIR/debug-corpo-proxy"
 timestamp="$(date +%Y%m%d-%H%M%S)"
-log_file="$DOCPUNCT_LOG_DIR/debug-gcm-curl-$timestamp.log"
-latest_log="$DOCPUNCT_LOG_DIR/debug-gcm-curl-latest.log"
+log_file="$DOCPUNCT_LOG_DIR/debug-corpo-proxy-$timestamp.log"
+latest_log="$DOCPUNCT_LOG_DIR/debug-corpo-proxy-latest.log"
 tmpdir="$(mktemp -d)"
 
 cleanup() {
@@ -96,7 +96,7 @@ run_curl_to_file() {
   set +e
   if [[ "$url" == https://api.github.com/* ]]; then
     curl -L -sS "$fail_arg" \
-      -A 'docpunct-debug-gcm-curl' \
+      -A 'docpunct-debug-corpo-proxy' \
       -H 'Accept: application/vnd.github+json' \
       "${auth_args[@]}" \
       -D "$headers" \
@@ -106,7 +106,7 @@ run_curl_to_file() {
       "$url" >"$metrics" 2>"$stderr"
   else
     curl -L -sS "$fail_arg" \
-      -A 'docpunct-debug-gcm-curl' \
+      -A 'docpunct-debug-corpo-proxy' \
       -D "$headers" \
       --trace-ascii "$trace" \
       -w $'http_code=%{http_code}\neffective_url=%{url_effective}\nsize_download=%{size_download}\n' \
@@ -123,7 +123,7 @@ run_curl_to_file() {
   log_trace_file "curl trace" "$trace"
 
   if [[ "$status" -ne 0 ]]; then
-    printf 'debug-gcm-curl: %s failed; diagnostic log: %s\n' "$description" "$log_file" >&2
+    printf 'debug-corpo-proxy: %s failed; diagnostic log: %s\n' "$description" "$log_file" >&2
     return "$status"
   fi
 }
@@ -132,7 +132,7 @@ require_command() {
   local command_name="$1"
   if ! command -v "$command_name" >/dev/null 2>&1; then
     log "missing required command: $command_name"
-    printf 'debug-gcm-curl: missing required command: %s; diagnostic log: %s\n' "$command_name" "$log_file" >&2
+    printf 'debug-corpo-proxy: missing required command: %s; diagnostic log: %s\n' "$command_name" "$log_file" >&2
     exit 1
   fi
 }
@@ -143,7 +143,7 @@ require_command dpkg
 require_command sha256sum
 
 {
-  log "debug-gcm-curl diagnostic started"
+  log "debug-corpo-proxy diagnostic started"
   log "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   log "hostname=$(hostname 2>/dev/null || printf unknown)"
   if [[ -r /etc/os-release ]]; then
@@ -164,7 +164,7 @@ require_command sha256sum
     arm64) asset_arch="arm64" ;;
     *)
       log "unsupported_architecture=$arch"
-      printf 'debug-gcm-curl: unsupported Debian architecture: %s; diagnostic log: %s\n' "$arch" "$log_file" >&2
+      printf 'debug-corpo-proxy: unsupported Debian architecture: %s; diagnostic log: %s\n' "$arch" "$log_file" >&2
       exit 1
       ;;
   esac
@@ -192,7 +192,7 @@ require_command sha256sum
     log "asset_selection=failed"
     log "available_assets:"
     printf '%s\n' "$release_json" | jq -r '.assets[].name' >>"$log_file"
-    printf 'debug-gcm-curl: could not find GCM Linux %s asset; diagnostic log: %s\n' "$asset_arch" "$log_file" >&2
+    printf 'debug-corpo-proxy: could not find GCM Linux %s asset; diagnostic log: %s\n' "$asset_arch" "$log_file" >&2
     exit 1
   fi
 
@@ -200,7 +200,7 @@ require_command sha256sum
   log "asset_url_host=$(url_host "$asset_url")"
   log "asset_digest=$asset_digest"
 
-  package_path="$download_dir/debug-gcm-curl-$asset_name"
+  package_path="$download_dir/debug-corpo-proxy-$asset_name"
   run_curl_to_file "GitHub release asset download" "$asset_url" "$package_path"
   log "download_path=$package_path"
 
@@ -210,14 +210,14 @@ require_command sha256sum
       log "checksum=ok"
     else
       log "checksum=failed"
-      printf 'debug-gcm-curl: checksum verification failed; diagnostic log: %s\n' "$log_file" >&2
+      printf 'debug-corpo-proxy: checksum verification failed; diagnostic log: %s\n' "$log_file" >&2
       exit 1
     fi
   else
     log "checksum=skipped invalid_or_missing_digest"
   fi
 
-  log "debug-gcm-curl diagnostic completed"
+  log "debug-corpo-proxy diagnostic completed"
 }
 
-printf 'debug-gcm-curl diagnostic log: %s\n' "$log_file" >&2
+printf 'debug-corpo-proxy diagnostic log: %s\n' "$log_file" >&2

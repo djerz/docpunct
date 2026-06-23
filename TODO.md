@@ -88,6 +88,9 @@
 - `gcm-gpg` owns an end-of-file marked include in `~/.gitconfig`, so its helper
   reset follows preserved host helpers. Configuration fails closed unless GCM
   with GPG storage is the only effective global credential helper.
+- The deprecated `git-credential-manager` feature has been removed after its
+  migration window; `gcm-gpg` now fully owns docpunct's Git Credential Manager
+  package lifecycle and adopts stale legacy ownership markers on update.
 - The resumed initial Gmail synchronization completed successfully on
   2026-06-22. `epel sync` processed all 15 folders without `OVERQUOTA`, and
   notmuch indexing completed with 67,937 indexed messages. The account had
@@ -136,11 +139,11 @@
 - Removed the deprecated Neovim file-level symlink migration special case from
   dotfiles reconciliation. Existing directories are now handled by the normal
   backup-and-replace path before creating the managed directory symlink.
-- Added a temporary `debug-gcm-curl` feature for diagnosing corporate proxy
-  failures in the Git Credential Manager curl path. It performs the same
-  GitHub release API lookup and asset download as `gcm-gpg`, installs nothing,
-  and writes a sanitized latest log at
-  `~/.cache/docpunct/log/debug-gcm-curl-latest.log`.
+- Added a temporary `debug-corpo-proxy` feature for diagnosing corporate proxy
+  setup issues. Its current probe performs the same GitHub release API lookup
+  and asset download as `gcm-gpg`, installs nothing, and writes a sanitized
+  latest log at
+  `~/.cache/docpunct/log/debug-corpo-proxy-latest.log`.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -167,8 +170,12 @@
 - Added standalone `gpg` and `gcm-gpg` features, including pass/key readiness
   checks, headless pinentry instructions, a separate managed Git include, and
   an explicit migration path from the deprecated implicit GCM feature.
-- Added temporary `debug-gcm-curl` feature diagnostics for reproducing and
-  logging GCM GitHub release curl failures behind corporate proxies.
+- Removed the deprecated `git-credential-manager` feature after its migration
+  window. `gcm-gpg` remains the only feature that installs and configures Git
+  Credential Manager, and it adopts stale legacy package ownership markers on
+  update.
+- Added temporary `debug-corpo-proxy` feature diagnostics for reproducing and
+  logging GitHub release curl failures behind corporate proxies.
 - Added guarded `GPG_TTY` setup to the managed shared shell environment for
   GPG/pass-backed Git Credential Manager terminal prompts.
 - Fixed `gcm-gpg` include ordering so later host helpers such as `store` cannot
@@ -221,7 +228,6 @@
   - `debian-cli-packages`
   - `debian-gui-packages`
   - `desktop-apps`
-  - `git-credential-manager`
   - `rust`
   - `node`
   - `python-uv`
@@ -244,17 +250,13 @@
 - Imported public dotfiles from `../mydotfiles`.
 - Imported `.gitconfig` with `credential.helper = manager`.
 - Imported `.config/nvim/lua/plugins/copilotchat.lua` with the hardcoded Copilot Node override removed.
-- Left `.gitconfig-private` out of the repository.
-- Added Git Credential Manager installer feature:
+- Added the original Git Credential Manager installer flow, which has since
+  been folded into `gcm-gpg`:
   - queries the latest GitHub release dynamically
   - selects `gcm-linux-x64-*.deb` for Debian `amd64`
   - selects `gcm-linux-arm64-*.deb` for Debian `arm64`
   - installs with `sudo dpkg -i`
   - runs `git-credential-manager configure`
-- Wired dependencies:
-  - `git-credential-manager` depends on `debian-cli-packages`
-  - `dotfiles` depends on `git-credential-manager`
-  - `core` includes `git-credential-manager` before `dotfiles`
 - Added Neovide desktop entry template and install/remove handling in the `neovide` feature.
 - Updated `HOWTO.md` to reflect the latest feature set and implemented behavior.
 - Added dependency cycle detection before install/update traversal.
@@ -372,7 +374,8 @@
 - fake-home dotfiles install/remove smoke tests
 - `desktop-file-validate` on generated Neovide desktop file
 - Git Credential Manager latest-release selector against current upstream release metadata
-- removal refusal when `dotfiles` depends on installed `git-credential-manager`
+- removal refusal when another installed feature depends on the requested
+  feature
 - dependency cycle refusal using a temporary fake feature tree
 - new third-party APT feature scripts pass `bash -n`
 - new third-party APT feature scripts are executable
@@ -535,13 +538,8 @@
   loaded `gpt-oss:20b` with a 65,536-token context, and Codex returned `hello`
   successfully after processing 6,711 tokens on the CPU-only host.
 
-## Pending clarification
-
-1. `.gitconfig-private` was not imported yet because its name indicates private data, although the provided file is empty.
-
 ## Remaining work
 
-- Decide whether to import the empty `.gitconfig-private`.
 - Improve epel credential security beyond command-based `secret-tool` lookup,
   including explicit OAuth/token lifecycle support.
 - Replace the notmuch.nvim private msmtp wrapper if the plugin gains a
@@ -553,16 +551,14 @@
   provider Sent folder being synchronized back through mbsync.
 - Consider adding Thunderbird and Evolution to `debian-gui-packages`; epel
   currently documents them without installing.
-- Remove the deprecated `git-credential-manager` feature after existing users
-  have migrated to `gcm-gpg` and the documented migration window has closed.
 - Remove the deprecated unmanaged `gcm-gpg` include migration from
   `features/gcm-gpg/git-hooks.sh` after existing machines have updated
   `gcm-gpg` and gained the ordered marked include block.
 - Consider independent publisher-signature validation for Git Credential
   Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
   release assets.
-- Remove the temporary `debug-gcm-curl` feature after the corporate proxy curl
-  failure has been diagnosed and the permanent download behavior is fixed.
+- Remove the temporary `debug-corpo-proxy` feature after the corporate proxy
+  setup issue has been diagnosed and any permanent download behavior is fixed.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
   from `features/dotfiles/shell-hooks.sh` after existing machines have migrated
   to additive shell blocks.
@@ -572,10 +568,6 @@
 
 ## Known issues
 
-- Existing users with the legacy `git-credential-manager` installed must
-  initialize GPG/pass and complete the documented explicit `gcm-gpg` migration;
-  existing credentials are not copied automatically and authentication may be
-  requested once.
 - notmuch.nvim currently hardcodes `msmtp`; epel uses a private wrapper placed
   first on Neovim's PATH so queued mode works without patching the plugin.
 - Epel's v1 credential instructions use the desktop keyring through
@@ -604,15 +596,14 @@
 
 1. Decide whether to enable epel's systemd sync timer now that provider Sent
    synchronization has been validated.
-2. Decide whether to import the empty `.gitconfig-private`.
-3. Consider independent publisher-signature validation for Git Credential
+2. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
    release assets.
-4. Run `./bin/docpunct install debug-gcm-curl` on the corporate proxy machine
-   and inspect `~/.cache/docpunct/log/debug-gcm-curl-latest.log`.
-5. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
+3. Run `./bin/docpunct install debug-corpo-proxy` on the corporate proxy machine
+   and inspect `~/.cache/docpunct/log/debug-corpo-proxy-latest.log`.
+4. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
    machines have updated to the ordered marked include block.
-6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+5. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
-7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+6. Remove the legacy whole-file `.gitconfig` symlink migration logic after
    existing machines have migrated to the additive include block.

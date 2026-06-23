@@ -144,27 +144,16 @@ assert_contains "$(cat "$legacy_remove_home/.gitconfig")" 'helper = store'
 mkdir -p "$migration_cache/state/installed"
 touch "$migration_cache/state/installed/git-credential-manager"
 touch "$migration_cache/state/installed/gcm-gpg"
-
-legacy_remove_output="$(
-  env HOME="$test_home" PATH="$fake_bin:$PATH" \
-    DOCPUNCT_CACHE_DIR="$migration_cache" \
-    "$repo_root/features/git-credential-manager/remove.sh"
-)"
-assert_contains "$legacy_remove_output" 'Keeping the shared gcm package because gcm-gpg is installed.'
-
-assert_fails_with \
-  'Remove the legacy git-credential-manager feature before removing gcm-gpg.' \
-  env HOME="$test_home" PATH="$fake_bin:$PATH" \
-    DOCPUNCT_CACHE_DIR="$migration_cache" \
-    "$repo_root/features/gcm-gpg/remove.sh"
-
-rm -f "$migration_cache/state/installed/git-credential-manager"
 remove_output="$(
   env HOME="$test_home" PATH="$fake_bin:$PATH" \
     DOCPUNCT_CACHE_DIR="$migration_cache" \
     "$repo_root/features/gcm-gpg/remove.sh"
 )"
 assert_contains "$remove_output" 'Keeping the pre-existing shared gcm package.'
+[[ ! -e "$migration_cache/state/installed/git-credential-manager" ]] || {
+  printf 'expected gcm-gpg removal to clean stale legacy feature marker\n' >&2
+  exit 1
+}
 [[ ! -e "$managed_config" ]] || {
   printf 'expected gcm-gpg removal to delete only its managed Git fragment\n' >&2
   exit 1

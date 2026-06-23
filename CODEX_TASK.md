@@ -26,7 +26,6 @@ Goals:
    - debian-gui-packages
    - gpg
    - gcm-gpg
-   - git-credential-manager
    - rust
    - node
    - python-uv

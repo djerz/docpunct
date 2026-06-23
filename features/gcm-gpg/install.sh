@@ -6,6 +6,7 @@ api_url="https://api.github.com/repos/$repo/releases/latest"
 download_dir="$DOCPUNCT_CACHE_DIR/downloads"
 state_dir="$DOCPUNCT_CACHE_DIR/state/gcm-gpg"
 package_owned_marker="$state_dir/package-installed-by-docpunct"
+stale_legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
 gpg_feature_dir="$(dirname "$DOCPUNCT_FEATURE_DIR")/gpg"
 
 DOCPUNCT_FEATURE_DIR="$gpg_feature_dir" "$gpg_feature_dir/check-readiness.sh"
@@ -70,15 +71,10 @@ if ! sudo dpkg -i "$package_path"; then
   sudo apt-get install -f -y
 fi
 
-if [[ "$package_preexisting" == false ]]; then
+if [[ "$package_preexisting" == false || -f "$stale_legacy_marker" ]]; then
   touch "$package_owned_marker"
 fi
+rm -f -- "$stale_legacy_marker"
 
 "$DOCPUNCT_FEATURE_DIR/configure.sh"
 git-credential-manager --version
-
-legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
-if [[ -f "$legacy_marker" ]]; then
-  printf 'Legacy feature detected. After verifying Git authentication, run:\n'
-  printf '  docpunct remove git-credential-manager\n'
-fi

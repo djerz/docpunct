@@ -1,0 +1,2 @@
+description: Temporary corporate proxy diagnostics using GitHub release curl probes.
+install_notice: "Temporary corporate proxy diagnostic feature: inspect the latest log at ~/.cache/docpunct/log/debug-corpo-proxy-latest.log."

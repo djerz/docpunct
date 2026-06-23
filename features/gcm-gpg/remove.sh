@@ -6,13 +6,7 @@ feature_dir="${DOCPUNCT_FEATURE_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")"
 state_dir="$DOCPUNCT_CACHE_DIR/state/gcm-gpg"
 package_owned_marker="$state_dir/package-installed-by-docpunct"
 config_owned_marker="$state_dir/config-written-by-docpunct"
-legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
-installed_marker="$DOCPUNCT_CACHE_DIR/state/installed/gcm-gpg"
-
-if [[ -f "$installed_marker" && -f "$legacy_marker" ]]; then
-  printf 'Remove the legacy git-credential-manager feature before removing gcm-gpg.\n' >&2
-  exit 1
-fi
+stale_legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
 
 if [[ -f "$config_owned_marker" ]]; then
   "$feature_dir/git-hooks.sh" remove
@@ -27,5 +21,6 @@ if [[ -f "$package_owned_marker" ]]; then
 else
   printf 'Keeping the pre-existing shared gcm package.\n'
 fi
+rm -f -- "$stale_legacy_marker"
 
 printf 'Keeping GPG keys and pass data. Preserved host credential helpers are active again.\n'
