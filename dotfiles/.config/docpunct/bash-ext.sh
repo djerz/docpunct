@@ -12,7 +12,7 @@ case $- in
     *) return 0 ;;
 esac
 
-#alias vim="nvim"
+alias vim="nvim"
 
 # Check for various OS openers. Quit as soon as we find one that works.
 for opener in browser-exec xdg-open cmd.exe cygstart "start" open; do
