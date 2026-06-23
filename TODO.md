@@ -110,6 +110,11 @@
   After synchronization, notmuch showed one two-message thread with both
   messages present in the provider Sent folder and INBOX; the thread carried
   the `replied` tag.
+- Epel now provides `epel fsync` for a fast foreground sync of explicitly
+  configured mbsync targets such as `personal@example.com:INBOX`. It uses the
+  same mail lock as full sync and backup, runs `notmuch new` afterward, records
+  `last-fsync` separately, and leaves `epel sync` as the unchanged
+  `mbsync --all` full synchronization path.
 - The current pinned notmuch.nvim send workflow leaves both its temporary send
   terminal and sent draft open. The Epel HOWTO now documents closing the
   terminal with `Ctrl-\ Ctrl-n`, then `:q`, and deleting the sent draft with
@@ -514,6 +519,10 @@
   validation on 2026-06-22. The resulting notmuch thread contained two
   messages, with both represented in INBOX and the provider Sent folder, and
   was tagged `replied`.
+- Bash syntax, full host ShellCheck, focused Epel smoke coverage,
+  `./bin/docpunct test-smoke`, and `git diff --check` after adding `epel
+  fsync`. Smoke coverage verifies the missing-configuration guidance, explicit
+  INBOX target syncing, `notmuch new`, and `last-fsync` status recording.
 - Bash syntax, full host ShellCheck, `./bin/docpunct test-smoke`, CLI routing
   checks, `git diff --check`, and a real Ubuntu 24.04
   `openai-codex-cli` install/update/remove lifecycle. The container verified

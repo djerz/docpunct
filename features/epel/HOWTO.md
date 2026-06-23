@@ -47,6 +47,19 @@ EPEL_BACKUP_ROOT="$HOME/backup/mail"
 This file is sourced as shell code. It must remain owned and writable only by
 the user.
 
+Optional fast synchronization targets are also configured there. Each entry is
+an explicit mbsync channel/mailbox target:
+
+```sh
+EPEL_FAST_SYNC_TARGETS=(
+  "personal@example.com:INBOX"
+  "work@example.org:INBOX"
+)
+```
+
+Use channel names from `~/.mbsyncrc`. The mailbox override after `:` should
+normally be `INBOX` for this workflow.
+
 ## Credentials and desktop keyring
 
 The initial implementation uses `secret-tool`, supplied by
@@ -184,6 +197,7 @@ authentication policy rather than copying Gmail settings to another provider.
 
 ```sh
 epel sync
+epel fsync
 epel sync-enable
 epel sync-disable
 epel sync-status
@@ -193,6 +207,14 @@ epel sync-status
 runs `notmuch new`. Backup uses the same lock, so synchronization and snapshots
 cannot overlap when invoked through epel. The timer runs five minutes after the
 user manager starts and then every fifteen minutes.
+
+`epel fsync` is a faster foreground sync for configured inbox targets. It
+requires `EPEL_FAST_SYNC_TARGETS` in `~/.config/epel/config`; if that array is
+missing or empty, epel prints the configuration snippet to add. For each target,
+it runs `mbsync CHANNEL:INBOX`, then runs `notmuch new`. This uses mbsync's
+mailbox override for that invocation only, so a later full `epel sync` still
+uses `mbsync --all` and processes every configured folder. `fsync`, `sync`, and
+`backup` share the same non-blocking mail lock and cannot overlap.
 
 ## Sending and queueing
 

@@ -33,9 +33,10 @@ Configuration:
 
 Mail synchronization:
   sync                 Run mbsync --all, then notmuch new.
+  fsync                Run configured fast mbsync targets, then notmuch new.
   sync-enable          Enable the 15-minute user timer.
   sync-disable         Disable the user timer.
-  sync-status          Show timer state and the last successful sync.
+  sync-status          Show timer state and the last successful syncs.
 
 Sending:
   submit               Submit an RFC 5322 message read from stdin.
@@ -114,6 +115,74 @@ sync_mail() {
   require_command "$EPEL_MBSYNC_BIN"
   require_command "$EPEL_NOTMUCH_BIN"
   with_lock mail sync_mail_locked
+}
+
+show_fsync_config_hint() {
+  cat >&2 <<EOF
+epel: fast sync targets are not configured.
+
+Add one or more mbsync channel/mailbox targets to $CONFIG_FILE, for example:
+
+EPEL_FAST_SYNC_TARGETS=(
+  "personal@example.com:INBOX"
+)
+
+Then retry:
+
+epel fsync
+EOF
+}
+
+fast_sync_targets() {
+  if ! declare -p EPEL_FAST_SYNC_TARGETS >/dev/null 2>&1; then
+    return 1
+  fi
+  case "$(declare -p EPEL_FAST_SYNC_TARGETS)" in
+    declare\ -a*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+fast_sync_mail_locked() {
+  local target
+  local -a targets=()
+
+  if ! fast_sync_targets; then
+    record_error fsync 'fast sync targets not configured'
+    show_fsync_config_hint
+    return 1
+  fi
+
+  # shellcheck disable=SC2154
+  targets=("${EPEL_FAST_SYNC_TARGETS[@]}")
+  if [[ "${#targets[@]}" -eq 0 ]]; then
+    record_error fsync 'fast sync targets not configured'
+    show_fsync_config_hint
+    return 1
+  fi
+
+  for target in "${targets[@]}"; do
+    if [[ -z "$target" ]]; then
+      record_error fsync 'empty fast sync target'
+      die 'empty fast sync target in EPEL_FAST_SYNC_TARGETS'
+    fi
+    if ! "$EPEL_MBSYNC_BIN" "$target"; then
+      record_error fsync "mbsync failed for $target"
+      return 1
+    fi
+  done
+
+  if ! "$EPEL_NOTMUCH_BIN" new; then
+    record_error fsync 'notmuch new failed'
+    return 1
+  fi
+  record_success fsync
+}
+
+fast_sync_mail() {
+  require_command "$EPEL_MBSYNC_BIN"
+  require_command "$EPEL_NOTMUCH_BIN"
+  with_lock mail fast_sync_mail_locked
 }
 
 systemctl_user() {
@@ -290,6 +359,7 @@ notmuch configuration: $HOME/.notmuch-config
 notmuch new.ignore:     .mbsyncstate and .uidvalidity
 mail root:             $EPEL_MAIL_ROOT
 backup root:           $EPEL_BACKUP_ROOT
+fast sync targets:     ${EPEL_FAST_SYNC_TARGETS[*]:-not configured}
 
 See $script_dir/HOWTO.md for Gmail, Orange, keyring, systemd, and troubleshooting guidance.
 EOF
@@ -308,6 +378,7 @@ main() {
   ensure_dirs
   case "$command" in
     sync) sync_mail ;;
+    fsync) fast_sync_mail ;;
     sync-enable)
       systemctl_user daemon-reload
       systemctl_user enable --now epel-sync.timer
@@ -316,6 +387,7 @@ main() {
     sync-status)
       printf 'automatic sync: %s\n' "$(enabled_state epel-sync.timer)"
       printf 'last successful sync: %s\n' "$(show_timestamp "$STATE_DIR/last-sync")"
+      printf 'last successful fast sync: %s\n' "$(show_timestamp "$STATE_DIR/last-fsync")"
       ;;
     submit) submit_message ;;
     send) flush_queue ;;

@@ -76,6 +76,24 @@ grep -qx 'mbsync --all' "$command_log"
 grep -qx 'notmuch new' "$command_log"
 [[ -f "$test_home/.local/state/epel/last-sync" ]]
 
+if run_epel fsync >/dev/null 2>"$tmpdir/fsync-missing.err"; then
+  printf 'expected fsync without configured targets to fail\n' >&2
+  exit 1
+fi
+grep -Fq 'fast sync targets are not configured' "$tmpdir/fsync-missing.err"
+
+mkdir -p "$test_home/.config/epel"
+cat >"$test_home/.config/epel/config" <<'EOF'
+EPEL_FAST_SYNC_TARGETS=(
+  "personal@example.com:INBOX"
+  "work@example.org:INBOX"
+)
+EOF
+run_epel fsync
+grep -qx 'mbsync personal@example.com:INBOX' "$command_log"
+grep -qx 'mbsync work@example.org:INBOX' "$command_log"
+[[ -f "$test_home/.local/state/epel/last-fsync" ]]
+
 run_epel send-queued
 message first@example.com first | run_epel submit >/dev/null
 message second@example.com second | run_epel submit >/dev/null

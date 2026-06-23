@@ -328,6 +328,7 @@ Future versions may become interactive and write configuration files after confi
 
 ```bash
 epel sync
+epel fsync
 epel sync-enable
 epel sync-disable
 epel sync-status
@@ -336,9 +337,10 @@ epel sync-status
 Meanings:
 
 * `epel sync` — manually receive mail with `mbsync` and index it with `notmuch new`
+* `epel fsync` — quickly sync explicitly configured inbox targets, then run `notmuch new`
 * `epel sync-enable` — enable automatic sync every 15 minutes
 * `epel sync-disable` — disable automatic sync
-* `epel sync-status` — show whether automatic sync is enabled and when sync last ran
+* `epel sync-status` — show whether automatic sync is enabled and when sync and fsync last ran
 
 Recommended implementation for `epel sync`:
 
@@ -346,6 +348,26 @@ Recommended implementation for `epel sync`:
 mbsync --all
 notmuch new
 ```
+
+Recommended implementation for `epel fsync`:
+
+```text
+mbsync CHANNEL:INBOX
+notmuch new
+```
+
+`epel fsync` must not parse `.mbsyncrc`. It should require explicit
+user-owned configuration in `~/.config/epel/config`, for example:
+
+```sh
+EPEL_FAST_SYNC_TARGETS=(
+  "personal@example.com:INBOX"
+)
+```
+
+The command uses the same mail lock as `epel sync` and `epel backup`. It
+selects only the named mailbox for that invocation; it must not modify the full
+sync configuration or prevent a later `epel sync` from running `mbsync --all`.
 
 Automatic sync should run every 15 minutes when enabled.
 
@@ -472,6 +494,11 @@ Meaning:
 * `mbsync` synchronizes all configured accounts under `~/Mail/<email_address>`
 * `notmuch new` indexes newly arrived Maildir messages
 * notmuch tags and searches only after mail exists locally
+
+A faster foreground command, `epel fsync`, may synchronize only configured
+inbox targets such as `personal@example.com:INBOX` before running
+`notmuch new`. This is an optimization for the common "check inbox now" case,
+not a replacement for full sync.
 
 The notmuch `new.ignore` list should contain `.mbsyncstate` and `.uidvalidity`.
 mbsync deliberately stores these synchronization and UID-validity metadata
