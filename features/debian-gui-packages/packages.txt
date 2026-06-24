@@ -3,6 +3,8 @@ keepassxc
 meld
 gnome-icon-theme
 adwaita-icon-theme-full
+gnome-calendar
+gnome-contacts
 
 # Required by the Neovide feature for desktop entry validation and updates.
 desktop-file-utils
