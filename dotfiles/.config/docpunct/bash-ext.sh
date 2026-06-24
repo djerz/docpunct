@@ -12,6 +12,7 @@ case $- in
     *) return 0 ;;
 esac
 
+alias git="g"
 alias vim="nvim"
 
 # Check for various OS openers. Quit as soon as we find one that works.
