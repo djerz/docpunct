@@ -808,7 +808,7 @@ cat >"$gui_remove_bin/dpkg-query" <<'EOF'
 set -euo pipefail
 package="${@: -1}"
 case "$package" in
-  keepassxc|meld|desktop-file-utils|gnome-icon-theme|adwaita-icon-theme-full|libfontconfig1-dev|libfreetype6-dev|wl-clipboard|xclip)
+  keepassxc|meld|desktop-file-utils|gnome-icon-theme|adwaita-icon-theme-full|gnome-calendar|gnome-contacts|seahorse|gnome-keyring|libpam-gnome-keyring|libsecret-tools|dbus-user-session|libfontconfig1-dev|libfreetype6-dev|wl-clipboard|xclip)
     printf 'ii '
     ;;
   *)
@@ -835,7 +835,7 @@ env \
   "$repo_root/features/debian-gui-packages/remove.sh"
 gui_remove_output="$(cat "$gui_remove_log")"
 assert_contains "$gui_remove_output" "remove -y keepassxc meld"
-for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-full libfontconfig1-dev libfreetype6-dev wl-clipboard xclip ubuntu-desktop ubuntu-desktop-minimal gdm3 gnome-control-center nautilus; do
+for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-full gnome-calendar gnome-contacts seahorse gnome-keyring libpam-gnome-keyring libsecret-tools dbus-user-session libfontconfig1-dev libfreetype6-dev wl-clipboard xclip ubuntu-desktop ubuntu-desktop-minimal gdm3 gnome-control-center nautilus; do
   if [[ "$gui_remove_output" == *"$protected_package"* ]]; then
     printf 'expected debian-gui-packages remove not to include protected/shared package: %s\noutput was:\n%s\n' "$protected_package" "$gui_remove_output" >&2
     exit 1

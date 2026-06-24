@@ -1057,6 +1057,13 @@ keepassxc
 meld
 gnome-icon-theme
 adwaita-icon-theme-full
+gnome-calendar
+gnome-contacts
+seahorse
+gnome-keyring
+libpam-gnome-keyring
+libsecret-tools
+dbus-user-session
 desktop-file-utils
 libfontconfig1-dev
 libfreetype6-dev
@@ -1067,6 +1074,11 @@ libqt6printsupport6
 
 `desktop-file-utils` is included because the Neovide feature validates and
 updates the installed desktop entry when those tools are available.
+
+`gnome-keyring`, `libpam-gnome-keyring`, `libsecret-tools`,
+`dbus-user-session`, and `seahorse` are included to provide a
+GNOME-compatible Secret Service stack and GUI inspection tool for applications
+that store credentials in the system vault, such as GitHub Copilot CLI.
 
 Neovide's Cargo build also requires native development libraries at link time:
 
@@ -1095,8 +1107,8 @@ keepassxc
 meld
 ```
 
-Shared dependencies such as `desktop-file-utils`, icon themes, development
-libraries, and Qt runtime libraries must not be removed by
+Shared dependencies such as `desktop-file-utils`, icon themes, Secret Service
+infrastructure, development libraries, and Qt runtime libraries must not be removed by
 `debian-gui-packages`, because removing them can cause APT to remove Ubuntu
 desktop packages that depend on them.
 

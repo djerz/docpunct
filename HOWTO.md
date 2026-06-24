@@ -231,6 +231,13 @@ keepassxc
 meld
 gnome-icon-theme
 adwaita-icon-theme-full
+gnome-calendar
+gnome-contacts
+seahorse
+gnome-keyring
+libpam-gnome-keyring
+libsecret-tools
+dbus-user-session
 desktop-file-utils
 libfontconfig1-dev
 libfreetype6-dev
@@ -247,6 +254,11 @@ remove Ubuntu desktop packages that depend on them.
 
 `desktop-file-utils` is included for Neovide desktop entry validation and
 updates.
+
+`gnome-keyring`, `libpam-gnome-keyring`, `libsecret-tools`,
+`dbus-user-session`, and `seahorse` provide a GNOME-compatible Secret Service
+stack and inspection tool for applications that use the system credential
+store, such as GitHub Copilot CLI.
 
 `libfontconfig1-dev` and `libfreetype6-dev` are included because the Neovide
 Cargo build links against Fontconfig and FreeType.

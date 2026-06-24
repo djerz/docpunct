@@ -18,10 +18,11 @@
 - `debian-cli-packages` includes `git-crypt` for repository encryption
   workflows that share the common CLI package set.
 - `debian-gui-packages` contains distro-repository GUI packages plus
-  `desktop-file-utils`, `libfontconfig1-dev`, `libfreetype6-dev`, and
-  `wl-clipboard`, `xclip`, and `libqt6printsupport6` for Neovide desktop entry
-  support, Neovide Cargo link-time requirements, Neovide clipboard integration,
-  and the Double Commander Qt6 runtime.
+  `desktop-file-utils`, the GNOME Secret Service stack, `libfontconfig1-dev`,
+  `libfreetype6-dev`, `wl-clipboard`, `xclip`, and `libqt6printsupport6` for
+  Neovide desktop entry support, GUI credential-vault support, Neovide Cargo
+  link-time requirements, Neovide clipboard integration, and the Double
+  Commander Qt6 runtime.
 - Third-party APT repository packages are modeled as separate features:
   `brave-browser`, `visual-studio-code`, `google-chrome`, `github-cli`, and
   `docker`.
@@ -149,6 +150,15 @@
   and asset download as `gcm-gpg`, installs nothing, and writes a sanitized
   latest log at
   `~/.cache/docpunct/log/debug-corpo-proxy-latest.log`.
+- Added GNOME Secret Service support packages to `debian-gui-packages` for GUI
+  system-vault users such as GitHub Copilot CLI: `gnome-keyring`,
+  `libpam-gnome-keyring`, `libsecret-tools`, `dbus-user-session`, and
+  `seahorse`. These packages are treated as shared desktop/keyring
+  infrastructure and are intentionally not removed by conservative
+  `debian-gui-packages` removal.
+- The Secret Service package change is committed locally on `main`. It was not
+  pushed by Codex because the user chose to push manually after the normal SSH
+  push failed on a bad-permissions system SSH config file.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -546,6 +556,11 @@
   environment setting. The current host was updated and restarted; Ollama
   loaded `gpt-oss:20b` with a 65,536-token context, and Codex returned `hello`
   successfully after processing 6,711 tokens on the CPU-only host.
+- `git diff --check`, Bash syntax, direct host ShellCheck, and
+  `./bin/docpunct test-smoke` after adding GNOME Secret Service support
+  packages to `debian-gui-packages`. The repo `./bin/docpunct shellcheck`
+  target remained blocked by Docker socket permissions, so host ShellCheck was
+  used as the fallback.
 
 ## Remaining work
 
