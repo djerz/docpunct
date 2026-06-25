@@ -73,24 +73,48 @@ if [ -s "$NVM_DIR/bash_completion" ]; then
     . "$NVM_DIR/bash_completion"
 fi
 
+winquote_if_needed() {
+    case "$1" in
+        *[[:space:]]*) printf '"%s"' "$1" ;;
+        *) printf '%s' "$1" ;;
+    esac
+}
+
 runwin() {
     local file="$1"
     shift
 
-    local abs win ext
+    local abs abs_dir base win_dir ext cmd
     abs=$(realpath "$file") || return 1
-    win=$(wslpath -w "$abs")
-    ext="${file##*.}"
+    abs_dir=$(dirname "$abs")
+    base=$(basename "$abs")
+    win_dir=$(wslpath -w "$abs_dir")
+    ext="${base##*.}"
+    ext="${ext,,}"
 
-    case "${ext,,}" in
+    case "$ext" in
         bat|cmd)
-            cmd.exe /c "\"$win\" $*"
+            cmd="cd /d $(winquote_if_needed "$win_dir") && call $(winquote_if_needed "$base")"
+
+            for arg in "$@"; do
+                cmd="$cmd $(winquote_if_needed "$arg")"
+            done
+
+            echo "[runwin] cmd=$cmd"
+            cmd.exe /c "$cmd"
             ;;
+
         ps1)
-            powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$win" "$@"
+            local win_ps1
+            win_ps1=$(wslpath -w "$abs")
+
+            echo "[runwin] ps1=$win_ps1"
+            powershell.exe -NoProfile -ExecutionPolicy Bypass \
+                -File "$(winquote_if_needed "$win_ps1")" "$@"
             ;;
+
         *)
-            echo "Unsupported extension: .$ext"
+            echo "Unsupported extension: .$ext" >&2
             return 1
             ;;
     esac
