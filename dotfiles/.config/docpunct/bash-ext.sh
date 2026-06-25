@@ -72,3 +72,26 @@ if [ -s "$NVM_DIR/bash_completion" ]; then
     # shellcheck disable=SC1091
     . "$NVM_DIR/bash_completion"
 fi
+
+runwin() {
+    local file="$1"
+    shift
+
+    local abs win ext
+    abs=$(realpath "$file") || return 1
+    win=$(wslpath -w "$abs")
+    ext="${file##*.}"
+
+    case "${ext,,}" in
+        bat|cmd)
+            cmd.exe /c "\"$win\" $*"
+            ;;
+        ps1)
+            powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$win" "$@"
+            ;;
+        *)
+            echo "Unsupported extension: .$ext"
+            return 1
+            ;;
+    esac
+}
