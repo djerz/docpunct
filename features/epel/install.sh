@@ -14,6 +14,10 @@ install_link() {
     if [[ "$current" == "$source" ]]; then
       return 0
     fi
+    if [[ "${DOCPUNCT_RELINK:-0}" == 1 && "$current" == */features/epel/"$(basename "$source")" ]]; then
+      ln -sfn -- "$source" "$target"
+      return 0
+    fi
     printf 'refusing to replace foreign symlink: %s -> %s\n' "$target" "$current" >&2
     exit 1
   elif [[ -e "$target" ]]; then

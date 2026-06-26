@@ -69,6 +69,23 @@ write_feature() {
   } >"$features_dir/$feature/feature.yml"
 }
 
+relink_features="$tmpdir/relink-features"
+write_feature "$relink_features" dotfiles
+write_feature "$relink_features" linked-tool
+# The fixture expands these variables when it runs.
+# shellcheck disable=SC2016
+printf '%s\n' \
+  '#!/usr/bin/env bash' \
+  'set -euo pipefail' \
+  'printf "%s\n" "$DOCPUNCT_FEATURE" >>"$DOCPUNCT_CACHE_DIR/relinked"' \
+  >"$relink_features/linked-tool/relink.sh"
+chmod +x "$relink_features/linked-tool/relink.sh"
+mkdir -p "$test_cache/state/installed"
+touch "$test_cache/state/installed/linked-tool"
+DOCPUNCT_FEATURES_DIR="$relink_features" run_docpunct relink
+grep -qx 'linked-tool' "$test_cache/relinked"
+rm -rf -- "$test_cache/state" "$test_cache/relinked"
+
 notice_features="$tmpdir/notice-features"
 write_feature "$notice_features" guided
 printf 'install_notice: Install user-owned data using HOWTO.md.\n' >>"$notice_features/guided/feature.yml"

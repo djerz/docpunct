@@ -7,6 +7,11 @@ split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
 user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
 binary are available in non-interactive login Bash shells.
 
+Version 26 extends `docpunct relink` with optional per-feature relocation
+hooks. Epel uses the hook to repair its command, private msmtp wrapper, and
+systemd user-unit links after the repository moves, while continuing to refuse
+unrelated symlinks.
+
 Version 18 adds a standalone `github-cli` feature backed by GitHub CLI's
 official APT repository, with a pinned official keyring checksum, architecture
 guards, conservative removal, and real Ubuntu container coverage.
@@ -401,6 +406,7 @@ feature.yml
 install.sh
 update.sh
 remove.sh
+relink.sh
 files.txt
 ```
 
@@ -414,7 +420,13 @@ Script paths are fixed and must not be declared in YAML:
 install.sh
 update.sh
 remove.sh
+relink.sh
 ```
+
+`relink.sh` is an optional relocation hook for installed features that own
+links directly into the repository. `docpunct relink` always reconciles
+dotfiles, then runs this hook for installed features that provide it. The hook
+must only repair feature-owned links and must not install or update packages.
 
 ---
 

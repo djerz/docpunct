@@ -156,9 +156,15 @@
   `seahorse`. These packages are treated as shared desktop/keyring
   infrastructure and are intentionally not removed by conservative
   `debian-gui-packages` removal.
-- The Secret Service package change is committed locally on `main`. It was not
-  pushed by Codex because the user chose to push manually after the normal SSH
-  push failed on a bad-permissions system SSH config file.
+- `docpunct relink` now runs optional relocation hooks for installed features.
+  Epel uses this to repair its command, private msmtp wrapper, and systemd user
+  unit links after the repository moves; unrelated symlinks remain protected.
+- The earlier Secret Service package change is committed and `main` currently
+  matches `origin/main`.
+- The current working tree intentionally contains uncommitted repository
+  relocation work: the generic feature `relink.sh` hook, Epel link repair,
+  regression coverage, and corresponding architecture, HOWTO, and TODO
+  updates. Preserve these changes when resuming.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -167,6 +173,11 @@
 - Future sessions are allowed to run any test target without asking first,
   including container tests that pull images or run APT/network work inside
   containers.
+- Host Docker access is healthy: `chris` is a member of the `docker` group,
+  `/var/run/docker.sock` is owned by `root:docker`, and both `docker ps` and
+  `./bin/docpunct shellcheck` pass in host context. Restricted AI command
+  sandboxes may map supplementary groups to `nogroup`; Docker commands from
+  such a sandbox must use the approved host-context execution path.
 - Future features that invoke Cargo or Rust tools must source
   `$HOME/.cargo/env` themselves before calling those tools; do not rely on
   `.profile`, `.bashrc`, the Rust feature script, or a previous child process
@@ -177,6 +188,10 @@
   `ubuntu-desktop-minimal`, `gdm3`, `gnome-control-center`, or `nautilus`.
 
 ## Done
+
+- Extended repository relocation beyond dotfiles with an optional feature
+  `relink.sh` hook and added Epel relocation support for all five of its
+  repository-backed links.
 
 - Added `libnotmuch-dev` to `debian-mail-packages` so notmuch.nvim can load
   the unversioned `libnotmuch.so` name, with supported-release container
@@ -558,9 +573,15 @@
   successfully after processing 6,711 tokens on the CPU-only host.
 - `git diff --check`, Bash syntax, direct host ShellCheck, and
   `./bin/docpunct test-smoke` after adding GNOME Secret Service support
-  packages to `debian-gui-packages`. The repo `./bin/docpunct shellcheck`
-  target remained blocked by Docker socket permissions, so host ShellCheck was
-  used as the fallback.
+  packages to `debian-gui-packages`. The restricted command sandbox could not
+  access the Docker socket, so host ShellCheck was used for that run.
+- `git diff --check`, Bash syntax, full host ShellCheck, and
+  `./bin/docpunct test-smoke` after adding feature relocation hooks and Epel
+  repository-move repair. The corrected command also repaired the current
+  host's Epel command, wrapper, and three systemd user-unit links.
+- Read-only host validation confirmed the Docker socket is `root:docker`, the
+  current user has active `docker` group membership, `docker ps` succeeds, and
+  the Docker-based `./bin/docpunct shellcheck` target passes.
 
 ## Remaining work
 
@@ -607,9 +628,9 @@
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
-- `./bin/docpunct shellcheck` is blocked in the current host environment by
-  Docker socket permissions; host `shellcheck` passed and is the current
-  fallback.
+- Restricted command sandboxes do not expose the host's effective Docker group
+  membership. Docker-backed tests must run through approved host-context
+  execution; this is a sandbox boundary, not a host Docker permission defect.
 - APT/container-heavy tests were not rerun for the `.profile` change because
   the behavior is covered by host-safe smoke tests.
 - The documented Qwen3 speed-tier multipliers have not been benchmarked on the

@@ -326,9 +326,20 @@ status_features() {
   done | sort
 }
 
-relink_dotfiles() {
+relink_features() {
+  local marker feature
+
   require_feature dotfiles
   run_feature_script install dotfiles
+
+  [[ -d "$INSTALLED_DIR" ]] || return 0
+  for marker in "$INSTALLED_DIR"/*; do
+    [[ -f "$marker" ]] || continue
+    feature="$(basename "$marker")"
+    [[ "$feature" == dotfiles ]] && continue
+    require_feature "$feature"
+    run_feature_script relink "$feature"
+  done
 }
 
 shellcheck_scripts() {
@@ -435,7 +446,7 @@ main() {
       ;;
     relink)
       [[ "$#" -eq 0 ]] || die "relink takes no arguments"
-      relink_dotfiles
+      relink_features
       ;;
     shellcheck)
       [[ "$#" -eq 0 ]] || die "shellcheck takes no arguments"

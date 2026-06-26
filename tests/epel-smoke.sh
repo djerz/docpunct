@@ -159,6 +159,23 @@ env \
 [[ -L "$feature_home/.local/bin/epel" ]]
 [[ -L "$feature_home/.local/lib/epel/bin/msmtp" ]]
 [[ -L "$feature_home/.config/systemd/user/epel-sync.timer" ]]
+
+old_feature_dir="$tmpdir/old-checkout/features/epel"
+ln -sfn -- "$old_feature_dir/epel" "$feature_home/.local/bin/epel"
+ln -sfn -- "$old_feature_dir/msmtp-wrapper" "$feature_home/.local/lib/epel/bin/msmtp"
+for unit in epel-sync.service epel-sync.timer epel-backup.service; do
+  ln -sfn -- "$old_feature_dir/$unit" "$feature_home/.config/systemd/user/$unit"
+done
+env \
+  HOME="$feature_home" \
+  PATH="$fake_bin:/usr/bin:/bin" \
+  EPEL_TEST_COMMAND_LOG="$command_log" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/epel" \
+  "$repo_root/features/epel/relink.sh"
+[[ "$(readlink "$feature_home/.local/bin/epel")" == "$repo_root/features/epel/epel" ]]
+[[ "$(readlink "$feature_home/.local/lib/epel/bin/msmtp")" == "$repo_root/features/epel/msmtp-wrapper" ]]
+[[ "$(readlink "$feature_home/.config/systemd/user/epel-sync.timer")" == "$repo_root/features/epel/epel-sync.timer" ]]
+
 mkdir -p "$feature_home/.local/share/epel/queue"
 printf 'preserve me\n' >"$feature_home/.local/share/epel/queue/unsent.eml"
 env \

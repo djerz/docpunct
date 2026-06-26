@@ -71,11 +71,16 @@ Remove a feature:
 ./bin/docpunct remove neovim
 ```
 
-Relink dotfiles after moving the repository:
+Relink repository-backed files after moving the repository:
 
 ```sh
 ./bin/docpunct relink
 ```
+
+This always reconciles managed dotfiles and runs `relink.sh` for installed
+features that provide that optional hook. Epel uses the hook to update its
+command, private msmtp wrapper, and systemd user-unit links after a repository
+move.
 
 ---
 
@@ -698,7 +703,12 @@ Supported fixed script names:
 install.sh
 update.sh
 remove.sh
+relink.sh
 ```
+
+`relink.sh` is optional and should only repair paths that an installed feature
+links directly into the repository. It is run by `docpunct relink`; it must not
+perform a package install or update.
 
 Do not declare script names in YAML.
 
