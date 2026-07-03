@@ -7,6 +7,10 @@ split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
 user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
 binary are available in non-interactive login Bash shells.
 
+Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
+official Python package with the managed uv toolchain, preserves user-owned
+configuration and credentials, and provides a real Ubuntu lifecycle test.
+
 Version 26 extends `docpunct relink` with optional per-feature relocation
 hooks. Epel uses the hook to repair its command, private msmtp wrapper, and
 systemd user-unit links after the repository moves, while continuing to refuse
@@ -227,6 +231,7 @@ docpunct/
 │   ├── github-cli/
 │   ├── github-copilot-cli/
 │   ├── devcontainer-cli/
+│   ├── mistral-vibe/
 │   ├── openai-codex-cli/
 │   ├── ollama/
 │   ├── docker/
@@ -319,6 +324,7 @@ docpunct test-containers
 docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
 docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
+docpunct test-mistral-vibe-feature [22.04|24.04|26.04]
 docpunct test-openai-codex-cli-feature [22.04|24.04|26.04]
 docpunct test-obsidian-feature [22.04|24.04|26.04]
 docpunct test-docker-feature [22.04|24.04|26.04]
@@ -1537,6 +1543,22 @@ sessions, skills, and other state under `~/.codex`.
 
 ---
 
+## Mistral Vibe feature
+
+The `mistral-vibe` feature depends on `python-uv` and installs Mistral's
+official `mistral-vibe` Python package as an isolated uv tool. It provides the
+`vibe` and `vibe-acp` commands. Its lifecycle scripts prepend
+`$HOME/.local/bin` themselves so installation works in the same docpunct run
+that first installs uv.
+
+Install and update select the latest stable package version. uv may install a
+managed Python 3.12 or later runtime when the host lacks a compatible Python.
+Removal uninstalls only the `mistral-vibe` tool; it must preserve uv, managed
+Python runtimes, unrelated uv tools, and all user-owned authentication,
+configuration, sessions, and other state under `~/.vibe`.
+
+---
+
 ## Ollama feature
 
 The `ollama` feature installs the current official `amd64` or `arm64` Linux
@@ -1722,6 +1744,7 @@ Disposable Ubuntu container integration tests are explicit:
 ./bin/docpunct test-container 26.04
 ./bin/docpunct test-containers
 ./bin/docpunct test-devcontainer-cli-feature 24.04
+./bin/docpunct test-mistral-vibe-feature 24.04
 ./bin/docpunct test-openai-codex-cli-feature 24.04
 ```
 
@@ -1734,6 +1757,7 @@ Feature-specific container tests:
 ```sh
 ./bin/docpunct test-doublecmd-feature 24.04
 ./bin/docpunct test-github-copilot-cli-feature 24.04
+./bin/docpunct test-mistral-vibe-feature 24.04
 ./bin/docpunct test-openai-codex-cli-feature 24.04
 ./bin/docpunct test-docker-feature 24.04
 ./bin/docpunct test-neovide-feature 24.04

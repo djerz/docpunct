@@ -102,6 +102,10 @@ assert_contains "$list_output" "dotfiles"
 status_output="$(run_docpunct status)"
 assert_contains "$status_output" "available    core"
 
+assert_fails_with \
+  "test-mistral-vibe-feature takes at most one Ubuntu version" \
+  run_docpunct test-mistral-vibe-feature 24.04 extra
+
 neovide_manifest="$(cat "$repo_root/features/neovide/feature.yml")"
 assert_contains "$neovide_manifest" "  - nerdfonts"
 

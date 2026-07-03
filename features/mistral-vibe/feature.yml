@@ -1,0 +1,4 @@
+description: Install Mistral Vibe from its official Python package using uv.
+install_notice: Run vibe --setup to configure user-owned authentication and provider settings.
+depends:
+  - python-uv

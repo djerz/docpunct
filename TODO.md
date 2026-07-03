@@ -47,6 +47,9 @@
   - `just test-openai-codex-cli-feature ubuntu=VERSION` runs the official
     OpenAI Codex CLI npm install/update/remove lifecycle in a separate
     non-privileged container.
+  - `just test-mistral-vibe-feature ubuntu=VERSION` runs the official Mistral
+    Vibe uv-tool install/update/remove lifecycle in a separate non-privileged
+    container.
 - Every `just` target now delegates to an equivalent `./bin/docpunct` command so the test suite can be run without `just`.
 - `docpunct update FEATURE` requires the requested feature to be installed and
   updates only that feature. It reports dependency actions that may also be
@@ -159,12 +162,9 @@
 - `docpunct relink` now runs optional relocation hooks for installed features.
   Epel uses this to repair its command, private msmtp wrapper, and systemd user
   unit links after the repository moves; unrelated symlinks remain protected.
-- The earlier Secret Service package change is committed and `main` currently
-  matches `origin/main`.
-- The current working tree intentionally contains uncommitted repository
-  relocation work: the generic feature `relink.sh` hook, Epel link repair,
-  regression coverage, and corresponding architecture, HOWTO, and TODO
-  updates. Preserve these changes when resuming.
+- The repository relocation work and earlier Secret Service package change
+  are committed. Do not assume the working tree contains pending relocation
+  changes; inspect Git state when resuming.
 - Future sessions should always run tests appropriate to the completed task:
   - shell script changes: `./bin/docpunct shellcheck` or `just shellcheck`
   - core behavior changes: `./bin/docpunct test` or `just test`
@@ -189,6 +189,9 @@
 
 ## Done
 
+- Added a standalone `mistral-vibe` feature using the managed uv toolchain,
+  with package-scoped removal, preserved `~/.vibe` state, setup guidance, and
+  a real Ubuntu lifecycle test target.
 - Extended repository relocation beyond dotfiles with an optional feature
   `relink.sh` hook and added Epel relocation support for all five of its
   repository-backed links.
@@ -582,6 +585,11 @@
 - Read-only host validation confirmed the Docker socket is `root:docker`, the
   current user has active `docker` group membership, `docker ps` succeeds, and
   the Docker-based `./bin/docpunct shellcheck` target passes.
+- Bash syntax, host ShellCheck, `./bin/docpunct test-smoke`, `git diff --check`,
+  and real `mistral-vibe` install/update/remove lifecycle tests on Ubuntu
+  22.04, 24.04, and 26.04. The matrix verified Vibe 2.19.0, both `vibe` and
+  `vibe-acp`, package-scoped removal, retained uv, and preserved
+  `~/.vibe/config.toml`.
 
 ## Remaining work
 

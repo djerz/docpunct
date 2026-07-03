@@ -144,6 +144,7 @@ google-chrome
 github-cli
 github-copilot-cli
 devcontainer-cli
+mistral-vibe
 openai-codex-cli
 ollama
 docker
@@ -344,6 +345,20 @@ global packages, and user-owned Codex state under `~/.codex`. After
 installation, run `codex` and sign in with ChatGPT or configure a user-owned
 OpenAI API key; docpunct does not create or store credentials.
 
+`mistral-vibe` installs Mistral's official `mistral-vibe` Python package as an
+isolated uv tool and provides the `vibe` and `vibe-acp` commands. It depends on
+`python-uv`; uv downloads a compatible managed Python 3.12 or later runtime
+when necessary. After installation, run `vibe --setup` to configure a
+user-owned Mistral login, API key, local model, or other compatible provider.
+Docpunct does not create or store credentials. Removal preserves uv, managed
+Python runtimes, unrelated tools, and all user-owned state under `~/.vibe`.
+To disable Vibe telemetry and crash reporting, set this in
+`~/.vibe/config.toml`:
+
+```toml
+enable_telemetry = false
+```
+
 Brave Browser, Visual Studio Code, Google Chrome, and GitHub CLI use upstream APT
 repositories with distro-independent `stable` suites, so the same source
 configuration is used on Ubuntu 22.04, 24.04, 26.04, and later supported
@@ -464,6 +479,9 @@ from the `@devcontainers/cli` npm package.
 
 `openai-codex-cli` depends on `node` and provides the `codex` command from
 OpenAI's official `@openai/codex` npm package.
+
+`mistral-vibe` depends on `python-uv` and provides the `vibe` and `vibe-acp`
+commands from Mistral's official `mistral-vibe` Python package.
 
 `python-uv` installs uv with Astral's standalone installer.
 
@@ -902,6 +920,16 @@ Run the real Dev Container CLI npm lifecycle test with:
 ```sh
 just test-devcontainer-cli-feature ubuntu=24.04
 ./bin/docpunct test-devcontainer-cli-feature 24.04
+```
+
+This target is intentionally separate from `just test` and
+`just test-containers`.
+
+Run the real Mistral Vibe uv-tool lifecycle test with:
+
+```sh
+just test-mistral-vibe-feature ubuntu=24.04
+./bin/docpunct test-mistral-vibe-feature 24.04
 ```
 
 This target is intentionally separate from `just test` and

@@ -36,6 +36,7 @@ Usage:
   docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
   docpunct test-doublecmd-feature [22.04|24.04|26.04]
   docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
+  docpunct test-mistral-vibe-feature [22.04|24.04|26.04]
   docpunct test-openai-codex-cli-feature [22.04|24.04|26.04]
   docpunct test-ollama-feature [22.04|24.04|26.04]
   docpunct test-obsidian-feature [22.04|24.04|26.04]
@@ -388,6 +389,11 @@ run_github_copilot_cli_feature_test() {
   "$ROOT_DIR/tests/container/run-github-copilot-cli-feature.sh" "$ubuntu_version"
 }
 
+run_mistral_vibe_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-mistral-vibe-feature.sh" "$ubuntu_version"
+}
+
 run_openai_codex_cli_feature_test() {
   local ubuntu_version="${1:-24.04}"
   "$ROOT_DIR/tests/container/run-openai-codex-cli-feature.sh" "$ubuntu_version"
@@ -479,6 +485,10 @@ main() {
     test-github-copilot-cli-feature)
       [[ "$#" -le 1 ]] || die "test-github-copilot-cli-feature takes at most one Ubuntu version"
       run_github_copilot_cli_feature_test "${1:-24.04}"
+      ;;
+    test-mistral-vibe-feature)
+      [[ "$#" -le 1 ]] || die "test-mistral-vibe-feature takes at most one Ubuntu version"
+      run_mistral_vibe_feature_test "${1:-24.04}"
       ;;
     test-openai-codex-cli-feature)
       [[ "$#" -le 1 ]] || die "test-openai-codex-cli-feature takes at most one Ubuntu version"
