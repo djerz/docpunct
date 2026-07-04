@@ -37,6 +37,17 @@ consumed entirely by Codex's initial instructions, causing a prompt to finish
 without a visible answer. A large context consumes additional memory; see
 Ollama's [context-length documentation](https://docs.ollama.com/context-length).
 
+## A note on quantization
+
+Quantization	RAM usage	CPU speed	Quality
+Q2	Lowest	Fastest	Noticeable quality loss
+Q3_K_M	Low	Very fast	Good
+Q4_K_M	Moderate	Fast	Excellent balance
+Q5_K_M	Higher	Slightly slower	Slight quality improvement
+Q6_K	Higher	Slower	Very close to full precision
+Q8_0	Much higher	Much slower	Near-lossless
+FP16/BF16	Highest	Slowest on CPU	Reference quality
+
 ## Recommendations for this computer class
 
 The computer inspected while adding this feature has an Intel Core i7-1270P,
@@ -137,6 +148,24 @@ ollama serve
 The managed service listens only on loopback. Do not expose Ollama directly to
 an untrusted network: its local API has no authentication by default.
 
+Control the user service with `systemctl --user`:
+
+```sh
+systemctl --user start ollama.service
+systemctl --user restart ollama.service
+systemctl --user stop ollama.service
+systemctl --user status ollama.service
+journalctl --user -u ollama.service -e
+```
+
+If you change a drop-in such as `~/.config/systemd/user/ollama.service.d/keep-alive.conf`,
+reload systemd before restarting:
+
+```sh
+systemctl --user daemon-reload
+systemctl --user restart ollama.service
+```
+
 The service defaults to a 65,536-token context so coding agents have room for
 their instructions, repository context, tool calls, and responses. Check the
 active context after a model is loaded:
@@ -190,6 +219,218 @@ Use `ollama launch codex --config` to generate the Ollama-backed Codex profile
 without starting Codex, and `ollama launch codex --restore` to remove that
 generated profile. See the official
 [Ollama Codex integration](https://docs.ollama.com/integrations/codex).
+
+## Mistral Vibe CLI
+
+Install the docpunct feature and make sure the local Ollama service and a
+tool-capable model are available:
+
+```sh
+./bin/docpunct install mistral-vibe
+systemctl --user start ollama.service
+ollama list
+ollama pull qwen2.5-coder:7b-instruct-q4_K_M
+```
+
+Vibe supports generic OpenAI-compatible providers. The following lean profile
+uses Vibe's minimal system prompt and only the tools needed for normal local
+editing. It favors first-response latency over connectors, skills, subagents,
+web tools, and automatic TODO management. If `~/.vibe/config.toml` already
+contains settings, merge these entries instead of replacing the file. Top-level
+options such as `active_model` must appear before the other TOML tables:
+
+```sh
+mkdir -p ~/.vibe
+chmod 700 ~/.vibe
+```
+
+```toml
+active_model = "ollama-qwen2.5-coder"
+enable_telemetry = false
+system_prompt_id = "minimal"
+include_commit_signature = false
+include_prompt_detail = false
+include_project_context = true
+enable_connectors = false
+enabled_tools = [
+  "bash",
+  "grep",
+  "read_file",
+  "edit",
+  "write_file",
+  "ask_user_question",
+  "exit_plan_mode",
+]
+
+[project_context]
+default_commit_count = 1
+
+[[providers]]
+name = "ollama"
+api_base = "http://127.0.0.1:11434/v1"
+api_key_env_var = "OLLAMA_API_KEY"
+api_style = "openai"
+backend = "generic"
+
+[[models]]
+name = "qwen2.5-coder:7b-instruct-q4_K_M"
+provider = "ollama"
+alias = "ollama-qwen2.5-coder"
+temperature = 0.2
+input_price = 0.0
+output_price = 0.0
+```
+
+This exact Qwen 2.5 Coder model was used for the CPU-only measurements below.
+Replace its name and alias when using another exact tag from `ollama list`;
+coding-agent use requires reliable tool calling.
+
+Ollama does not authenticate loopback API requests, but Vibe's generic
+provider expects an API-key variable. Give it a non-secret dummy value for the
+current shell:
+
+```sh
+export OLLAMA_API_KEY=ollama
+```
+
+For persistent configuration, add the same assignment to `~/.vibe/.env` and
+keep that file private:
+
+```text
+OLLAMA_API_KEY=ollama
+```
+
+```sh
+chmod 600 ~/.vibe/.env
+```
+
+Keep the model and its prompt cache resident for one hour with a host-specific
+user-service drop-in. Do not edit the docpunct-managed unit:
+
+```sh
+mkdir -p ~/.config/systemd/user/ollama.service.d
+```
+
+```ini
+# ~/.config/systemd/user/ollama.service.d/keep-alive.conf
+[Service]
+Environment=OLLAMA_KEEP_ALIVE=1h
+```
+
+```sh
+systemctl --user daemon-reload
+systemctl --user restart ollama.service
+ollama run qwen2.5-coder:7b-instruct-q4_K_M ""
+ollama ps
+```
+
+Restart only when no agent request is active. This model remains about 6.9 GB
+in resident memory until the keep-alive expires. The service's managed
+`OLLAMA_CONTEXT_LENGTH=65536` setting remains useful for larger models; Ollama
+clips this Qwen model to its native 32,768-token context, as shown by
+`ollama ps`.
+
+Start Vibe from the project it should work on:
+
+```sh
+cd /path/to/project
+vibe
+```
+
+Use `/model` inside Vibe to confirm or switch to `ollama-qwen2.5-coder`.
+`ollama run` sends a small prompt, while an agent client also sends its system
+instructions, project context, and JSON tool schemas. Those additions can be
+thousands of tokens and dominate first-response latency on a CPU-only host.
+
+Use a harmless one-turn plan-agent request to compare cold and warm behavior:
+
+```sh
+ollama ps
+vibe --agent plan --prompt 'Reply with exactly READY. Do not call any tools.' \
+  --max-turns 1 --trust
+journalctl --user -u ollama.service -e
+```
+
+In the journal, `task.n_tokens` is the initial prefix size, `cached n_tokens`
+shows prompt-cache reuse, and the prompt timing lines separate prompt
+processing from generation. On the reference CPU-only host, this profile cut
+the initial prefix from 5,714 to 1,954 tokens (65.8%). The cold prompt took
+124.6 seconds in Ollama. Repeating the same request while the model stayed
+loaded reused 1,827 tokens, processed only 125, and reduced Ollama time to 4.79
+seconds (6.07 seconds end to end). `ollama ps` should report about one hour in
+the `UNTIL` column after either request; if it does not, confirm the drop-in is
+loaded with `systemctl --user show ollama.service -p Environment`.
+
+### Add explicit local-tool guidance and URL fetching
+
+The minimal prompt reduces latency, but a small local model may still decline
+to inspect the working directory even though the `bash` tool is available. Add
+a short custom prompt that explicitly tells the model when to use its local
+tools, without restoring Vibe's full default prompt:
+
+```sh
+mkdir -p ~/.vibe/prompts
+chmod 700 ~/.vibe/prompts
+```
+
+Create `~/.vibe/prompts/minimal-local.md` with:
+
+```md
+You are Mistral Vibe, a CLI coding agent working through tools.
+
+Use available tools instead of claiming you lack access:
+- Use bash with pwd or ls to inspect directories.
+- Use grep and read_file to inspect local files.
+- Use web_fetch when the user provides a URL.
+- Attempt the appropriate tool before reporting that an operation is unavailable.
+
+Make minimal changes and verify them.
+```
+
+Then select that prompt and add `web_fetch` to the existing tool allowlist in
+`~/.vibe/config.toml`:
+
+```toml
+system_prompt_id = "minimal-local"
+
+enabled_tools = [
+  "bash",
+  "grep",
+  "read_file",
+  "edit",
+  "write_file",
+  "web_fetch",
+  "ask_user_question",
+  "exit_plan_mode",
+]
+```
+
+Keep `enable_connectors = false`. `web_fetch` is a built-in, read-only tool
+that retrieves a known HTTP or HTTPS URL and converts HTML to Markdown. It
+does not require a Mistral API key, but Vibe asks for permission before
+accessing a domain. It is not a search engine: requests that do not provide a
+URL still require Vibe's `web_search` with a Mistral API key, or a separately
+configured search connector.
+
+Validate both capabilities with harmless programmatic requests:
+
+```sh
+vibe --prompt 'Use bash to run pwd and ls, then summarize the result.' \
+  --max-turns 2 --auto-approve --trust
+vibe --prompt 'Fetch https://example.com and report its page title.' \
+  --max-turns 2 --auto-approve --trust
+```
+
+Recheck `task.n_tokens` in the Ollama journal afterward. The custom guidance
+adds only a short instruction, while `web_fetch` also adds its JSON tool
+schema; measure the resulting prefix rather than assuming the original 1,954
+token result is unchanged.
+
+See Mistral's
+[configuration documentation](https://docs.mistral.ai/vibe/code/cli/configuration)
+and Ollama's
+[OpenAI compatibility reference](https://docs.ollama.com/api/openai-compatibility)
+and [FAQ](https://docs.ollama.com/faq).
 
 ## GitHub Copilot CLI
 

@@ -191,7 +191,10 @@
 
 - Added a standalone `mistral-vibe` feature using the managed uv toolchain,
   with package-scoped removal, preserved `~/.vibe` state, setup guidance, and
-  a real Ubuntu lifecycle test target.
+  a real Ubuntu lifecycle test target. The Ollama HOWTO documents a lean local
+  Qwen profile and one-hour prompt-cache retention. On the reference host this
+  reduced Vibe's initial prefix from 5,714 to 1,954 tokens (65.8%), and a warm
+  repeat reused 1,827 tokens and completed in 6.07 seconds end to end.
 - Extended repository relocation beyond dotfiles with an optional feature
   `relink.sh` hook and added Epel relocation support for all five of its
   repository-backed links.
@@ -590,6 +593,11 @@
   22.04, 24.04, and 26.04. The matrix verified Vibe 2.19.0, both `vibe` and
   `vibe-acp`, package-scoped removal, retained uv, and preserved
   `~/.vibe/config.toml`.
+- Vibe 2.19.0 loaded the lean Ollama profile with the configured Qwen 2.5
+  Coder model. A safe plan-agent request measured 1,954 initial tokens versus
+  5,714 before optimization; the warm repeat reused 1,827 tokens and Ollama
+  processed only 125 new tokens in 4.79 seconds.
+- `git diff --check` after documenting the measured Vibe latency optimization.
 
 ## Remaining work
 

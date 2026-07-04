@@ -40,9 +40,11 @@ Ubuntu lifecycle test.
 Version 23 adds an `ollama` feature that installs a digest-verified official
 Linux runtime under the user's local share directory, manages a loopback-only
 systemd user service, preserves user-owned models on removal, and documents
-Codex CLI, Copilot CLI, CopilotChat.nvim, and direct API usage. It deliberately
-does not run Ollama's convenience installer because that script may install
-GPU drivers and modify system package repositories.
+Codex CLI, Mistral Vibe, Copilot CLI, CopilotChat.nvim, and direct API usage.
+The Vibe guidance includes a lean local-model profile and a host-specific
+keep-alive drop-in for prompt-cache reuse. The feature deliberately does not
+run Ollama's convenience installer because that script may install GPU drivers
+and modify system package repositories.
 
 Version 24 removes the deprecated special-case migration for the old Neovim
 file-level symlink layout. Existing target directories are now preserved by the
