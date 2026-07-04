@@ -189,6 +189,11 @@
 
 ## Done
 
+- Added a standalone `printer-hp-m175nw` feature that installs Ubuntu's HPLIP,
+  printer-driver, and scanner packages while leaving the required proprietary
+  plugin and printer configuration as explicit `hp-plugin` and `hp-setup`
+  steps in the feature HOWTO. Removal conservatively retains packages, queues,
+  plugin state, and user configuration.
 - Added a standalone `mistral-vibe` feature using the managed uv toolchain,
   with package-scoped removal, preserved `~/.vibe` state, setup guidance, and
   a real Ubuntu lifecycle test target. The Ollama HOWTO documents a lean local
@@ -598,9 +603,19 @@
   5,714 before optimization; the warm repeat reused 1,827 tokens and Ollama
   processed only 125 new tokens in 4.79 seconds.
 - `git diff --check` after documenting the measured Vibe latency optimization.
+- Bash syntax, Docker-based ShellCheck, `./bin/docpunct test-smoke`,
+  `git diff --check`, and a real Ubuntu 26.04 package install after adding
+  `printer-hp-m175nw`. Smoke coverage verifies the exact package command and
+  post-install HOWTO guidance; the container verified that all four packages
+  and their dependencies resolve and install together.
 
 ## Remaining work
 
+- Extend `printer-hp-m175nw` removal so it can help remove the configured HP
+  printer queue and the Debian packages installed by the feature. Keep the
+  behavior conservative: identify the exact queue and feature-owned packages,
+  require explicit confirmation for destructive printer cleanup, and do not
+  remove unrelated queues, PPDs, or shared printing/scanning packages.
 - Improve epel credential security beyond command-based `secret-tool` lookup,
   including explicit OAuth/token lifecycle support.
 - Replace the notmuch.nvim private msmtp wrapper if the plugin gains a
@@ -655,16 +670,18 @@
 
 ## Next steps
 
-1. Decide whether to enable epel's systemd sync timer now that provider Sent
+1. Extend `printer-hp-m175nw` with safe, explicit removal assistance for its
+   configured printer queue and Debian packages.
+2. Decide whether to enable epel's systemd sync timer now that provider Sent
    synchronization has been validated.
-2. Consider independent publisher-signature validation for Git Credential
+3. Consider independent publisher-signature validation for Git Credential
    Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
    release assets.
-3. Run `./bin/docpunct install debug-corpo-proxy` on the corporate proxy machine
+4. Run `./bin/docpunct install debug-corpo-proxy` on the corporate proxy machine
    and inspect `~/.cache/docpunct/log/debug-corpo-proxy-latest.log`.
-4. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
+5. Remove the deprecated unmanaged `gcm-gpg` include migration after existing
    machines have updated to the ordered marked include block.
-5. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
+6. Remove the legacy whole-file `.bashrc` and `.profile` symlink migration
    logic after existing machines have migrated to additive shell blocks.
-6. Remove the legacy whole-file `.gitconfig` symlink migration logic after
+7. Remove the legacy whole-file `.gitconfig` symlink migration logic after
    existing machines have migrated to the additive include block.

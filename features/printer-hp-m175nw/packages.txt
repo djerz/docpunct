@@ -1,0 +1,4 @@
+hplip
+hplip-gui
+printer-driver-hpcups
+libsane-hpaio

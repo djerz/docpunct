@@ -98,6 +98,37 @@ DOCPUNCT_FEATURES_DIR="$notice_features" run_docpunct remove guided >/dev/null
 list_output="$(run_docpunct list)"
 assert_contains "$list_output" "core"
 assert_contains "$list_output" "dotfiles"
+assert_contains "$list_output" "printer-hp-m175nw"
+
+printer_packages="$(cat "$repo_root/features/printer-hp-m175nw/packages.txt")"
+for package in hplip hplip-gui printer-driver-hpcups libsane-hpaio; do
+  grep -Fqx "$package" <<<"$printer_packages"
+done
+[[ "$(wc -l <"$repo_root/features/printer-hp-m175nw/packages.txt")" -eq 4 ]]
+
+printer_manifest="$(cat "$repo_root/features/printer-hp-m175nw/feature.yml")"
+assert_contains "$printer_manifest" "plugin and printer setup steps"
+
+printer_bin="$tmpdir/printer-bin"
+printer_log="$tmpdir/printer-sudo.log"
+mkdir -p "$printer_bin"
+cat >"$printer_bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$DOCPUNCT_PRINTER_TEST_LOG"
+EOF
+chmod +x "$printer_bin/sudo"
+printer_output="$({
+  PATH="$printer_bin:$PATH" \
+    DOCPUNCT_FEATURES_DIR="$repo_root/features" \
+    DOCPUNCT_PRINTER_TEST_LOG="$printer_log" \
+    run_docpunct install printer-hp-m175nw
+})"
+assert_contains "$printer_output" "plugin and printer setup steps"
+assert_contains "$printer_output" "$repo_root/features/printer-hp-m175nw/HOWTO.md"
+grep -Fqx 'apt-get update' "$printer_log"
+grep -Fqx 'apt-get install -y hplip hplip-gui printer-driver-hpcups libsane-hpaio' "$printer_log"
+DOCPUNCT_FEATURES_DIR="$repo_root/features" run_docpunct remove printer-hp-m175nw >/dev/null
 
 status_output="$(run_docpunct status)"
 assert_contains "$status_output" "available    core"

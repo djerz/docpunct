@@ -1,0 +1,3 @@
+description: Install Ubuntu packages for the HP LaserJet 100 color MFP M175nw.
+install_notice: Complete the required HP plugin and printer setup steps described in HOWTO.md.
+depends: []

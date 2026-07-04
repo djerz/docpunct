@@ -7,6 +7,11 @@ split login-shell PATH setup out of `.bashrc` into a managed `.profile` so
 user-local binaries, Cargo-installed binaries, and the NVM-managed `node`
 binary are available in non-interactive login Bash shells.
 
+Version 28 adds a standalone `printer-hp-m175nw` feature that installs only
+Ubuntu's HPLIP, printer-driver, and scanner packages for the HP LaserJet 100
+color MFP M175nw. Destructive queue cleanup, the required proprietary plugin,
+and printer configuration remain explicit user actions in the feature HOWTO.
+
 Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
 official Python package with the managed uv toolchain, preserves user-owned
 configuration and credentials, and provides a real Ubuntu lifecycle test.
@@ -226,6 +231,7 @@ docpunct/
 │   ├── debian-cli-packages/
 │   ├── debian-mail-packages/
 │   ├── debian-gui-packages/
+│   ├── printer-hp-m175nw/
 │   ├── desktop-apps/
 │   ├── brave-browser/
 │   ├── visual-studio-code/
@@ -1157,6 +1163,24 @@ google-chrome
 github-cli
 docker
 ```
+
+## HP LaserJet 100 color MFP M175nw feature
+
+The `printer-hp-m175nw` feature installs these Ubuntu packages:
+
+```text
+hplip
+hplip-gui
+printer-driver-hpcups
+libsane-hpaio
+```
+
+Installation does not run HP's `.run` installer, install the proprietary
+binary plugin, remove CUPS queues, or configure the printer. A successful
+first install points to `features/printer-hp-m175nw/HOWTO.md`, which documents
+the optional clean-start procedure and the required manual `hp-plugin` and
+`hp-setup` commands. Removal keeps the shared printing and scanning packages,
+printer queues, plugin, and user configuration unchanged.
 
 ## Desktop apps meta-feature
 

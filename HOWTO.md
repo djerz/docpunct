@@ -137,6 +137,7 @@ fd-find
 debian-cli-packages
 debian-mail-packages
 debian-gui-packages
+printer-hp-m175nw
 desktop-apps
 brave-browser
 visual-studio-code
@@ -212,6 +213,12 @@ recommended compatibility link:
 
 `debian-cli-packages` depends on `fd-find` so the link is available whenever
 the common CLI package set is installed.
+
+`printer-hp-m175nw` installs Ubuntu's `hplip`, `hplip-gui`,
+`printer-driver-hpcups`, and `libsane-hpaio` packages for the HP LaserJet 100
+color MFP M175nw. This printer requires HP's proprietary HPLIP binary plugin,
+which docpunct does not install automatically. Queue cleanup, `hp-plugin`, and
+`hp-setup` instructions live in `features/printer-hp-m175nw/HOWTO.md`.
 
 `debian-mail-packages` installs `isync`, `notmuch`, `libnotmuch-dev`, `msmtp`,
 `rsync`, `libsecret-tools`, `util-linux`, and `w3m` for the epel mail workflow.
