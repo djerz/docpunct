@@ -206,6 +206,10 @@
 - Made `./bin/docpunct shellcheck` fall back to the host `shellcheck` binary
   when Docker or the Docker socket is unavailable, so restricted AI command
   sandboxes can run the normal project ShellCheck target without escalation.
+- Documented Thunderbird as a thin GUI layer for Epel: it should connect
+  directly to the provider over IMAP/SMTP, disable full local synchronization,
+  unsubscribe from heavy Gmail labels such as All Mail, and never open Epel's
+  `~/Mail` Maildir tree.
 - Added a standalone `mistral-vibe` feature using the managed uv toolchain,
   with package-scoped removal, preserved `~/.vibe` state, setup guidance, and
   a real Ubuntu lifecycle test target. The Ollama HOWTO documents a lean local
@@ -633,6 +637,8 @@
 - `git diff --check`, Bash syntax, `./bin/docpunct shellcheck` through the
   restricted-sandbox host fallback, and `./bin/docpunct test-smoke` after
   adding automatic host ShellCheck fallback.
+- `git diff --check` after documenting Thunderbird thin-client settings in the
+  Epel HOWTO.
 
 ## Remaining work
 

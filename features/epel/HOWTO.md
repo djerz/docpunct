@@ -333,6 +333,95 @@ OnUnitActiveSec=30m
 Then reload and restart the timer. Cron support is a possible future extension
 for systems without a systemd user manager.
 
+## Thunderbird as a thin GUI client
+
+Thunderbird can be useful as a fast graphical layer for browsing recent mail,
+reading HTML-heavy messages, and using provider calendar or contact
+integration. In the epel design, it is not the canonical local archive.
+
+Use Thunderbird as a normal remote IMAP/SMTP client:
+
+```text
+Thunderbird <-> Gmail / IMAP provider
+```
+
+Do not point Thunderbird at epel's local Maildir:
+
+```text
+~/Mail
+~/Mail/<email_address>
+~/.local/share/epel
+```
+
+Epel remains responsible for the durable local path:
+
+```text
+mbsync -> ~/Mail -> notmuch -> rsync snapshots
+```
+
+Configure the account as IMAP, not POP. For Gmail, use Thunderbird's OAuth
+account setup flow, then immediately review synchronization settings before
+letting it download a large local cache.
+
+In Thunderbird, open:
+
+```text
+Account Settings -> Synchronization & Storage
+```
+
+Disable:
+
+```text
+Keep messages for this account on this computer
+```
+
+With that setting disabled, Thunderbird keeps headers locally and downloads
+message bodies on demand when a message is opened. This keeps Thunderbird thin
+while epel keeps the complete local corpus.
+
+For Gmail accounts, right-click the account, choose `Subscribe...`, and
+unsubscribe from high-volume labels that should not be browsed through
+Thunderbird. At minimum, unsubscribe from:
+
+```text
+[Gmail]/All Mail
+[Gmail]/Important
+```
+
+Also unsubscribe from large archive-only labels that are better searched with
+notmuch. Gmail labels appear as IMAP folders in Thunderbird; subscribing to
+`All Mail` can make Thunderbird show and cache extra copies of messages that
+also appear through Inbox, Sent, or label folders.
+
+For Gmail, use these Thunderbird account settings:
+
+```text
+Server Settings:
+  Check for new messages at startup: enabled
+  Check for new messages every 10 minutes: enabled
+  When I delete a message: Just mark it as deleted
+  Clean up ("Expunge") Inbox on Exit: disabled
+  Empty Trash on Exit: disabled
+
+Copies & Folders:
+  Place a copy in: disabled
+  Keep message drafts in: [Gmail]/Drafts
+
+Junk Settings:
+  Enable adaptive junk mail controls for this account: disabled
+```
+
+Gmail already stores SMTP-sent mail in its Sent folder and handles spam
+filtering server-side. Let the provider own those behaviors so Thunderbird
+does not create conflicting local copies or duplicate filtering decisions.
+
+Thunderbird may still cache message bodies that are opened. That is acceptable
+because the cache is incidental. The canonical local mail asset remains
+`~/Mail`, maintained by `epel sync` and protected by `epel backup`.
+
+Evolution follows the same rule: connect it to the provider through IMAP/SMTP,
+and do not point it at epel's Maildir tree.
+
 ## Errors and exit status
 
 Manual commands write normal output to the terminal. Scheduled output is
@@ -357,6 +446,3 @@ Exit status meanings:
 Removal disables automation and removes only docpunct-owned commands and unit
 links. It preserves account configuration, credentials, state, queued mail,
 `~/Mail`, snapshots, and installed mail packages.
-
-Thunderbird and Evolution are optional remote IMAP/SMTP clients. They must not
-open epel's Maildir directly. Packaging them through docpunct is future work.
