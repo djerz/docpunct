@@ -142,6 +142,7 @@ desktop-apps
 brave-browser
 visual-studio-code
 google-chrome
+google-earth-pro
 github-cli
 github-copilot-cli
 devcontainer-cli
@@ -303,6 +304,7 @@ Third-party APT repository packages are managed by separate features, not by
 brave-browser
 visual-studio-code
 google-chrome
+google-earth-pro
 github-cli
 docker
 ```
@@ -315,13 +317,14 @@ debian-gui-packages
 brave-browser
 visual-studio-code
 google-chrome
+google-earth-pro
 doublecmd
 obsidian
 ```
 
-Each third-party package feature owns its package, APT source file, and signing
-key. Removing one of these features removes the package, source file, and key
-owned by that feature.
+Each third-party package feature owns its package, APT source file, signing key,
+or downloaded package lifecycle as appropriate. Removing one of these features
+removes only package artifacts owned by that feature and preserves user data.
 
 `github-cli` installs the `gh` package from GitHub CLI's official APT
 repository. It supports `i386`, `amd64`, `armhf`, and `arm64`. Removal
@@ -476,6 +479,14 @@ fail without downloading because upstream currently provides no Debian package
 for them. Removal preserves Obsidian configuration, plugins, caches, and vault
 data. The digest shares the same GitHub release trust boundary as the package
 and is not independent publisher-signature verification.
+
+`google-earth-pro` installs Google Earth Pro from Google's official current
+`amd64` Debian package. It installs `xdg-utils` first because Google's package
+maintainer scripts require `xdg-icon-resource` and `xdg-desktop-menu` while the
+package metadata does not declare that dependency. The package installs
+Google's own updater source and signing key through its maintainer scripts.
+Removal removes only `google-earth-pro-stable` and preserves saved places,
+caches, and user configuration.
 
 `rust` installs Rust with the official `rustup` installer.
 
@@ -984,6 +995,14 @@ The Obsidian feature has a separate non-privileged container test target:
 ```sh
 just test-obsidian-feature ubuntu=24.04
 ./bin/docpunct test-obsidian-feature 24.04
+```
+
+The Google Earth Pro feature has a separate non-privileged container test
+target:
+
+```sh
+just test-google-earth-pro-feature ubuntu=24.04
+./bin/docpunct test-google-earth-pro-feature 24.04
 ```
 
 The GitHub Copilot CLI feature has a separate non-privileged container test:

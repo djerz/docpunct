@@ -4,5 +4,6 @@ depends:
   - brave-browser
   - visual-studio-code
   - google-chrome
+  - google-earth-pro
   - doublecmd
   - obsidian

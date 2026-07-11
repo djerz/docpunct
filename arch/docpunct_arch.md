@@ -12,6 +12,11 @@ Ubuntu's HPLIP, printer-driver, and scanner packages for the HP LaserJet 100
 color MFP M175nw. Destructive queue cleanup, the required proprietary plugin,
 and printer configuration remain explicit user actions in the feature HOWTO.
 
+Version 29 adds a standalone `google-earth-pro` feature that installs Google's
+official current `amd64` Debian package, accounts for its undeclared
+`xdg-utils` maintainer-script dependency, preserves user data on removal, and
+adds the feature to `desktop-apps`.
+
 Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
 official Python package with the managed uv toolchain, preserves user-owned
 configuration and credentials, and provides a real Ubuntu lifecycle test.
@@ -236,6 +241,7 @@ docpunct/
 │   ├── brave-browser/
 │   ├── visual-studio-code/
 │   ├── google-chrome/
+│   ├── google-earth-pro/
 │   ├── github-cli/
 │   ├── github-copilot-cli/
 │   ├── devcontainer-cli/
@@ -331,6 +337,7 @@ docpunct test-container [22.04|24.04|26.04]
 docpunct test-containers
 docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
+docpunct test-google-earth-pro-feature [22.04|24.04|26.04]
 docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
 docpunct test-mistral-vibe-feature [22.04|24.04|26.04]
 docpunct test-openai-codex-cli-feature [22.04|24.04|26.04]
@@ -1160,6 +1167,7 @@ Initial third-party APT package features:
 brave-browser
 visual-studio-code
 google-chrome
+google-earth-pro
 github-cli
 docker
 ```
@@ -1195,6 +1203,7 @@ depends:
   - brave-browser
   - visual-studio-code
   - google-chrome
+  - google-earth-pro
   - doublecmd
   - obsidian
 ```
@@ -1504,6 +1513,39 @@ independent publisher-signature verification.
 
 ---
 
+## Google Earth Pro feature
+
+The `google-earth-pro` feature installs Google Earth Pro from Google's official
+current Debian package URL:
+
+```text
+https://dl.google.com/dl/earth/client/current/google-earth-pro-stable_current_amd64.deb
+```
+
+The upstream package currently supports `amd64`; unsupported architectures
+fail before any download or package change. Downloads are cached under
+`~/.cache/docpunct/downloads`.
+
+Installation first installs `xdg-utils`, because the package maintainer
+scripts call `xdg-icon-resource` and `xdg-desktop-menu` but the package
+metadata does not declare that dependency. It then installs the downloaded
+package through APT so declared package dependencies are resolved normally.
+
+The Google package's maintainer scripts install an updater source at
+`/etc/apt/sources.list.d/google-earth-pro.list`, a package signing key, and
+`/etc/cron.daily/google-earth-pro`. These artifacts are owned by the package's
+maintainer scripts, not hand-written by docpunct.
+
+Update repeats the current-package install flow. Removal removes only
+`google-earth-pro-stable` and lets the package maintainer scripts clean their
+own package-owned updater artifacts. It preserves saved places, caches, and
+user configuration such as `~/.googleearth`.
+
+The current direct package download is HTTPS-only and does not provide the
+independent release digest used by GitHub-backed features such as Obsidian.
+
+---
+
 ## Rust feature
 
 Rust must be installed using the official rustup installer.
@@ -1782,6 +1824,7 @@ Feature-specific container tests:
 
 ```sh
 ./bin/docpunct test-doublecmd-feature 24.04
+./bin/docpunct test-google-earth-pro-feature 24.04
 ./bin/docpunct test-github-copilot-cli-feature 24.04
 ./bin/docpunct test-mistral-vibe-feature 24.04
 ./bin/docpunct test-openai-codex-cli-feature 24.04

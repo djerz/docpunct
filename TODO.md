@@ -23,9 +23,9 @@
   Neovide desktop entry support, GUI credential-vault support, Neovide Cargo
   link-time requirements, Neovide clipboard integration, and the Double
   Commander Qt6 runtime.
-- Third-party APT repository packages are modeled as separate features:
-  `brave-browser`, `visual-studio-code`, `google-chrome`, `github-cli`, and
-  `docker`.
+- Third-party package and APT repository packages are modeled as separate
+  features: `brave-browser`, `visual-studio-code`, `google-chrome`,
+  `google-earth-pro`, `github-cli`, and `docker`.
 - Docker was installed with docpunct in the previous session, the sibling `../dockerfiles` ShellCheck image was usable, and this repository now has a repeatable `just shellcheck` target.
 - A first testing architecture is in place:
   - `just test-smoke` runs host-safe Bash smoke tests with temporary home/cache directories.
@@ -38,6 +38,9 @@
   - `just test-doublecmd-feature ubuntu=VERSION` runs a real Double Commander
     install in a separate non-privileged container and checks the installed
     binary for unresolved shared libraries with `ldd`.
+  - `just test-google-earth-pro-feature ubuntu=VERSION` runs a real official
+    Google Earth Pro Debian package install/update/remove lifecycle in a
+    separate non-privileged container.
   - `just test-obsidian-feature ubuntu=VERSION` runs a real official Obsidian
     Debian package install/update/remove lifecycle in a separate
     non-privileged container.
@@ -194,6 +197,10 @@
   plugin and printer configuration as explicit `hp-plugin` and `hp-setup`
   steps in the feature HOWTO. Removal conservatively retains packages, queues,
   plugin state, and user configuration.
+- Added a standalone `google-earth-pro` feature that installs Google's
+  official current `amd64` Debian package, includes the `xdg-utils` dependency
+  required by the package's maintainer scripts, makes it part of
+  `desktop-apps`, and preserves saved places and user configuration on removal.
 - Added a standalone `mistral-vibe` feature using the managed uv toolchain,
   with package-scoped removal, preserved `~/.vibe` state, setup guidance, and
   a real Ubuntu lifecycle test target. The Ollama HOWTO documents a lean local
@@ -279,6 +286,7 @@
   - `brave-browser`
   - `visual-studio-code`
   - `google-chrome`
+  - `google-earth-pro`
   - `github-cli`
   - `github-copilot-cli`
   - `devcontainer-cli`
@@ -611,6 +619,12 @@
   post-install HOWTO guidance; the container verified that all four packages
   and their dependencies resolve and install together.
 - `git diff --check` after replacing `AIHANDOVER.md` with `AGENTS.md`.
+- Bash syntax, Docker-based ShellCheck, `./bin/docpunct test-smoke`,
+  `git diff --check`, `./bin/docpunct list`, and real Ubuntu 22.04, 24.04,
+  and 26.04 install/update/remove lifecycle tests after adding
+  `google-earth-pro`. The matrix verified the package install, executable
+  path, package-owned cron updater artifact, package-scoped removal, and
+  preservation of `~/.googleearth/myplaces.kml`.
 
 ## Remaining work
 
@@ -634,8 +648,8 @@
   `features/gcm-gpg/git-hooks.sh` after existing machines have updated
   `gcm-gpg` and gained the ordered marked include block.
 - Consider independent publisher-signature validation for Git Credential
-  Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
-  release assets.
+  Manager, Double Commander, Nerd Fonts, Obsidian, Google Earth Pro, and
+  GitHub Copilot CLI release assets.
 - Remove the temporary `debug-corpo-proxy` feature after the corporate proxy
   setup issue has been diagnosed and any permanent download behavior is fixed.
 - Remove the legacy whole-file `.bashrc` and `.profile` symlink migration logic
@@ -655,9 +669,10 @@
   and reached a completed snapshot. Its default backup root may be on the same
   physical disk and therefore is not protection against disk loss.
 - Independent publisher-signature validation is not implemented for Git
-  Credential Manager, Double Commander, Nerd Fonts, Obsidian, or GitHub Copilot
-  CLI release assets. Their SHA-256 checksums come from the same GitHub release
-  trust boundary as the downloads.
+  Credential Manager, Double Commander, Nerd Fonts, Obsidian, Google Earth Pro,
+  or GitHub Copilot CLI release assets. Google Earth Pro is a direct HTTPS
+  package download; the other listed SHA-256 checksums come from the same
+  GitHub release trust boundary as the downloads.
 - Neovim removal currently removes the user binary/runtime path but leaves the source checkout under `~/.cache/docpunct/src/neovim`.
 - Neovide is installed with `cargo install --locked neovide`, not from a managed source checkout.
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
@@ -678,8 +693,8 @@
 2. Decide whether to enable epel's systemd sync timer now that provider Sent
    synchronization has been validated.
 3. Consider independent publisher-signature validation for Git Credential
-   Manager, Double Commander, Nerd Fonts, Obsidian, and GitHub Copilot CLI
-   release assets.
+   Manager, Double Commander, Nerd Fonts, Obsidian, Google Earth Pro, and
+   GitHub Copilot CLI release assets.
 4. Run `./bin/docpunct install debug-corpo-proxy` on the corporate proxy machine
    and inspect `~/.cache/docpunct/log/debug-corpo-proxy-latest.log`.
 5. Remove the deprecated unmanaged `gcm-gpg` include migration after existing

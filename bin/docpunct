@@ -35,6 +35,7 @@ Usage:
   docpunct test-containers
   docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
   docpunct test-doublecmd-feature [22.04|24.04|26.04]
+  docpunct test-google-earth-pro-feature [22.04|24.04|26.04]
   docpunct test-github-copilot-cli-feature [22.04|24.04|26.04]
   docpunct test-mistral-vibe-feature [22.04|24.04|26.04]
   docpunct test-openai-codex-cli-feature [22.04|24.04|26.04]
@@ -384,6 +385,11 @@ run_doublecmd_feature_test() {
   "$ROOT_DIR/tests/container/run-doublecmd-feature.sh" "$ubuntu_version"
 }
 
+run_google_earth_pro_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-google-earth-pro-feature.sh" "$ubuntu_version"
+}
+
 run_github_copilot_cli_feature_test() {
   local ubuntu_version="${1:-24.04}"
   "$ROOT_DIR/tests/container/run-github-copilot-cli-feature.sh" "$ubuntu_version"
@@ -481,6 +487,10 @@ main() {
     test-doublecmd-feature)
       [[ "$#" -le 1 ]] || die "test-doublecmd-feature takes at most one Ubuntu version"
       run_doublecmd_feature_test "${1:-24.04}"
+      ;;
+    test-google-earth-pro-feature)
+      [[ "$#" -le 1 ]] || die "test-google-earth-pro-feature takes at most one Ubuntu version"
+      run_google_earth_pro_feature_test "${1:-24.04}"
       ;;
     test-github-copilot-cli-feature)
       [[ "$#" -le 1 ]] || die "test-github-copilot-cli-feature takes at most one Ubuntu version"
