@@ -251,8 +251,10 @@
   and unchanged installed state.
 - Added fail-closed SHA-256 verification for Git Credential Manager, Double
   Commander, and Nerd Fonts release downloads.
-- Added `AIHANDOVER.md` with a concise prompt that directs new sessions to the
-  authoritative specification, usage, task, and TODO documents.
+- Added `AGENTS.md` with concise AI-agent startup instructions, authoritative
+  document routing, and testing expectations. It replaces the older
+  `AIHANDOVER.md` prompt and avoids forcing every session to reread all long
+  architecture and HOWTO documents.
 - Added `libicu-dev` to `debian-cli-packages`, made the Git Credential Manager
   installer ensure it is present for failed-install retries, and added a
   container assertion after a fresh Ubuntu 26.04 core install exposed Git
@@ -608,6 +610,7 @@
   `printer-hp-m175nw`. Smoke coverage verifies the exact package command and
   post-install HOWTO guidance; the container verified that all four packages
   and their dependencies resolve and install together.
+- `git diff --check` after replacing `AIHANDOVER.md` with `AGENTS.md`.
 
 ## Remaining work
 
