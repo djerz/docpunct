@@ -883,7 +883,8 @@ After making changes, run tests appropriate to the area touched. Shell script
 changes should always be checked with ShellCheck. Behavior changes should also
 run the relevant smoke or container tests.
 
-Run ShellCheck through the Docker image:
+Run ShellCheck. It uses the Docker image when Docker is available and falls
+back to the host `shellcheck` binary when Docker socket access is unavailable:
 
 ```sh
 just shellcheck

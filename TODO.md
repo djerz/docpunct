@@ -179,8 +179,10 @@
 - Host Docker access is healthy: `chris` is a member of the `docker` group,
   `/var/run/docker.sock` is owned by `root:docker`, and both `docker ps` and
   `./bin/docpunct shellcheck` pass in host context. Restricted AI command
-  sandboxes may map supplementary groups to `nogroup`; Docker commands from
-  such a sandbox must use the approved host-context execution path.
+  sandboxes may map supplementary groups to `nogroup`; `./bin/docpunct
+  shellcheck` now falls back to host ShellCheck in that case, while
+  Docker-backed container tests still need the approved host-context execution
+  path.
 - Future features that invoke Cargo or Rust tools must source
   `$HOME/.cargo/env` themselves before calling those tools; do not rely on
   `.profile`, `.bashrc`, the Rust feature script, or a previous child process
@@ -201,6 +203,9 @@
   official current `amd64` Debian package, includes the `xdg-utils` dependency
   required by the package's maintainer scripts, makes it part of
   `desktop-apps`, and preserves saved places and user configuration on removal.
+- Made `./bin/docpunct shellcheck` fall back to the host `shellcheck` binary
+  when Docker or the Docker socket is unavailable, so restricted AI command
+  sandboxes can run the normal project ShellCheck target without escalation.
 - Added a standalone `mistral-vibe` feature using the managed uv toolchain,
   with package-scoped removal, preserved `~/.vibe` state, setup guidance, and
   a real Ubuntu lifecycle test target. The Ollama HOWTO documents a lean local
@@ -625,6 +630,9 @@
   `google-earth-pro`. The matrix verified the package install, executable
   path, package-owned cron updater artifact, package-scoped removal, and
   preservation of `~/.googleearth/myplaces.kml`.
+- `git diff --check`, Bash syntax, `./bin/docpunct shellcheck` through the
+  restricted-sandbox host fallback, and `./bin/docpunct test-smoke` after
+  adding automatic host ShellCheck fallback.
 
 ## Remaining work
 
@@ -678,8 +686,9 @@
 - APT/sudo-backed package feature scripts have been tested in disposable containers, but most have not been install-tested directly on the host.
 - Third-party APT repository feature scripts other than Docker have not been install-tested on the host because they download signing keys/source configuration and invoke APT/sudo.
 - Restricted command sandboxes do not expose the host's effective Docker group
-  membership. Docker-backed tests must run through approved host-context
-  execution; this is a sandbox boundary, not a host Docker permission defect.
+  membership. `./bin/docpunct shellcheck` falls back to host ShellCheck in that
+  case; Docker-backed container tests still need approved host-context
+  execution. This is a sandbox boundary, not a host Docker permission defect.
 - APT/container-heavy tests were not rerun for the `.profile` change because
   the behavior is covered by host-safe smoke tests.
 - The documented Qwen3 speed-tier multipliers have not been benchmarked on the

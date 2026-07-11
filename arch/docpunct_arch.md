@@ -1779,11 +1779,16 @@ Shell scripts should be checked with:
 just shellcheck
 ```
 
-`shellcheck` runs through:
+`shellcheck` prefers the Docker image:
 
 ```text
 ghcr.io/djerz/shellcheck:latest
 ```
+
+When Docker is unavailable, such as in a restricted command sandbox that cannot
+access `/var/run/docker.sock`, the command falls back to the host `shellcheck`
+binary if one is installed. If neither Docker nor host ShellCheck is available,
+the command fails with a clear error.
 
 The default local test set is:
 

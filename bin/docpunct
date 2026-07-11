@@ -345,14 +345,36 @@ relink_features() {
 }
 
 shellcheck_scripts() {
-  docker run --rm -i \
-    --pull=never \
-    --name docpunct-shellcheck \
-    -v "$ROOT_DIR:/usr/src:ro" \
-    --workdir /usr/src \
-    ghcr.io/djerz/shellcheck:latest \
-    shellcheck bin/docpunct features/*/*.sh features/epel/epel \
-      features/epel/msmtp-wrapper tests/*.sh tests/container/*.sh
+  local scripts=(
+    bin/docpunct
+    features/*/*.sh
+    features/epel/epel
+    features/epel/msmtp-wrapper
+    tests/*.sh
+    tests/container/*.sh
+  )
+
+  if command -v docker >/dev/null 2>&1 && docker ps >/dev/null 2>&1; then
+    docker run --rm -i \
+      --pull=never \
+      --name docpunct-shellcheck \
+      -v "$ROOT_DIR:/usr/src:ro" \
+      --workdir /usr/src \
+      ghcr.io/djerz/shellcheck:latest \
+      shellcheck "${scripts[@]}"
+    return 0
+  fi
+
+  if command -v shellcheck >/dev/null 2>&1; then
+    printf 'Docker is unavailable; using host shellcheck.\n' >&2
+    (
+      cd "$ROOT_DIR"
+      shellcheck "${scripts[@]}"
+    )
+    return 0
+  fi
+
+  die "shellcheck requires Docker access or a host shellcheck binary"
 }
 
 run_smoke_tests() {

@@ -48,7 +48,7 @@ relevant to the change.
 
 Run tests appropriate to the completed change:
 
-- Shell script changes: `./bin/docpunct shellcheck` or direct host
+- Shell script changes: `./bin/docpunct shellcheck`; it falls back to host
   `shellcheck` when Docker socket access is unavailable.
 - Core behavior changes: `./bin/docpunct test` or at least
   `./bin/docpunct test-smoke`.
