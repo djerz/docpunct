@@ -33,6 +33,7 @@ Usage:
   docpunct test-smoke
   docpunct test-container [22.04|24.04|26.04]
   docpunct test-containers
+  docpunct test-claude-code-cli-feature [22.04|24.04|26.04]
   docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
   docpunct test-doublecmd-feature [22.04|24.04|26.04]
   docpunct test-google-earth-pro-feature [22.04|24.04|26.04]
@@ -386,6 +387,11 @@ run_container_tests() {
   "$ROOT_DIR/tests/container/run.sh" "$ubuntu_version"
 }
 
+run_claude_code_cli_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-claude-code-cli-feature.sh" "$ubuntu_version"
+}
+
 run_all_container_tests() {
   run_container_tests 22.04
   run_container_tests 24.04
@@ -497,6 +503,10 @@ main() {
     test-containers)
       [[ "$#" -eq 0 ]] || die "test-containers takes no arguments"
       run_all_container_tests
+      ;;
+    test-claude-code-cli-feature)
+      [[ "$#" -le 1 ]] || die "test-claude-code-cli-feature takes at most one Ubuntu version"
+      run_claude_code_cli_feature_test "${1:-24.04}"
       ;;
     test-docker-feature)
       [[ "$#" -le 1 ]] || die "test-docker-feature takes at most one Ubuntu version"

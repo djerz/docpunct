@@ -50,6 +50,9 @@
   - `just test-openai-codex-cli-feature ubuntu=VERSION` runs the official
     OpenAI Codex CLI npm install/update/remove lifecycle in a separate
     non-privileged container.
+  - `just test-claude-code-cli-feature ubuntu=VERSION` runs the official
+    Anthropic Claude Code CLI npm install/update/remove lifecycle in a
+    separate non-privileged container.
   - `just test-mistral-vibe-feature ubuntu=VERSION` runs the official Mistral
     Vibe uv-tool install/update/remove lifecycle in a separate non-privileged
     container.
@@ -194,6 +197,16 @@
 
 ## Done
 
+- Added a standalone `claude-code-cli` feature using Anthropic's official
+  `@anthropic-ai/claude-code` npm package with the managed NVM Node.js
+  toolchain. Install/update/remove explicitly source NVM, package removal is
+  scoped to `@anthropic-ai/claude-code`, and user-owned state under `~/.claude`
+  is preserved.
+- Added `just test-claude-code-cli-feature` and
+  `./bin/docpunct test-claude-code-cli-feature` for a real disposable Ubuntu
+  lifecycle test. On 2026-07-12, the Ubuntu 24.04 test installed Claude Code
+  2.1.207, verified `claude --version`, updated and removed the npm package,
+  preserved `~/.claude/settings.json`, and confirmed Node/npm remained.
 - Added a standalone `printer-hp-m175nw` feature that installs Ubuntu's HPLIP,
   printer-driver, and scanner packages while leaving the required proprietary
   plugin and printer configuration as explicit `hp-plugin` and `hp-setup`

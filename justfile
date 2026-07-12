@@ -30,6 +30,9 @@ test-container ubuntu="24.04":
 test-containers:
     {{docpunct}} test-containers
 
+test-claude-code-cli-feature ubuntu="24.04":
+    {{docpunct}} test-claude-code-cli-feature {{ubuntu}}
+
 test-docker-feature ubuntu="24.04":
     {{docpunct}} test-docker-feature {{ubuntu}}
 

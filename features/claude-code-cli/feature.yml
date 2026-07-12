@@ -1,0 +1,4 @@
+description: Install Anthropic Claude Code CLI from its official npm package using NVM-managed Node.js.
+install_notice: Run claude to authenticate with a Claude Code eligible account.
+depends:
+  - node

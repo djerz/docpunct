@@ -17,6 +17,11 @@ official current `amd64` Debian package, accounts for its undeclared
 `xdg-utils` maintainer-script dependency, preserves user data on removal, and
 adds the feature to `desktop-apps`.
 
+Version 30 adds a `claude-code-cli` feature that installs Anthropic's official
+`@anthropic-ai/claude-code` npm package for the default NVM-managed Node.js
+version, preserves user-owned Claude Code state, and provides a real Ubuntu
+lifecycle test.
+
 Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
 official Python package with the managed uv toolchain, preserves user-owned
 configuration and credentials, and provides a real Ubuntu lifecycle test.
@@ -244,6 +249,7 @@ docpunct/
 │   ├── google-earth-pro/
 │   ├── github-cli/
 │   ├── github-copilot-cli/
+│   ├── claude-code-cli/
 │   ├── devcontainer-cli/
 │   ├── mistral-vibe/
 │   ├── openai-codex-cli/
@@ -335,6 +341,7 @@ docpunct shellcheck
 docpunct test-smoke
 docpunct test-container [22.04|24.04|26.04]
 docpunct test-containers
+docpunct test-claude-code-cli-feature [22.04|24.04|26.04]
 docpunct test-devcontainer-cli-feature [22.04|24.04|26.04]
 docpunct test-doublecmd-feature [22.04|24.04|26.04]
 docpunct test-google-earth-pro-feature [22.04|24.04|26.04]
@@ -1597,6 +1604,21 @@ other global npm packages, and user project data.
 
 ---
 
+## Claude Code CLI feature
+
+The `claude-code-cli` feature depends on `node` and installs Anthropic's
+official `@anthropic-ai/claude-code` package globally with npm for NVM's
+default Node.js version. Each lifecycle script must source `$NVM_DIR/nvm.sh`
+and select the default version before invoking npm.
+
+Update installs `@anthropic-ai/claude-code@latest` to obtain the current
+package release. Removal uninstalls only `@anthropic-ai/claude-code`; it must
+preserve NVM, Node.js, other global npm packages, and user-owned Claude Code
+authentication, configuration, sessions, MCP settings, and other state under
+`~/.claude`.
+
+---
+
 ## OpenAI Codex CLI feature
 
 The `openai-codex-cli` feature depends on `node` and installs OpenAI's official
@@ -1816,6 +1838,7 @@ Disposable Ubuntu container integration tests are explicit:
 ./bin/docpunct test-container 24.04
 ./bin/docpunct test-container 26.04
 ./bin/docpunct test-containers
+./bin/docpunct test-claude-code-cli-feature 24.04
 ./bin/docpunct test-devcontainer-cli-feature 24.04
 ./bin/docpunct test-mistral-vibe-feature 24.04
 ./bin/docpunct test-openai-codex-cli-feature 24.04
@@ -1828,6 +1851,7 @@ first.
 Feature-specific container tests:
 
 ```sh
+./bin/docpunct test-claude-code-cli-feature 24.04
 ./bin/docpunct test-doublecmd-feature 24.04
 ./bin/docpunct test-google-earth-pro-feature 24.04
 ./bin/docpunct test-github-copilot-cli-feature 24.04

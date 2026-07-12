@@ -145,6 +145,7 @@ google-chrome
 google-earth-pro
 github-cli
 github-copilot-cli
+claude-code-cli
 devcontainer-cli
 mistral-vibe
 openai-codex-cli
@@ -348,6 +349,14 @@ installation, update, and removal do not depend on the calling shell having
 initialized Node.js. Removal uninstalls only that npm package and preserves
 NVM, Node.js, and unrelated global packages.
 
+`claude-code-cli` installs Anthropic's official `@anthropic-ai/claude-code` npm
+package for the default NVM-managed Node.js version and provides the `claude`
+command. Removal uninstalls only that package and preserves NVM, Node.js,
+unrelated global packages, and user-owned Claude Code state under `~/.claude`.
+After installation, run `claude` and authenticate with a Claude Code eligible
+Claude account or configured provider; docpunct does not create or store
+credentials.
+
 `openai-codex-cli` installs OpenAI's official `@openai/codex` npm package for
 the default NVM-managed Node.js version and provides the `codex` command.
 Removal uninstalls only that package and preserves NVM, Node.js, unrelated
@@ -494,6 +503,9 @@ caches, and user configuration.
 
 `devcontainer-cli` depends on `node` and provides the `devcontainer` command
 from the `@devcontainers/cli` npm package.
+
+`claude-code-cli` depends on `node` and provides the `claude` command from
+Anthropic's official `@anthropic-ai/claude-code` npm package.
 
 `openai-codex-cli` depends on `node` and provides the `codex` command from
 OpenAI's official `@openai/codex` npm package.
@@ -939,6 +951,16 @@ Run the real Dev Container CLI npm lifecycle test with:
 ```sh
 just test-devcontainer-cli-feature ubuntu=24.04
 ./bin/docpunct test-devcontainer-cli-feature 24.04
+```
+
+This target is intentionally separate from `just test` and
+`just test-containers`.
+
+Run the real Claude Code CLI npm lifecycle test with:
+
+```sh
+just test-claude-code-cli-feature ubuntu=24.04
+./bin/docpunct test-claude-code-cli-feature 24.04
 ```
 
 This target is intentionally separate from `just test` and
