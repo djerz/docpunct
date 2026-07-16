@@ -4,7 +4,7 @@
   "diffview.nvim": { "branch": "main", "commit": "4516612fe98ff56ae0415a259ff6361a89419b0a" },
   "hexview.nvim": { "branch": "main", "commit": "413b73a2177a8d48b1af6658d2741584da209ece" },
   "lazy.nvim": { "branch": "main", "commit": "306a05526ada86a7b30af95c5cc81ffba93fef97" },
-  "notmuch.nvim": { "branch": "main", "commit": "4041f9280ed08ff01e97caf5fe9e3b119efc4701" },
+  "notmuch.nvim": { "branch": "main", "commit": "91acab026b4c0aa790a4bcc34dcdc47077c803b6" },
   "nvim-web-devicons": { "branch": "master", "commit": "0ca28b61a04fe7426cefbdd52c2647ef0e335b5f" },
   "plenary.nvim": { "branch": "master", "commit": "74b06c6c75e4eeb3108ec01852001636d85a932b" },
   "telescope-fzf-native.nvim": { "branch": "main", "commit": "b25b749b9db64d375d782094e2b9dce53ad53a40" },
