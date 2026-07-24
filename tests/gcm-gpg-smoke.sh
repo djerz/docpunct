@@ -29,6 +29,7 @@ assert_fails_with() {
 }
 
 assert_contains "$(cat "$repo_root/features/gcm-gpg/feature.yml")" "  - gpg"
+assert_contains "$(cat "$repo_root/features/gcm-keyring/feature.yml")" "  - debian-gui-packages"
 if grep -q 'git-credential-manager' "$repo_root/features/core/feature.yml" "$repo_root/features/dotfiles/feature.yml"; then
   printf 'core and dotfiles must not depend on Git Credential Manager\n' >&2
   exit 1
@@ -117,6 +118,47 @@ env HOME="$test_home" PATH="$fake_bin:$PATH" \
   printf 'expected exactly one managed gcm-gpg block\n' >&2
   exit 1
 }
+
+# A later gcm-keyring configuration uses the same include and switches the
+# active backend without duplicating the managed block.
+env HOME="$test_home" PATH="$fake_bin:$PATH" \
+  DOCPUNCT_CACHE_DIR="$migration_cache" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/gcm-keyring" \
+  "$repo_root/features/gcm-keyring/configure.sh" >/dev/null
+assert_contains "$(cat "$managed_config")" 'credentialStore = secretservice'
+assert_contains "$(cat "$managed_config")" "helper = $fake_bin/git-credential-manager"
+[[ "$(grep -Fxc '# >>> docpunct gcm-gpg >>>' "$test_home/.gitconfig")" -eq 1 ]] || {
+  printf 'expected one shared managed GCM block after keyring switch\n' >&2
+  exit 1
+}
+mapfile -t helpers < <(env HOME="$test_home" PATH="$fake_bin:$PATH" \
+  git config --global --includes --get-all credential.helper)
+[[ "${#helpers[@]}" -eq 3 && "${helpers[0]}" == store && -z "${helpers[1]}" && "${helpers[2]}" == "$fake_bin/git-credential-manager" ]] || {
+  printf 'expected keyring switch to preserve helper reset semantics\n' >&2
+  exit 1
+}
+
+inactive_remove_output="$(
+  env HOME="$test_home" PATH="$fake_bin:$PATH" \
+    DOCPUNCT_CACHE_DIR="$migration_cache" \
+    "$repo_root/features/gcm-gpg/remove.sh"
+)"
+assert_contains "$inactive_remove_output" 'Keeping active Git Credential Manager configuration for secretservice.'
+assert_contains "$(cat "$managed_config")" 'credentialStore = secretservice'
+
+# Updating gcm-gpg after both capabilities are installed switches the active
+# backend back to GPG/pass.
+env HOME="$test_home" PATH="$fake_bin:$PATH" \
+  DOCPUNCT_CACHE_DIR="$migration_cache" \
+  "$repo_root/features/gcm-gpg/configure.sh" >/dev/null
+assert_contains "$(cat "$managed_config")" 'credentialStore = gpg'
+inactive_keyring_remove_output="$(
+  env HOME="$test_home" PATH="$fake_bin:$PATH" \
+    DOCPUNCT_CACHE_DIR="$migration_cache" \
+    "$repo_root/features/gcm-keyring/remove.sh"
+)"
+assert_contains "$inactive_keyring_remove_output" 'Keeping active Git Credential Manager configuration for gpg.'
+assert_contains "$(cat "$managed_config")" 'credentialStore = gpg'
 
 malformed_home="$tmpdir/malformed-home"
 mkdir -p "$malformed_home"

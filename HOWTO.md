@@ -155,6 +155,7 @@ doublecmd
 obsidian
 gpg
 gcm-gpg
+gcm-keyring
 debug-corpo-proxy
 nerdfonts
 rust
@@ -176,9 +177,9 @@ python-uv
 ```
 
 `core` and `dotfiles` deliberately do not select a Git credential helper.
-Encrypted HTTPS credential storage is available as the explicit `gcm-gpg`
-feature. The tracked Git settings fragment only includes its optional managed
-credential fragment:
+HTTPS credential storage is available through the explicit `gcm-gpg` and
+`gcm-keyring` features. The tracked Git settings fragment only includes their
+optional shared managed credential fragment:
 
 ```ini
 [include]
@@ -445,14 +446,26 @@ are documented in `features/gpg/HOWTO.md`.
 `gcm-gpg` depends on `gpg`. It requires an initialized pass store backed by an
 encryption-capable secret key, then downloads and verifies the latest upstream
 GCM Debian package and configures GCM with `credentialStore = gpg` in a
-separate docpunct-managed Git include. A marked include block is kept at the
-end of `~/.gitconfig`, so its empty helper reset and GCM helper override earlier
-host helpers such as `store` without deleting those user-owned settings. The
-feature fails closed if another global helper remains active after GCM. It
-supports GCM's provider-specific authentication and generic HTTPS servers
-using a username plus password or personal access token.
+shared docpunct-managed Git include. This backend is TTY-compatible, but Git
+operations can prompt for GPG input when the GPG agent cache is cold.
 
-The provider may ask for authentication once to populate the new GPG store.
+`gcm-keyring` depends on `debian-gui-packages` and configures the same GCM
+package with `credentialStore = secretservice`. This backend is recommended
+for desktop-launched agentic workflows because it uses the unlocked desktop
+keyring instead of GPG pinentry. It requires an active Secret Service session,
+such as GNOME Keyring or KDE Wallet, and is not a reliable plain TTY default.
+
+Both GCM features can be installed. The most recent install or update writes
+the shared managed Git fragment and becomes the active backend. If the selected
+feature is already installed, use `./bin/docpunct update gcm-gpg` or
+`./bin/docpunct update gcm-keyring` to switch. Switching does not migrate
+stored credentials; expect GCM to authenticate once per host/account/provider
+to populate the newly active store.
+
+A marked include block is kept at the end of `~/.gitconfig`, so its empty
+helper reset and GCM helper override earlier host helpers such as `store`
+without deleting those user-owned settings. The features fail closed if another
+global helper remains active after GCM.
 
 `doublecmd` installs the latest Double Commander GitHub release from the
 portable Qt6 Linux tarball for the local architecture. It verifies the

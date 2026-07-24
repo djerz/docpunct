@@ -86,9 +86,10 @@ Version 16 makes Git HTTPS credential storage explicit. `core` and `dotfiles`
 no longer install a credential helper. The standalone `gpg` feature owns the
 GPG/pass command-line prerequisites and instructional key setup, while
 `gcm-gpg` requires an initialized user-owned pass store and configures Git
-Credential Manager with encrypted GPG storage. The former
-the deprecated `git-credential-manager` feature has now been removed after its
-migration window.
+Credential Manager with encrypted GPG storage. `gcm-keyring` configures the
+same Git Credential Manager package with Linux Secret Service storage for
+desktop and agentic workflows. The deprecated `git-credential-manager` feature
+has now been removed after its migration window.
 
 Version 11 incorporated the session that
 reworked update behavior so recipe changes can be applied without a
@@ -1016,7 +1017,9 @@ packages, keys, agent configuration, and password-store data.
 `gcm-gpg` depends on `gpg`. Before any download or Git configuration it
 requires a non-empty pass `.gpg-id` whose recipients resolve to
 encryption-capable secret keys. An incomplete setup fails with the GPG HOWTO
-path and can be retried after initialization.
+path and can be retried after initialization. `gcm-keyring` depends on
+`debian-gui-packages` and uses the desktop Secret Service stack instead of
+GPG/pass.
 
 Installation behavior:
 
@@ -1052,11 +1055,19 @@ Installation behavior:
    ```
 
 6. Write `~/.config/docpunct/git-credential-manager.gitconfig`, resetting prior
-   helpers and selecting the installed GCM executable plus:
+   helpers and selecting the installed GCM executable plus the active store.
+   `gcm-gpg` writes:
 
    ```ini
    [credential]
        credentialStore = gpg
+   ```
+
+   `gcm-keyring` writes:
+
+   ```ini
+   [credential]
+       credentialStore = secretservice
    ```
 
 7. Remove the deprecated unmanaged include written by earlier `gcm-gpg`
@@ -1064,15 +1075,27 @@ Installation behavior:
    `~/.gitconfig`. Its ordering makes the managed empty helper reset occur
    after preserved host helpers such as `store`.
 8. Fail closed unless applying Git's empty-helper reset semantics leaves the
-   installed GCM executable as the only effective global helper, with
-   `credentialStore = gpg`.
+   installed GCM executable as the only effective global helper, with the
+   configured credential store matching the backend being installed or updated.
 
-Update behavior should repeat the latest-release installation flow.
+Both GCM features can be installed. The most recent install or update writes
+the shared managed Git fragment and becomes the active backend. Because
+`docpunct install FEATURE` returns immediately for an already installed
+feature, switching back to an installed backend is done with
+`docpunct update gcm-gpg` or `docpunct update gcm-keyring`.
 
-Removal deletes only the marked include block, managed fragment, and a GCM
-package originally installed by `gcm-gpg`. It preserves pre-existing packages,
-GPG keys, pass data, and host Git settings; preserved host credential helpers
-become active again.
+Removal deletes the marked include block and managed fragment only when the
+feature being removed is the active backend. Removing an inactive GCM backend
+leaves the active backend configuration untouched. The GCM package is removed
+only when it was docpunct-installed and no other installed GCM backend still
+uses it. Removal preserves pre-existing packages, GPG keys, pass data, desktop
+keyring data, and host Git settings; preserved host credential helpers become
+active again when no GCM backend remains.
+
+Switching stores does not migrate credentials. Existing GPG/pass credentials
+remain in the password store, Secret Service credentials remain in the desktop
+keyring, and the newly active store is populated by GCM on first use per
+host/account/provider.
 
 The downloaded package is verified against the SHA-256 digest in GitHub's
 release API before installation. This detects a corrupted or mismatched

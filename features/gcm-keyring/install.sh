@@ -4,13 +4,10 @@ set -euo pipefail
 repo="git-ecosystem/git-credential-manager"
 api_url="https://api.github.com/repos/$repo/releases/latest"
 download_dir="$DOCPUNCT_CACHE_DIR/downloads"
-state_dir="$DOCPUNCT_CACHE_DIR/state/gcm-gpg"
+state_dir="$DOCPUNCT_CACHE_DIR/state/gcm-keyring"
 package_owned_marker="$state_dir/package-installed-by-docpunct"
-other_package_owned_marker="$DOCPUNCT_CACHE_DIR/state/gcm-keyring/package-installed-by-docpunct"
+other_package_owned_marker="$DOCPUNCT_CACHE_DIR/state/gcm-gpg/package-installed-by-docpunct"
 stale_legacy_marker="$DOCPUNCT_CACHE_DIR/state/installed/git-credential-manager"
-gpg_feature_dir="$(dirname "$DOCPUNCT_FEATURE_DIR")/gpg"
-
-DOCPUNCT_FEATURE_DIR="$gpg_feature_dir" "$gpg_feature_dir/check-readiness.sh"
 
 mkdir -p "$download_dir" "$state_dir"
 

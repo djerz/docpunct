@@ -91,13 +91,17 @@
   the unversioned `libnotmuch.so` name, which the runtime package does not
   provide.
 - Git HTTPS credentials are now opt-in: `gpg` provides instructional
-  GPG/pass setup and `gcm-gpg` configures GCM with encrypted GPG storage.
-  `core` and `dotfiles` do not select a credential helper.
+  GPG/pass setup, `gcm-gpg` configures GCM with encrypted GPG storage, and
+  `gcm-keyring` configures GCM with desktop Secret Service storage for
+  desktop-launched agentic workflows. `core` and `dotfiles` do not select a
+  credential helper.
 - The GPG HOWTO also documents optional public-key publication and Git commit
   signing with the selected full key fingerprint.
-- `gcm-gpg` owns an end-of-file marked include in `~/.gitconfig`, so its helper
-  reset follows preserved host helpers. Configuration fails closed unless GCM
-  with GPG storage is the only effective global credential helper.
+- `gcm-gpg` and `gcm-keyring` share an end-of-file marked include in
+  `~/.gitconfig`, so their helper reset follows preserved host helpers. The
+  most recent install or update writes the shared managed Git fragment and
+  becomes the active backend. Configuration fails closed unless GCM is the only
+  effective global credential helper with the selected store.
 - The deprecated `git-credential-manager` feature has been removed after its
   migration window; `gcm-gpg` now fully owns docpunct's Git Credential Manager
   package lifecycle and adopts stale legacy ownership markers on update.
@@ -240,6 +244,9 @@
 - Added standalone `gpg` and `gcm-gpg` features, including pass/key readiness
   checks, headless pinentry instructions, a separate managed Git include, and
   an explicit migration path from the deprecated implicit GCM feature.
+- Added standalone `gcm-keyring` as the desktop Secret Service-backed GCM
+  profile. It can be installed beside `gcm-gpg`; the latest installed or
+  updated profile wins by rewriting the shared managed GCM fragment.
 - Removed the deprecated `git-credential-manager` feature after its migration
   window. `gcm-gpg` remains the only feature that installs and configures Git
   Credential Manager, and it adopts stale legacy package ownership markers on

@@ -61,6 +61,14 @@ sudo -u docpunct-test \
     test "${credential_helpers[2]}" = /usr/local/bin/git-credential-manager
     grep -F "credentialStore = gpg" \
       "$HOME/.config/docpunct/git-credential-manager.gitconfig"
+    DOCPUNCT_FEATURE_DIR="$PWD/features/gcm-keyring" \
+      ./features/gcm-keyring/configure.sh
+    grep -F "credentialStore = secretservice" \
+      "$HOME/.config/docpunct/git-credential-manager.gitconfig"
+    DOCPUNCT_FEATURE_DIR="$PWD/features/gcm-gpg" \
+      ./features/gcm-gpg/configure.sh
+    grep -F "credentialStore = gpg" \
+      "$HOME/.config/docpunct/git-credential-manager.gitconfig"
     ./bin/docpunct install debian-mail-packages
     for package in isync notmuch libnotmuch-dev msmtp rsync libsecret-tools util-linux w3m; do
       dpkg-query -W -f="\${Status}\n" "$package" | grep -qx "install ok installed"
