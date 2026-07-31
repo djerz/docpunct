@@ -23,10 +23,16 @@ sudo -u docpunct-test \
     command -v google-earth-pro
     test -x /opt/google/earth/pro/googleearth
     test -f /etc/cron.daily/google-earth-pro
+    test -f /etc/apt/sources.list.d/google-earth-pro.sources
+    test ! -e /etc/apt/sources.list.d/google-earth-pro.list
     ./bin/docpunct update google-earth-pro
+    test -f /etc/apt/sources.list.d/google-earth-pro.sources
+    test ! -e /etc/apt/sources.list.d/google-earth-pro.list
     mkdir -p "$HOME/.googleearth"
     touch "$HOME/.googleearth/myplaces.kml"
     ./bin/docpunct remove google-earth-pro
     ! dpkg-query -W -f="\${Status}" google-earth-pro-stable 2>/dev/null | grep -q "install ok installed"
+    test ! -e /etc/apt/sources.list.d/google-earth-pro.sources
+    test ! -e /etc/apt/sources.list.d/google-earth-pro.list
     test -f "$HOME/.googleearth/myplaces.kml"
   '

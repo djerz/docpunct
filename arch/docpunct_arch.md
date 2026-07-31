@@ -1564,13 +1564,14 @@ package through APT so declared package dependencies are resolved normally.
 
 The Google package's maintainer scripts install an updater source at
 `/etc/apt/sources.list.d/google-earth-pro.list`, a package signing key, and
-`/etc/cron.daily/google-earth-pro`. These artifacts are owned by the package's
-maintainer scripts, not hand-written by docpunct.
+`/etc/cron.daily/google-earth-pro`. Docpunct replaces the legacy updater source
+with `/etc/apt/sources.list.d/google-earth-pro.sources` after installation or
+update so Ubuntu 26.04 and newer do not report it as an APT source that can be
+modernized.
 
 Update repeats the current-package install flow. Removal removes only
-`google-earth-pro-stable` and lets the package maintainer scripts clean their
-own package-owned updater artifacts. It preserves saved places, caches, and
-user configuration such as `~/.googleearth`.
+`google-earth-pro-stable` and the updater source files. It preserves saved
+places, caches, and user configuration such as `~/.googleearth`.
 
 The current direct package download is HTTPS-only and does not provide the
 independent release digest used by GitHub-backed features such as Obsidian.
