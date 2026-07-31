@@ -1337,15 +1337,16 @@ The `github-cli` feature installs the `gh` package from GitHub CLI's official
 APT repository and owns:
 
 ```text
-/etc/apt/sources.list.d/github-cli.list
+/etc/apt/sources.list.d/github-cli.sources
 /etc/apt/keyrings/githubcli-archive-keyring.gpg
 ```
 
 The repository uses a distro-independent `stable` suite and publishes `i386`,
 `amd64`, `armhf`, and `arm64`. The downloaded keyring must match the SHA-256
 published in GitHub CLI's official installation documentation before
-installation. Removal preserves user authentication and configuration under
-`~/.config/gh`.
+installation. Install and remove also delete the legacy
+`/etc/apt/sources.list.d/github-cli.list` path if it exists. Removal preserves
+user authentication and configuration under `~/.config/gh`.
 
 The `github-copilot-cli` feature installs the latest standalone GitHub Copilot
 CLI release for glibc Linux:

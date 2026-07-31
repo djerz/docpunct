@@ -7,7 +7,8 @@ apt-get install -y --no-install-recommends \
   ca-certificates \
   git \
   shellcheck \
-  sudo
+  sudo \
+  zstd
 rm -rf /var/lib/apt/lists/*
 
 useradd --create-home --shell /bin/bash docpunct-test
@@ -33,12 +34,14 @@ sudo -u docpunct-test \
     ./bin/docpunct install github-cli
     gh --version
     test -f /etc/apt/keyrings/githubcli-archive-keyring.gpg
-    test -f /etc/apt/sources.list.d/github-cli.list
+    test -f /etc/apt/sources.list.d/github-cli.sources
+    test ! -e /etc/apt/sources.list.d/github-cli.list
     ./bin/docpunct update github-cli
     mkdir -p "$HOME/.config/gh"
     touch "$HOME/.config/gh/hosts.yml"
     ./bin/docpunct remove github-cli
     test ! -e /etc/apt/keyrings/githubcli-archive-keyring.gpg
+    test ! -e /etc/apt/sources.list.d/github-cli.sources
     test ! -e /etc/apt/sources.list.d/github-cli.list
     test -f "$HOME/.config/gh/hosts.yml"
     ./bin/docpunct install gpg

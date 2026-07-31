@@ -3,7 +3,8 @@ set -euo pipefail
 
 package="gh"
 keyring="/etc/apt/keyrings/githubcli-archive-keyring.gpg"
-source_file="/etc/apt/sources.list.d/github-cli.list"
+source_file="/etc/apt/sources.list.d/github-cli.sources"
+legacy_source_file="/etc/apt/sources.list.d/github-cli.list"
 arch="$(dpkg --print-architecture)"
 keyring_sha256="6084d5d7bd8e288441e0e94fc6275570895da18e6751f70f057485dc2d1a811b"
 keyring_tmp="$(mktemp)"
@@ -29,7 +30,8 @@ sudo install -m 0644 "$keyring_tmp" "$keyring"
 rm -f -- "$keyring_tmp"
 trap - EXIT
 
-printf 'deb [arch=%s signed-by=%s] https://cli.github.com/packages stable main\n' \
+sudo rm -f -- "$legacy_source_file"
+printf 'Types: deb\nURIs: https://cli.github.com/packages\nSuites: stable\nComponents: main\nArchitectures: %s\nSigned-By: %s\n' \
   "$arch" "$keyring" |
   sudo tee "$source_file" >/dev/null
 
