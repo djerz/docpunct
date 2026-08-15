@@ -216,6 +216,10 @@
   plugin and printer configuration as explicit `hp-plugin` and `hp-setup`
   steps in the feature HOWTO. Removal conservatively retains packages, queues,
   plugin state, and user configuration.
+- Added a standalone `retroarch` feature that installs RetroArch from the
+  Libretro Stable PPA, preserves user configuration and game data on removal,
+  is included in `desktop-apps`, and has a feature-specific Ubuntu lifecycle
+  test.
 - Added a standalone `google-earth-pro` feature that installs Google's
   official current `amd64` Debian package, includes the `xdg-utils` dependency
   required by the package's maintainer scripts, makes it part of

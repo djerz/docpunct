@@ -60,6 +60,9 @@ test-ollama-feature ubuntu="24.04":
 test-obsidian-feature ubuntu="24.04":
     {{docpunct}} test-obsidian-feature {{ubuntu}}
 
+test-retroarch-feature ubuntu="24.04":
+    {{docpunct}} test-retroarch-feature {{ubuntu}}
+
 test-neovide-feature ubuntu="24.04":
     {{docpunct}} test-neovide-feature {{ubuntu}}
 

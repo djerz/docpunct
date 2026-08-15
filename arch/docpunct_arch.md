@@ -22,6 +22,10 @@ Version 30 adds a `claude-code-cli` feature that installs Anthropic's official
 version, preserves user-owned Claude Code state, and provides a real Ubuntu
 lifecycle test.
 
+Version 31 adds a standalone `retroarch` feature that installs RetroArch from
+the Libretro Stable PPA, preserves user configuration and game data on removal,
+adds the feature to `desktop-apps`, and provides a real Ubuntu lifecycle test.
+
 Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
 official Python package with the managed uv toolchain, preserves user-owned
 configuration and credentials, and provides a real Ubuntu lifecycle test.
