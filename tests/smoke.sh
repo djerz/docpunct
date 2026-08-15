@@ -140,6 +140,13 @@ assert_fails_with \
 neovide_manifest="$(cat "$repo_root/features/neovide/feature.yml")"
 assert_contains "$neovide_manifest" "  - nerdfonts"
 
+node_install_script="$(cat "$repo_root/features/node/install.sh")"
+node_update_script="$(cat "$repo_root/features/node/update.sh")"
+assert_contains "$node_install_script" "v0.40.6"
+assert_contains "$node_install_script" "PROFILE=/dev/null bash"
+assert_contains "$node_update_script" "v0.40.6"
+assert_contains "$node_update_script" "PROFILE=/dev/null bash"
+
 debug_proxy_home="$tmpdir/debug-proxy-home"
 debug_proxy_cache="$tmpdir/debug-proxy-cache"
 debug_proxy_bin="$tmpdir/debug-proxy-bin"
@@ -893,6 +900,83 @@ for protected_package in desktop-file-utils gnome-icon-theme adwaita-icon-theme-
     exit 1
   fi
 done
+
+repo_remove_bin="$tmpdir/repo-remove-bin"
+repo_remove_log="$tmpdir/repo-remove.log"
+mkdir -p "$repo_remove_bin"
+cat >"$repo_remove_bin/dpkg-query" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+exit 1
+EOF
+cat >"$repo_remove_bin/sudo" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$REPO_REMOVE_LOG"
+EOF
+chmod +x "$repo_remove_bin/dpkg-query" "$repo_remove_bin/sudo"
+
+env \
+  PATH="$repo_remove_bin:$PATH" \
+  REPO_REMOVE_LOG="$repo_remove_log" \
+  "$repo_root/features/brave-browser/remove.sh"
+repo_remove_output="$(cat "$repo_remove_log")"
+assert_not_contains "$repo_remove_output" "apt-get remove -y brave-browser"
+assert_contains "$repo_remove_output" "rm -f -- /etc/apt/sources.list.d/brave-browser-release.sources /usr/share/keyrings/brave-browser-archive-keyring.gpg"
+assert_contains "$repo_remove_output" "apt-get update"
+
+uv_home="$tmpdir/uv-home"
+uv_state="$tmpdir/uv-state"
+mkdir -p "$uv_home/.local/bin" "$uv_state/installed"
+cat >"$uv_home/.local/bin/uv" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$*" >>"$UV_TEST_LOG"
+EOF
+cat >"$uv_home/.local/bin/uvx" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+EOF
+chmod +x "$uv_home/.local/bin/uv" "$uv_home/.local/bin/uvx"
+touch "$uv_state/installed/python-uv"
+uv_log="$tmpdir/uv.log"
+
+env \
+  HOME="$uv_home" \
+  DOCPUNCT_STATE_DIR="$uv_state" \
+  DOCPUNCT_INSTALLED_DIR="$uv_state/installed" \
+  DOCPUNCT_FEATURE_DIR="$repo_root/features/python-uv" \
+  UV_TEST_LOG="$uv_log" \
+  "$repo_root/features/python-uv/update.sh" >/dev/null
+[[ -f "$uv_state/python-uv/owned-by-docpunct" ]] || {
+  printf 'expected python-uv update to adopt old docpunct install ownership\n' >&2
+  exit 1
+}
+grep -Fxq 'self update' "$uv_log" || {
+  printf 'expected python-uv update to call uv self update\n' >&2
+  exit 1
+}
+env \
+  HOME="$uv_home" \
+  DOCPUNCT_STATE_DIR="$uv_state" \
+  "$repo_root/features/python-uv/remove.sh" >/dev/null
+[[ ! -e "$uv_home/.local/bin/uv" && ! -e "$uv_home/.local/bin/uvx" ]] || {
+  printf 'expected python-uv remove to delete adopted docpunct-owned uv binaries\n' >&2
+  exit 1
+}
+
+uv_foreign_home="$tmpdir/uv-foreign-home"
+uv_foreign_state="$tmpdir/uv-foreign-state"
+mkdir -p "$uv_foreign_home/.local/bin" "$uv_foreign_state"
+touch "$uv_foreign_home/.local/bin/uv" "$uv_foreign_home/.local/bin/uvx"
+env \
+  HOME="$uv_foreign_home" \
+  DOCPUNCT_STATE_DIR="$uv_foreign_state" \
+  "$repo_root/features/python-uv/remove.sh" >/dev/null
+[[ -e "$uv_foreign_home/.local/bin/uv" && -e "$uv_foreign_home/.local/bin/uvx" ]] || {
+  printf 'expected python-uv remove to preserve uv binaries without ownership marker\n' >&2
+  exit 1
+}
 
 "$repo_root/tests/epel-smoke.sh"
 "$repo_root/tests/gcm-gpg-smoke.sh"

@@ -24,6 +24,22 @@ sudo -u docpunct-test \
     bash -n bin/docpunct features/*/*.sh features/epel/epel features/epel/msmtp-wrapper
     shellcheck bin/docpunct features/*/*.sh features/epel/epel features/epel/msmtp-wrapper
     ./tests/smoke.sh
+    ./bin/docpunct install python-uv
+    export PATH="$HOME/.local/bin:$PATH"
+    command -v uv
+    command -v uvx
+    test -f "$DOCPUNCT_CACHE_DIR/state/python-uv/owned-by-docpunct"
+    uv --version
+    ./bin/docpunct update python-uv
+    mkdir -p "$HOME/.local/share/uv/tools"
+    touch "$HOME/.local/share/uv/tools/preserved"
+    ./bin/docpunct remove python-uv
+    hash -r
+    ! command -v uv
+    ! command -v uvx
+    test ! -e "$HOME/.local/bin/uv"
+    test ! -e "$HOME/.local/bin/uvx"
+    test -f "$HOME/.local/share/uv/tools/preserved"
     ./bin/docpunct install debian-cli-packages
     dpkg-query -W -f="\${Status}\n" libicu-dev | grep -qx "install ok installed"
     dpkg-query -W -f="\${Status}\n" git-crypt | grep -qx "install ok installed"

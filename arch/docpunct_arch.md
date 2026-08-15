@@ -26,6 +26,14 @@ Version 31 adds a standalone `retroarch` feature that installs RetroArch from
 the Libretro Stable PPA, preserves user configuration and game data on removal,
 adds the feature to `desktop-apps`, and provides a real Ubuntu lifecycle test.
 
+Version 32 hardens repository-backed feature removal so failed install cleanup
+and repeated removal still clean managed APT source/key files when packages are
+already absent. It refreshes the `node` feature to nvm `v0.40.6` and makes
+updates refresh nvm before installing the latest LTS Node.js. It also adds
+python-uv ownership markers, with a temporary transition path that adopts
+existing docpunct-installed `~/.local/bin/uv` and `uvx` binaries during
+update.
+
 Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
 official Python package with the managed uv toolchain, preserves user-owned
 configuration and credentials, and provides a real Ubuntu lifecycle test.

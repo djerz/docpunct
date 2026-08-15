@@ -198,6 +198,11 @@
   shared desktop/system dependencies and warn before implementing removal that
   could cause APT to remove packages such as `ubuntu-desktop`,
   `ubuntu-desktop-minimal`, `gdm3`, `gnome-control-center`, or `nautilus`.
+- Temporary transition logic exists in `features/python-uv/update.sh` to adopt
+  existing docpunct-installed `~/.local/bin/uv` and `uvx` binaries that predate
+  the `python-uv` ownership marker. After all known installed hosts have run
+  `docpunct update python-uv` or reinstalled the feature, remove this adoption
+  branch and the corresponding smoke-test migration case.
 
 ## Done
 
@@ -220,6 +225,16 @@
   Libretro Stable PPA, preserves user configuration and game data on removal,
   is included in `desktop-apps`, and has a feature-specific Ubuntu lifecycle
   test.
+- Hardened repository-backed feature removal for Brave, Visual Studio Code,
+  Google Chrome, GitHub CLI, and Docker so repeated removal and failed-install
+  cleanup do not fail when packages are absent, while managed APT sources and
+  keyrings are still cleaned up. Refreshed `node` to nvm `v0.40.6` and made
+  update refresh nvm itself before installing the latest LTS Node.js. Added
+  `python-uv` ownership markers with a temporary adoption path for existing
+  docpunct installs. GitHub Copilot CLI intentionally remains on the
+  digest-verified standalone release asset for cleaner binary ownership, and
+  OpenAI Codex CLI intentionally remains npm-managed with the rest of the
+  Node-based CLI tools.
 - Added a standalone `google-earth-pro` feature that installs Google's
   official current `amd64` Debian package, includes the `xdg-utils` dependency
   required by the package's maintainer scripts, makes it part of

@@ -35,7 +35,16 @@ if [[ -f "$group_user_marker" ]]; then
   rm -f -- "$group_user_marker"
 fi
 
-sudo apt-get remove -y "${packages[@]}"
+installed_packages=()
+for package in "${packages[@]}"; do
+  if dpkg-query -W -f='${db:Status-Abbrev}' "$package" 2>/dev/null | grep -q '^ii '; then
+    installed_packages+=("$package")
+  fi
+done
+
+if [[ "${#installed_packages[@]}" -gt 0 ]]; then
+  sudo apt-get remove -y "${installed_packages[@]}"
+fi
 sudo rm -f -- "$source_file" "$keyring"
 sudo apt-get update
 
