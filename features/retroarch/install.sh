@@ -1,9 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-package="retroarch"
+packages=(
+  retroarch
+  libretro-nestopia
+  libretro-snes9x
+  libretro-gambatte
+  libretro-mgba
+  libretro-genesisplusgx
+  libretro-mupen64plus-next
+  libretro-fbneo
+)
 keyring="/etc/apt/keyrings/libretro-stable.asc"
-source_file="/etc/apt/sources.list.d/libretro-stable.sources"
+stable_source_file="/etc/apt/sources.list.d/libretro-stable.sources"
+testing_source_file="/etc/apt/sources.list.d/libretro-testing.sources"
+testing_preferences_file="/etc/apt/preferences.d/docpunct-libretro-testing"
 arch="$(dpkg --print-architecture)"
 codename=""
 keyring_sha256="bda2a6fc6ea2a716e40ba7e4d7fab2a5775b224918212b9118e629771f683755"
@@ -29,7 +40,7 @@ if [[ -z "$codename" ]]; then
   exit 1
 fi
 
-sudo install -d -m 0755 /etc/apt/keyrings /etc/apt/sources.list.d
+sudo install -d -m 0755 /etc/apt/keyrings /etc/apt/preferences.d /etc/apt/sources.list.d
 curl -fsSLo "$keyring_tmp" \
   'https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3B2BA0B6750986899B189AFF18DAAE7FECA3745F'
 printf '%s  %s\n' "$keyring_sha256" "$keyring_tmp" |
@@ -43,10 +54,17 @@ trap - EXIT
 
 sudo rm -f -- \
   "/etc/apt/sources.list.d/libretro-ubuntu-stable-${codename}.list" \
-  "/etc/apt/sources.list.d/libretro-ubuntu-stable-${codename}.sources"
+  "/etc/apt/sources.list.d/libretro-ubuntu-stable-${codename}.sources" \
+  "/etc/apt/sources.list.d/libretro-ubuntu-testing-${codename}.list" \
+  "/etc/apt/sources.list.d/libretro-ubuntu-testing-${codename}.sources"
 printf 'Types: deb\nURIs: https://ppa.launchpadcontent.net/libretro/stable/ubuntu\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-By: %s\n' \
   "$codename" "$arch" "$keyring" |
-  sudo tee "$source_file" >/dev/null
+  sudo tee "$stable_source_file" >/dev/null
+printf 'Types: deb\nURIs: https://ppa.launchpadcontent.net/libretro/testing/ubuntu\nSuites: %s\nComponents: main\nArchitectures: %s\nSigned-By: %s\n' \
+  "$codename" "$arch" "$keyring" |
+  sudo tee "$testing_source_file" >/dev/null
+printf 'Package: libretro-fbneo libretro-mupen64plus-next\nPin: release o=LP-PPA-libretro-testing\nPin-Priority: 500\n\nPackage: *\nPin: release o=LP-PPA-libretro-testing\nPin-Priority: 100\n' |
+  sudo tee "$testing_preferences_file" >/dev/null
 
 sudo apt-get update
-sudo apt-get install -y "$package"
+sudo apt-get install -y "${packages[@]}"

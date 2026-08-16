@@ -222,9 +222,13 @@
   steps in the feature HOWTO. Removal conservatively retains packages, queues,
   plugin state, and user configuration.
 - Added a standalone `retroarch` feature that installs RetroArch from the
-  Libretro Stable PPA, preserves user configuration and game data on removal,
-  is included in `desktop-apps`, and has a feature-specific Ubuntu lifecycle
-  test.
+  Libretro Stable PPA plus default cores for NES, SNES, Game Boy, Game Boy
+  Color, Game Boy Advance, Nintendo 64, Genesis / Mega Drive, Sega CD /
+  Mega-CD, Master System, Game Gear, SG-1000, and Neo Geo. N64 and Neo Geo use
+  package-specific apt pinning from the Libretro Testing/Nightly PPA while
+  unrelated testing packages remain low priority. It preserves user
+  configuration and game data on removal, is included in `desktop-apps`, and
+  has a feature-specific Ubuntu lifecycle test.
 - Hardened repository-backed feature removal for Brave, Visual Studio Code,
   Google Chrome, GitHub CLI, and Docker so repeated removal and failed-install
   cleanup do not fail when packages are absent, while managed APT sources and

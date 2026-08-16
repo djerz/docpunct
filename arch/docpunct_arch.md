@@ -23,8 +23,13 @@ version, preserves user-owned Claude Code state, and provides a real Ubuntu
 lifecycle test.
 
 Version 31 adds a standalone `retroarch` feature that installs RetroArch from
-the Libretro Stable PPA, preserves user configuration and game data on removal,
-adds the feature to `desktop-apps`, and provides a real Ubuntu lifecycle test.
+the Libretro Stable PPA plus a default core set for NES, SNES, Game Boy,
+Game Boy Color, Game Boy Advance, Nintendo 64, Genesis / Mega Drive, Sega CD /
+Mega-CD, Master System, Game Gear, SG-1000, and Neo Geo. N64 and Neo Geo come
+from the Libretro Testing/Nightly PPA via package-specific apt pinning, leaving
+the testing archive low-priority for unrelated packages. It preserves user
+configuration and game data on removal, adds the feature to `desktop-apps`, and
+provides a real Ubuntu lifecycle test.
 
 Version 32 hardens repository-backed feature removal so failed install cleanup
 and repeated removal still clean managed APT source/key files when packages are
