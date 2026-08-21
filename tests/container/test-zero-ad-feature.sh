@@ -25,6 +25,11 @@ sudo -u docpunct-test \
     cat >"$HOME/zero-ad-fixture/0ad-0.28.0-x86_64.AppImage" <<'"'"'EOF'"'"'
 #!/usr/bin/env bash
 set -euo pipefail
+if [[ "${1:-}" == --appimage-extract ]]; then
+  mkdir -p squashfs-root
+  printf "fake png\n" >squashfs-root/.DirIcon
+  exit 0
+fi
 printf "0 A.D. fake AppImage 0.28.0\n"
 EOF
     chmod +x "$HOME/zero-ad-fixture/0ad-0.28.0-x86_64.AppImage"
@@ -36,10 +41,14 @@ EOF
     cd /workspace/docpunct
     ./bin/docpunct install zero-ad
     test -x "$HOME/.local/share/docpunct/zero-ad/0ad-0.28.0-x86_64.AppImage"
-    test "$(readlink "$HOME/.local/bin/0ad")" = "$HOME/.local/share/docpunct/zero-ad/0ad-0.28.0-x86_64.AppImage"
+    test -f "$HOME/.local/share/docpunct/zero-ad/zero-ad.png"
+    test -x "$HOME/.local/bin/0ad"
+    grep -qx "# Managed by docpunct zero-ad feature." "$HOME/.local/bin/0ad"
+    grep -Fqx "exec \"$HOME/.local/share/docpunct/zero-ad/0ad-0.28.0-x86_64.AppImage\" \"\$@\"" "$HOME/.local/bin/0ad"
     "$HOME/.local/bin/0ad" | grep -qx "0 A.D. fake AppImage 0.28.0"
     test -f "$HOME/.local/share/applications/zero-ad.desktop"
     grep -qx "Exec=$HOME/.local/bin/0ad" "$HOME/.local/share/applications/zero-ad.desktop"
+    grep -qx "Icon=$HOME/.local/share/docpunct/zero-ad/zero-ad.png" "$HOME/.local/share/applications/zero-ad.desktop"
     ./bin/docpunct update zero-ad
     mkdir -p "$HOME/.config/0ad" "$HOME/.local/share/0ad/saves"
     touch "$HOME/.config/0ad/config" "$HOME/.local/share/0ad/saves/example.0adsave"

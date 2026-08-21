@@ -5,6 +5,7 @@ install_dir="$HOME/.local/share/docpunct/zero-ad"
 bin_link="$HOME/.local/bin/0ad"
 applications_dir="$HOME/.local/share/applications"
 desktop_file="$applications_dir/zero-ad.desktop"
+wrapper_marker="# Managed by docpunct zero-ad feature."
 
 if [[ -L "$bin_link" ]]; then
   current_target="$(readlink "$bin_link")"
@@ -13,7 +14,11 @@ if [[ -L "$bin_link" ]]; then
     *) printf 'leaving foreign 0 A.D. symlink untouched: %s -> %s\n' "$bin_link" "$current_target" ;;
   esac
 elif [[ -e "$bin_link" ]]; then
-  printf 'leaving foreign 0 A.D. command untouched: %s\n' "$bin_link"
+  if grep -Fqx "$wrapper_marker" "$bin_link" 2>/dev/null; then
+    rm -- "$bin_link"
+  else
+    printf 'leaving foreign 0 A.D. command untouched: %s\n' "$bin_link"
+  fi
 fi
 
 if [[ -f "$desktop_file" ]]; then

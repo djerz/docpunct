@@ -12,6 +12,14 @@ bin_link="$bin_dir/0ad"
 applications_dir="$HOME/.local/share/applications"
 desktop_file="$applications_dir/zero-ad.desktop"
 appimage_path="$install_dir/$asset_name"
+icon_path="$install_dir/zero-ad.png"
+wrapper_marker="# Managed by docpunct zero-ad feature."
+tmpdir="$(mktemp -d)"
+
+cleanup() {
+  rm -rf -- "$tmpdir"
+}
+trap cleanup EXIT
 
 arch="$(dpkg --print-architecture)"
 case "$arch" in
@@ -23,7 +31,12 @@ case "$arch" in
 esac
 
 if [[ -e "$bin_link" || -L "$bin_link" ]]; then
-  if [[ ! -L "$bin_link" || "$(readlink "$bin_link")" != "$appimage_path" ]]; then
+  if [[ -L "$bin_link" ]]; then
+    if [[ "$(readlink "$bin_link")" != "$appimage_path" ]]; then
+      printf 'refusing to replace foreign 0 A.D. command: %s\n' "$bin_link" >&2
+      exit 1
+    fi
+  elif ! grep -Fqx "$wrapper_marker" "$bin_link" 2>/dev/null; then
     printf 'refusing to replace foreign 0 A.D. command: %s\n' "$bin_link" >&2
     exit 1
   fi
@@ -76,10 +89,41 @@ curl -fL "$base_url/$asset_name" -o "$download_dir/$asset_name"
 }
 
 install -m 0755 "$download_dir/$asset_name" "$appimage_path"
-ln -sfn -- "$appimage_path" "$bin_link"
+(
+  cd "$tmpdir"
+  if "$appimage_path" --appimage-extract >/dev/null 2>&1; then
+    if [[ -f squashfs-root/.DirIcon ]]; then
+      install -m 0644 squashfs-root/.DirIcon "$icon_path"
+    else
+      found_icon="$(
+        find squashfs-root -type f \
+          \( -name '0ad.png' -o -name 'pyrogenesis.png' -o -name '*.png' \) \
+          -print |
+          sort |
+          tail -n 1
+      )"
+      if [[ -n "$found_icon" ]]; then
+        install -m 0644 "$found_icon" "$icon_path"
+      fi
+    fi
+  fi
+)
+cat >"$bin_link" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+$wrapper_marker
+
+if [[ -z "\${SDL_VIDEODRIVER:-}" && -n "\${WAYLAND_DISPLAY:-}" ]]; then
+  export SDL_VIDEODRIVER=wayland
+fi
+
+exec "$appimage_path" "\$@"
+EOF
+chmod 0755 "$bin_link"
 
 sed \
   -e "s#__ZERO_AD_EXEC__#$bin_link#g" \
+  -e "s#__ZERO_AD_ICON__#$icon_path#g" \
   "$DOCPUNCT_FEATURE_DIR/zero-ad.desktop.in" >"$desktop_file"
 chmod 0644 "$desktop_file"
 
