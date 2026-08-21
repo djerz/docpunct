@@ -63,6 +63,9 @@ test-obsidian-feature ubuntu="24.04":
 test-retroarch-feature ubuntu="24.04":
     {{docpunct}} test-retroarch-feature {{ubuntu}}
 
+test-zero-ad-feature ubuntu="24.04":
+    {{docpunct}} test-zero-ad-feature {{ubuntu}}
+
 test-neovide-feature ubuntu="24.04":
     {{docpunct}} test-neovide-feature {{ubuntu}}
 

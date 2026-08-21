@@ -39,6 +39,13 @@ python-uv ownership markers, with a temporary transition path that adopts
 existing docpunct-installed `~/.local/bin/uv` and `uvx` binaries during
 update.
 
+Version 33 adds a standalone `zero-ad` feature that installs the official
+0 A.D. Release 28 `x86_64` AppImage user-locally, installs only the minimal
+download and AppImage runtime packages it needs, verifies the upstream SHA-256
+sidecar before installation, creates a `0ad` command and desktop entry,
+preserves user configuration and saved games on removal, adds the feature to
+`desktop-apps`, and provides a fixture-backed Ubuntu lifecycle test.
+
 Version 27 adds a standalone `mistral-vibe` feature that installs Mistral's
 official Python package with the managed uv toolchain, preserves user-owned
 configuration and credentials, and provides a real Ubuntu lifecycle test.

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=0 A.D.
+Comment=A real-time strategy game of ancient warfare
+Exec=__ZERO_AD_EXEC__
+Terminal=false
+Categories=Game;StrategyGame;

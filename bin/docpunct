@@ -43,6 +43,7 @@ Usage:
   docpunct test-ollama-feature [22.04|24.04|26.04]
   docpunct test-obsidian-feature [22.04|24.04|26.04]
   docpunct test-retroarch-feature [22.04|24.04|26.04]
+  docpunct test-zero-ad-feature [22.04|24.04|26.04]
   docpunct test-docker-feature [22.04|24.04|26.04]
   docpunct test-neovide-feature [22.04|24.04|26.04]
   docpunct test
@@ -449,6 +450,11 @@ run_retroarch_feature_test() {
   "$ROOT_DIR/tests/container/run-retroarch-feature.sh" "$ubuntu_version"
 }
 
+run_zero_ad_feature_test() {
+  local ubuntu_version="${1:-24.04}"
+  "$ROOT_DIR/tests/container/run-zero-ad-feature.sh" "$ubuntu_version"
+}
+
 run_neovide_feature_test() {
   local ubuntu_version="${1:-24.04}"
   "$ROOT_DIR/tests/container/run-neovide-feature.sh" "$ubuntu_version"
@@ -553,6 +559,10 @@ main() {
     test-retroarch-feature)
       [[ "$#" -le 1 ]] || die "test-retroarch-feature takes at most one Ubuntu version"
       run_retroarch_feature_test "${1:-24.04}"
+      ;;
+    test-zero-ad-feature)
+      [[ "$#" -le 1 ]] || die "test-zero-ad-feature takes at most one Ubuntu version"
+      run_zero_ad_feature_test "${1:-24.04}"
       ;;
     test-neovide-feature)
       [[ "$#" -le 1 ]] || die "test-neovide-feature takes at most one Ubuntu version"
