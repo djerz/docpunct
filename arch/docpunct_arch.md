@@ -1142,6 +1142,7 @@ Initial package list:
 ```text
 keepassxc
 meld
+calibre
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar
@@ -1192,6 +1193,7 @@ in a dedicated removable package list. The initial removable list is:
 ```text
 keepassxc
 meld
+calibre
 ```
 
 Shared dependencies such as `desktop-file-utils`, icon themes, Secret Service

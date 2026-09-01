@@ -1,3 +1,4 @@
 # Only packages safe for docpunct to remove from a normal Ubuntu desktop.
 keepassxc
 meld
+calibre

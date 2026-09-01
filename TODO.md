@@ -17,7 +17,8 @@
   Ubuntu 26.04.
 - `debian-cli-packages` includes `git-crypt` for repository encryption
   workflows that share the common CLI package set.
-- `debian-gui-packages` contains distro-repository GUI packages plus
+- `debian-gui-packages` contains distro-repository GUI packages including
+  `calibre`, plus
   `desktop-file-utils`, the GNOME Secret Service stack, `libfontconfig1-dev`,
   `libfreetype6-dev`, `wl-clipboard`, `xclip`, and `libqt6printsupport6` for
   Neovide desktop entry support, GUI credential-vault support, Neovide Cargo

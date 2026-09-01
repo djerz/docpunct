@@ -1,6 +1,7 @@
 # User-selected GUI packages.
 keepassxc
 meld
+calibre
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar

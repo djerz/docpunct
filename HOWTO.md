@@ -245,6 +245,7 @@ consume Ollama's smaller default context before a response can be generated.
 ```text
 keepassxc
 meld
+calibre
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar
