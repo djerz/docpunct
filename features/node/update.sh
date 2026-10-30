@@ -10,5 +10,16 @@ curl -fsSL "$nvm_install_url" | PROFILE=/dev/null bash
 
 # shellcheck source=/dev/null
 . "$NVM_DIR/nvm.sh"
-nvm install node --reinstall-packages-from=default
+# Floating aliases (especially lts/*) can point to an uninstalled release.
+# Resolve the migration source before installation changes NVM's aliases.
+previous_version="$(nvm version default)" || previous_version=""
+if [[ ! "$previous_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  previous_version="$(nvm version node)" || previous_version=""
+fi
+
+nvm install node
+current_version="$(nvm current)"
+if [[ "$previous_version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ && "$previous_version" != "$current_version" ]]; then
+  nvm reinstall-packages "$previous_version"
+fi
 nvm alias default node

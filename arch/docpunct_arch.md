@@ -1661,7 +1661,9 @@ node (latest released Node.js Current)
 
 Install and update resolve the latest stable NVM GitHub release dynamically and
 refresh NVM before selecting Node.js. Updates migrate global npm packages from
-the previous default. APT features continue to select their repository candidate,
+the installed previous default, falling back to the newest installed Node when
+that alias is stale. Migration runs after installation only when the resolved
+source and current versions differ. APT features select their repository candidate,
 which can lag upstream; user-local release features resolve upstream stable
 releases at execution time. Neovim plugin lockfiles remain separately managed.
 

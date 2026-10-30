@@ -2,6 +2,15 @@
 
 ## Resumable status
 
+- Fixed Node update failure when `default` -> `lts/*` resolves to an uninstalled
+  release. Resolve a concrete installed migration source before installing,
+  fall back to the newest installed Node, and migrate packages afterward only
+  when versions differ. Host read-only inspection reproduced `default` resolving
+  to `N/A` while `node` resolves to installed `v24.19.0`. Regression coverage
+  includes stale/default aliases, repeat updates, and no installed Node.
+  Verification: ShellCheck, full host-safe smoke suite, git diff --check, and
+  user-confirmed successful host Node update.
+
 - Audited external-tool release selection: NVM now resolves its latest stable
   GitHub release; Node selects Current instead of LTS; 0 A.D. discovers the
   official current AppImage instead of pinning 0.28.0. npm tool installs use

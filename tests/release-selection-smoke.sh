@@ -28,15 +28,47 @@ case "$*" in
 esac
 MOCK
 cat >"$HOME/.nvm/nvm.sh" <<'MOCK'
-nvm() { printf 'nvm %s\n' "$*" >>"$RELEASE_TEST_LOG"; }
+nvm() {
+  printf 'nvm %s\n' "$*" >>"$RELEASE_TEST_LOG"
+  case "$*" in
+    'version default')
+      printf '%s\n' "${RELEASE_TEST_DEFAULT:-v24.1.0}"
+      [[ "${RELEASE_TEST_DEFAULT:-v24.1.0}" != N/A ]] ;;
+    'version node')
+      printf '%s\n' "${RELEASE_TEST_LOCAL:-v24.2.0}"
+      [[ "${RELEASE_TEST_LOCAL:-v24.2.0}" != N/A ]] ;;
+    current) printf 'v99.8.7\n' ;;
+    'reinstall-packages v24.1.0'|'reinstall-packages v24.2.0') ;;
+    reinstall-packages*) return 5 ;;
+  esac
+}
 MOCK
 chmod +x "$tmpdir/bin/curl"
 for action in install update; do
   "$repo_root/features/node/$action.sh"
 done
 grep -Fqx 'nvm install node' "$RELEASE_TEST_LOG"
-grep -Fqx 'nvm install node --reinstall-packages-from=default' "$RELEASE_TEST_LOG"
+grep -Fqx 'nvm reinstall-packages v24.1.0' "$RELEASE_TEST_LOG"
 grep -Fqx 'nvm alias default node' "$RELEASE_TEST_LOG"
+# A stale default falls back to the newest locally installed Node.
+: >"$RELEASE_TEST_LOG"
+RELEASE_TEST_DEFAULT=N/A "$repo_root/features/node/update.sh"
+grep -Fqx 'nvm reinstall-packages v24.2.0' "$RELEASE_TEST_LOG"
+# A repeat update and a machine with no installed Node need no migration.
+for scenario in same missing; do
+  : >"$RELEASE_TEST_LOG"
+  if [[ "$scenario" == same ]]; then
+    RELEASE_TEST_DEFAULT=v99.8.7 "$repo_root/features/node/update.sh"
+  else
+    RELEASE_TEST_DEFAULT=N/A RELEASE_TEST_LOCAL=N/A "$repo_root/features/node/update.sh"
+  fi
+  grep -Fqx 'nvm install node' "$RELEASE_TEST_LOG"
+  grep -Fqx 'nvm alias default node' "$RELEASE_TEST_LOG"
+  if grep -q '^nvm reinstall-packages ' "$RELEASE_TEST_LOG"; then
+    printf 'unexpected package migration for %s scenario\n' "$scenario" >&2
+    exit 1
+  fi
+done
 for tag in null v99.8.7-rc1; do
   if RELEASE_TEST_TAG="$tag" "$repo_root/features/node/update.sh" >/dev/null 2>&1; then
     printf 'expected invalid NVM release to fail: %s\n' "$tag" >&2

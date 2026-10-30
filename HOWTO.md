@@ -553,7 +553,10 @@ caches, and user configuration.
 
 `node` resolves the latest NVM release on each install/update and installs
 Node.js Current (the newest released version) as the default, including releases
-newer than LTS. Updates carry global npm packages over from the previous default.
+newer than LTS. Updates carry global npm packages over from the installed previous
+default, falling back to the newest locally installed Node if that alias is stale.
+Package migration is skipped when the selected version is already current or no
+previous Node is installed.
 
 External tool features resolve stable upstream releases at install/update time:
 GitHub release assets, npm's `latest` tag, crates.io, rustup stable, or uv's stable
