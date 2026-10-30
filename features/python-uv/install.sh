@@ -9,11 +9,11 @@ uvx_path="$HOME/.local/bin/uvx"
 mkdir -p "$state_dir"
 
 if [[ -x "$uv_path" ]]; then
-  "$uv_path" self update || true
+  "$uv_path" self update
   touch "$owned_marker"
 elif command -v uv >/dev/null 2>&1; then
   printf 'Using existing uv outside docpunct ownership: %s\n' "$(command -v uv)"
-  uv self update || true
+  uv self update
 else
   curl -LsSf https://astral.sh/uv/install.sh | sh
   if [[ -x "$uv_path" && -x "$uvx_path" ]]; then

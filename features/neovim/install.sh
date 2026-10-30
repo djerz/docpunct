@@ -9,7 +9,7 @@ if [[ ! -d "$repo/.git" ]]; then
 fi
 
 git -C "$repo" fetch --tags --force
-tag="$(git -C "$repo" tag -l 'v[0-9]*' | grep -Ev 'nightly|dev|rc' | sort -V | tail -n 1)"
+tag="$(git -C "$repo" tag -l 'v[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)"
 [[ -n "$tag" ]] || { printf 'could not determine latest stable Neovim tag\n' >&2; exit 1; }
 git -C "$repo" checkout "$tag"
 make -C "$repo" CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX="$HOME/.local"

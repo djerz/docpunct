@@ -34,7 +34,7 @@ provides a real Ubuntu lifecycle test.
 Version 32 hardens repository-backed feature removal so failed install cleanup
 and repeated removal still clean managed APT source/key files when packages are
 already absent. It refreshes the `node` feature to nvm `v0.40.6` and makes
-updates refresh nvm before installing the latest LTS Node.js. It also adds
+updates refresh nvm before installing the latest released Node.js. It also adds
 python-uv ownership markers, with a temporary transition path that adopts
 existing docpunct-installed `~/.local/bin/uv` and `uvx` binaries during
 update.
@@ -1656,8 +1656,14 @@ Node.js must not be installed from Ubuntu packages.
 Default version:
 
 ```text
-lts
+node (latest released Node.js Current)
 ```
+
+Install and update resolve the latest stable NVM GitHub release dynamically and
+refresh NVM before selecting Node.js. Updates migrate global npm packages from
+the previous default. APT features continue to select their repository candidate,
+which can lag upstream; user-local release features resolve upstream stable
+releases at execution time. Neovim plugin lockfiles remain separately managed.
 
 Removal should be conservative. The current initial implementation does not
 delete `~/.nvm`; it prints a manual removal note instead.

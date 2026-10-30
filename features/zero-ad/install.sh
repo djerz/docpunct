@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="${DOCPUNCT_ZERO_AD_VERSION:-0.28.0}"
+version="${DOCPUNCT_ZERO_AD_VERSION:-}"
 base_url="${DOCPUNCT_ZERO_AD_BASE_URL:-https://releases.wildfiregames.com}"
+if [[ -z "$version" ]]; then
+  # The official download page links the current release, excluding test builds.
+  release_page="$(curl -fsSL https://play0ad.com/download/linux/)"
+  version="$(printf '%s' "$release_page" |
+    grep -oE '0ad-[0-9]+\.[0-9]+\.[0-9]+-x86_64\.AppImage' |
+    sort -Vu | tail -n 1 | sed -E 's/^0ad-(.*)-x86_64\.AppImage$/\1/')"
+fi
+if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  printf 'could not determine a valid current 0 A.D. release version\n' >&2
+  exit 1
+fi
 asset_name="0ad-${version}-x86_64.AppImage"
 download_dir="$DOCPUNCT_CACHE_DIR/downloads"
 install_parent="$HOME/.local/share/docpunct"
@@ -25,7 +36,7 @@ arch="$(dpkg --print-architecture)"
 case "$arch" in
   amd64) ;;
   *)
-    printf 'official 0 A.D. Release 28 AppImage supports only amd64/x86_64, not: %s\n' "$arch" >&2
+    printf 'official 0 A.D. AppImage supports only amd64/x86_64, not: %s\n' "$arch" >&2
     exit 1
     ;;
 esac

@@ -142,9 +142,9 @@ assert_contains "$neovide_manifest" "  - nerdfonts"
 
 node_install_script="$(cat "$repo_root/features/node/install.sh")"
 node_update_script="$(cat "$repo_root/features/node/update.sh")"
-assert_contains "$node_install_script" "v0.40.6"
+assert_contains "$node_install_script" "https://api.github.com/repos/nvm-sh/nvm/releases/latest"
 assert_contains "$node_install_script" "PROFILE=/dev/null bash"
-assert_contains "$node_update_script" "v0.40.6"
+assert_contains "$node_update_script" "https://api.github.com/repos/nvm-sh/nvm/releases/latest"
 assert_contains "$node_update_script" "PROFILE=/dev/null bash"
 
 debug_proxy_home="$tmpdir/debug-proxy-home"
@@ -1070,5 +1070,6 @@ env \
 "$repo_root/tests/epel-smoke.sh"
 "$repo_root/tests/gcm-gpg-smoke.sh"
 "$repo_root/tests/ollama-smoke.sh"
+"$repo_root/tests/release-selection-smoke.sh"
 
 printf 'smoke tests passed\n'

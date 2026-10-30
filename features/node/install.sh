@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-nvm_version="v0.40.6"
+nvm_version="$(curl -fsSL https://api.github.com/repos/nvm-sh/nvm/releases/latest |
+  jq -er '.tag_name | select(test("^v[0-9]+\\.[0-9]+\\.[0-9]+$"))')"
 nvm_install_url="https://raw.githubusercontent.com/nvm-sh/nvm/$nvm_version/install.sh"
 export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 
-if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
-  curl -fsSL "$nvm_install_url" | PROFILE=/dev/null bash
-fi
+curl -fsSL "$nvm_install_url" | PROFILE=/dev/null bash
 
 # shellcheck source=/dev/null
 . "$NVM_DIR/nvm.sh"
-nvm install --lts
-nvm alias default 'lts/*'
+nvm install node
+nvm alias default node

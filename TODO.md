@@ -2,6 +2,20 @@
 
 ## Resumable status
 
+- Audited external-tool release selection: NVM now resolves its latest stable
+  GitHub release; Node selects Current instead of LTS; 0 A.D. discovers the
+  official current AppImage instead of pinning 0.28.0. npm tool installs use
+  explicit `@latest`, Neovim accepts only release version tags, and uv install
+  propagates self-update failures. Existing GitHub-release, Cargo, rustup, and
+  uv-tool features already resolve current releases. APT-backed features still
+  select repository candidates, which may lag upstream. Neovim plugin locks
+  remain separately managed. See HOWTO.md for the version policy.
+  Verification: full host ShellCheck, complete host-safe smoke suite (including
+  mocked future NVM and 0 A.D. releases, invalid versions, and uv failures),
+  Ubuntu 24.04 fixture-based 0 A.D. install/update/remove lifecycle, live NVM
+  release API and official 0 A.D. download-page discovery, and git diff --check.
+  No host tool installation or upgrade was performed.
+
 - Framework and initial feature scaffolding have been generated.
 - `../mydotfiles` was inspected.
 - Safe dotfiles were imported into `dotfiles/` and listed in

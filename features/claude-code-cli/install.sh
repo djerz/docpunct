@@ -5,4 +5,4 @@ export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
 # shellcheck source=/dev/null
 . "$NVM_DIR/nvm.sh"
 nvm use --silent default
-npm install --global @anthropic-ai/claude-code
+npm install --global @anthropic-ai/claude-code@latest

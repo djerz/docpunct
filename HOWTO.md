@@ -551,7 +551,24 @@ caches, and user configuration.
 
 `rust` installs Rust with the official `rustup` installer.
 
-`node` installs Node.js with `nvm`.
+`node` resolves the latest NVM release on each install/update and installs
+Node.js Current (the newest released version) as the default, including releases
+newer than LTS. Updates carry global npm packages over from the previous default.
+
+External tool features resolve stable upstream releases at install/update time:
+GitHub release assets, npm's `latest` tag, crates.io, rustup stable, or uv's stable
+package selection. `zero-ad` discovers the current official AppImage from the
+upstream download page and verifies its checksum. `DOCPUNCT_ZERO_AD_VERSION`
+remains an explicit version override for testing or reproducible installs.
+
+APT-backed features install the newest candidate from configured repositories.
+Ubuntu packages (including `fd-find` and the Debian package collections) can lag
+upstream releases; they do not promise upstream's newest version. RetroArch also
+uses its existing restricted testing PPA for two cores. Neovim plugins keep their
+committed lazy.nvim lockfile and are updated separately with `:Lazy update`.
+An already installed feature is skipped by `install`; use `update FEATURE` to
+refresh it. Dependencies are reported separately and are not automatically
+updated.
 
 `devcontainer-cli` depends on `node` and provides the `devcontainer` command
 from the `@devcontainers/cli` npm package.
