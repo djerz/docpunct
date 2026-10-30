@@ -4,4 +4,5 @@
 .config/docpunct/gitconfig
 .config/docpunct/session-env.sh
 .config/docpunct/bash-ext.sh
+.config/docpunct/wsl-keyring-unlock.py
 .config/nvim

@@ -466,24 +466,28 @@ per-terminal bus or extra keyring daemon is started. SSH and headless sessions
 do not publish display settings.
 
 WSL must have a running user session bus (normally with systemd enabled) and
-a working WSLg display. The setup does not create a bus or unlock the keyring
-at shell startup. The provider should ask for the keyring password on first
-access; WSL login does not supply that password automatically. Keep the
-keyring password distinct from the provider login: unlocking existing stored
-credentials should not require another provider login.
+a working WSLg display. When docpunct's active GCM backend is `secretservice`,
+interactive Bash startup also requests unlocking the default keyring through
+libsecret. This works around first-access failures observed with GCM 3.0.2
+on Ubuntu 26.04 under WSL2. The provider displays its normal password dialog
+if locked; an already unlocked keyring needs no input. The unlock completes
+before the shell prompt appears and benefits all clients of that keyring.
+Cancelling or an unlock error leaves the shell usable, with a warning.
+Native Linux, SSH, headless, noninteractive, and GPG-backend sessions skip
+this unlock hook. Python 3 and libsecret are required; the helper never reads
+or stores credentials, creates a keyring, or starts another daemon.
 
-For an existing terminal, apply the session setup before retrying:
+Apply the new helper link on the WSL installation and open a new terminal:
 
 ```sh
-. "$HOME/.config/docpunct/session-env.sh"
+./bin/docpunct update dotfiles
 ```
 
 If first access still fails, record the exact error and inspect
 `journalctl --user -b` for keyring/prompter failures. Already running services
 retain their old environment until restarted; a WSL shutdown and fresh
-terminal can provide a clean verification. This session integration addresses
-missing GUI activation environment; it does not establish that every GCM
-credential failure has that cause.
+terminal can provide a clean verification. The startup unlock is a workaround;
+the underlying GCM/libsecret item-retrieval failure is not yet established.
 
 Both GCM features can be installed. The most recent install or update writes
 the shared managed Git fragment and becomes the active backend. If the selected

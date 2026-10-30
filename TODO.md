@@ -722,12 +722,19 @@
 - WSL2 `gcm-keyring` first-access failure is reported, with an unlock dialog
   appearing on a later attempt and provider login needed again. Shared
   `session-env.sh` now imports the WSLg display environment into D-Bus/systemd
-  activation before GUI credential access, preserving explicit buses and
-  skipping SSH/headless sessions. ShellCheck, host-safe smoke coverage, and
-  diff checks validate the change; the exact original error and a cold-session
-  check on the affected Windows 11 WSL2 machine are still needed to confirm
-  whether this resolves the report. Update `dotfiles` there and start a fresh
-  WSL session; no Git retry wrapper or credential migration is involved.
+  activation before GUI credential access, but this did not resolve the report.
+  The affected WSL machine uses GCM 3.0.2, GNOME Keyring 50.0 and libsecret
+  0.21.7 on Ubuntu 26.04. Stored credentials work after manual unlocking;
+  locked entries are discoverable, and direct libsecret collection unlocking
+  successfully displays the password dialog. Added a WSL-only interactive
+  Bash startup workaround for the active `secretservice` backend: resolve and
+  unlock the default collection before credential lookup. Update `dotfiles`
+  there and open a new terminal to validate the workaround end to end. The
+  underlying item-retrieval failure remains unconfirmed; no GCM patch exists.
+  Verification: ShellCheck, full host-safe smoke suite (including WSL-only
+  interactive startup, SSH/headless/native/GPG exclusions, and shell survival
+  on helper failure), `git diff --check`, and two helper calls against an
+  already unlocked disposable GNOME keyring on an isolated D-Bus session.
 - notmuch.nvim currently hardcodes `msmtp`; epel uses a private wrapper placed
   first on Neovim's PATH so queued mode works without patching the plugin.
 - Epel's v1 credential instructions use the desktop keyring through

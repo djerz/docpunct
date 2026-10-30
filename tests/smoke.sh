@@ -469,6 +469,37 @@ for session_case in graphical ssh headless native failure; do
   esac
 done
 
+# Test the interactive unlock hook without touching the real user keyring.
+cat >"$profile_home/.config/docpunct/wsl-keyring-unlock.py" <<'EOF'
+from pathlib import Path
+import os
+Path(os.environ["HOME"], "unlock-called").touch()
+raise SystemExit(int(os.environ.get("UNLOCK_EXIT", "0")))
+EOF
+for unlock_case in graphical native ssh headless noninteractive gpg failure; do
+  rm -f "$profile_home/unlock-called"
+  unlock_store=secretservice
+  [[ "$unlock_case" != gpg ]] || unlock_store=gpg
+  printf '[credential]\ncredentialStore = %s\n' "$unlock_store" \
+    >"$profile_home/.config/docpunct/git-credential-manager.gitconfig"
+  unlock_vars=(HOME="$profile_home" PATH="$session_bin:/usr/bin:/bin"
+    DBUS_SESSION_BUS_ADDRESS=unix:path=/explicit-test-bus)
+  [[ "$unlock_case" == native ]] || unlock_vars+=(WSL_DISTRO_NAME=Ubuntu)
+  [[ "$unlock_case" == headless ]] || unlock_vars+=(DISPLAY=:0)
+  [[ "$unlock_case" != ssh ]] || unlock_vars+=(SSH_CONNECTION=test)
+  [[ "$unlock_case" != failure ]] || unlock_vars+=(UNLOCK_EXIT=1)
+  unlock_flags=-eic
+  [[ "$unlock_case" != noninteractive ]] || unlock_flags=-ec
+  # shellcheck disable=SC2016
+  unlock_output="$(env -i "${unlock_vars[@]}" bash --noprofile --norc "$unlock_flags" \
+    '. "$HOME/.config/docpunct/bash-ext.sh"; printf "shell survived\n"' 2>/dev/null)"
+  assert_contains "$unlock_output" 'shell survived'
+  case "$unlock_case" in
+    graphical|failure) [[ -e "$profile_home/unlock-called" ]] ;;
+    *) [[ ! -e "$profile_home/unlock-called" ]] ;;
+  esac || { printf 'unexpected unlock hook behavior for %s\n' "$unlock_case" >&2; exit 1; }
+done
+
 bash_ext_output="$(
   # shellcheck disable=SC2016
   env -i HOME="$profile_home" PATH=/usr/bin:/bin \

@@ -1055,6 +1055,16 @@ excluded. Failures warn without aborting shell startup. Distro D-Bus activation
 continues to own the Secret Service and GUI prompter lifecycle; no per-shell
 bus, replacement daemon, password storage, or Git wrapper is introduced.
 
+After that setup, interactive `bash-ext.sh` requests default-collection
+unlocking on graphical, local WSL sessions only when the managed GCM fragment
+selects `secretservice`. The linked `wsl-keyring-unlock.py` uses Python's
+standard-library ctypes and libsecret to open an explicit service, resolve
+the `default` alias, and synchronously unlock that collection. There is no
+hardcoded collection name or credential search. Missing default collections
+are left alone; already unlocked collections need no password prompt. Errors
+and cancellation warn without aborting shell startup. The provider owns
+prompt handling; the helper neither receives passwords nor reads secrets.
+
 Installation behavior:
 
 1. Query the latest release from:
