@@ -456,6 +456,35 @@ for desktop-launched agentic workflows because it uses the unlocked desktop
 keyring instead of GPG pinentry. It requires an active Secret Service session,
 such as GNOME Keyring or KDE Wallet, and is not a reliable plain TTY default.
 
+On Windows 11 WSL2 with WSLg, also install or update `dotfiles` and open a
+new terminal. Its shared session setup publishes the WSLg display environment
+to D-Bus and systemd user services before applications request credentials.
+This lets an activated keyring prompter open the unlock dialog, including for
+applications other than Git. An explicitly selected session bus is preserved;
+otherwise the existing socket at `$XDG_RUNTIME_DIR/bus` is used. No private
+per-terminal bus or extra keyring daemon is started. SSH and headless sessions
+do not publish display settings.
+
+WSL must have a running user session bus (normally with systemd enabled) and
+a working WSLg display. The setup does not create a bus or unlock the keyring
+at shell startup. The provider should ask for the keyring password on first
+access; WSL login does not supply that password automatically. Keep the
+keyring password distinct from the provider login: unlocking existing stored
+credentials should not require another provider login.
+
+For an existing terminal, apply the session setup before retrying:
+
+```sh
+. "$HOME/.config/docpunct/session-env.sh"
+```
+
+If first access still fails, record the exact error and inspect
+`journalctl --user -b` for keyring/prompter failures. Already running services
+retain their old environment until restarted; a WSL shutdown and fresh
+terminal can provide a clean verification. This session integration addresses
+missing GUI activation environment; it does not establish that every GCM
+credential failure has that cause.
+
 Both GCM features can be installed. The most recent install or update writes
 the shared managed Git fragment and becomes the active backend. If the selected
 feature is already installed, use `./bin/docpunct update gcm-gpg` or

@@ -427,6 +427,48 @@ profile_gpg_tty="$(
   printf 'expected non-tty session-env.sh source to leave GPG_TTY unset, got: %s\n' "$profile_gpg_tty" >&2
   exit 1
 }
+# Exercise WSL activation setup with an isolated updater; never change the
+# host user's D-Bus/systemd environment from a smoke test.
+session_bin="$tmpdir/session-bin"
+mkdir -p "$session_bin"
+cat >"$session_bin/dbus-update-activation-environment" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$@" >"$HOME/activation-args"
+printf '%s\n' "$DBUS_SESSION_BUS_ADDRESS" "$DISPLAY" >"$HOME/activation-values"
+exit "${ACTIVATION_EXIT:-0}"
+EOF
+chmod +x "$session_bin/dbus-update-activation-environment"
+# Expanded by the isolated child shell.
+# shellcheck disable=SC2016
+session_source='. "$HOME/.config/docpunct/session-env.sh"; printf "shell survived\n"'
+for session_case in graphical ssh headless native failure; do
+  rm -f "$profile_home/activation-args" "$profile_home/activation-values"
+  session_vars=(HOME="$profile_home" PATH="$session_bin:/usr/bin:/bin"
+    DBUS_SESSION_BUS_ADDRESS=unix:path=/explicit-test-bus)
+  [[ "$session_case" == native ]] || session_vars+=(WSL_DISTRO_NAME=Ubuntu)
+  [[ "$session_case" == headless ]] || session_vars+=(DISPLAY=:0 WAYLAND_DISPLAY=wayland-0)
+  [[ "$session_case" != ssh ]] || session_vars+=(SSH_CONNECTION=test)
+  [[ "$session_case" != failure ]] || session_vars+=(ACTIVATION_EXIT=1)
+  session_output="$(env -i "${session_vars[@]}" sh -ec "$session_source" 2>&1)"
+  assert_contains "$session_output" 'shell survived'
+  case "$session_case" in
+    graphical|failure)
+      assert_contains "$(cat "$profile_home/activation-args")" '--systemd'
+      assert_contains "$(cat "$profile_home/activation-args")" 'WAYLAND_DISPLAY'
+      assert_contains "$(cat "$profile_home/activation-values")" 'unix:path=/explicit-test-bus'
+      if [[ "$session_case" == failure ]]; then
+        assert_contains "$session_output" 'could not publish WSL GUI environment'
+      fi
+      ;;
+    *)
+      [[ ! -e "$profile_home/activation-args" ]] || {
+        printf 'unexpected GUI environment import for %s\n' "$session_case" >&2
+        exit 1
+      }
+      ;;
+  esac
+done
+
 bash_ext_output="$(
   # shellcheck disable=SC2016
   env -i HOME="$profile_home" PATH=/usr/bin:/bin \

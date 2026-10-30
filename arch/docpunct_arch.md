@@ -1045,6 +1045,16 @@ path and can be retried after initialization. `gcm-keyring` depends on
 `debian-gui-packages` and uses the desktop Secret Service stack instead of
 GPG/pass.
 
+On graphical WSL sessions, the shared dotfiles `session-env.sh` supplies the
+desktop session manager's missing activation-environment step: it preserves
+an explicit D-Bus address, otherwise selects an existing user bus socket at
+`$XDG_RUNTIME_DIR/bus`, and imports only `DBUS_SESSION_BUS_ADDRESS`, `DISPLAY`,
+`WAYLAND_DISPLAY`, `XAUTHORITY`, and `XDG_RUNTIME_DIR` using
+`dbus-update-activation-environment --systemd`. SSH and headless sessions are
+excluded. Failures warn without aborting shell startup. Distro D-Bus activation
+continues to own the Secret Service and GUI prompter lifecycle; no per-shell
+bus, replacement daemon, password storage, or Git wrapper is introduced.
+
 Installation behavior:
 
 1. Query the latest release from:

@@ -719,6 +719,15 @@
 
 ## Known issues
 
+- WSL2 `gcm-keyring` first-access failure is reported, with an unlock dialog
+  appearing on a later attempt and provider login needed again. Shared
+  `session-env.sh` now imports the WSLg display environment into D-Bus/systemd
+  activation before GUI credential access, preserving explicit buses and
+  skipping SSH/headless sessions. ShellCheck, host-safe smoke coverage, and
+  diff checks validate the change; the exact original error and a cold-session
+  check on the affected Windows 11 WSL2 machine are still needed to confirm
+  whether this resolves the report. Update `dotfiles` there and start a fresh
+  WSL session; no Git retry wrapper or credential migration is involved.
 - notmuch.nvim currently hardcodes `msmtp`; epel uses a private wrapper placed
   first on Neovim's PATH so queued mode works without patching the plugin.
 - Epel's v1 credential instructions use the desktop keyring through
