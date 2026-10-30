@@ -726,15 +726,18 @@
   The affected WSL machine uses GCM 3.0.2, GNOME Keyring 50.0 and libsecret
   0.21.7 on Ubuntu 26.04. Stored credentials work after manual unlocking;
   locked entries are discoverable, and direct libsecret collection unlocking
-  successfully displays the password dialog. Added a WSL-only interactive
-  Bash startup workaround for the active `secretservice` backend: resolve and
-  unlock the default collection before credential lookup. Update `dotfiles`
-  there and open a new terminal to validate the workaround end to end. The
-  underlying item-retrieval failure remains unconfirmed; no GCM patch exists.
+  successfully displays the password dialog. Automatic Bash startup unlocking
+  produced an unresponsive dialog (both keyboard and mouse), while running
+  the same helper from `bash --noprofile --norc` worked. Replaced automatic
+  unlocking with an explicit WSL-only `keyring-unlock` command for the active
+  `secretservice` backend. Update `dotfiles`, open a new terminal, and run
+  `keyring-unlock` before Git. The startup-specific freeze remains unexplained.
+  The underlying item-retrieval failure remains unconfirmed; no GCM patch exists.
   Verification: ShellCheck, full host-safe smoke suite (including WSL-only
-  interactive startup, SSH/headless/native/GPG exclusions, and shell survival
-  on helper failure), `git diff --check`, and two helper calls against an
-  already unlocked disposable GNOME keyring on an isolated D-Bus session.
+  command availability, no automatic invocation, SSH/headless/native/GPG
+  exclusions, and helper failure status), `git diff --check`, and two earlier
+  helper calls against an already unlocked disposable GNOME keyring on an
+  isolated D-Bus session.
 - notmuch.nvim currently hardcodes `msmtp`; epel uses a private wrapper placed
   first on Neovim's PATH so queued mode works without patching the plugin.
 - Epel's v1 credential instructions use the desktop keyring through

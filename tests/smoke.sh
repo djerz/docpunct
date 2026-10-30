@@ -469,7 +469,7 @@ for session_case in graphical ssh headless native failure; do
   esac
 done
 
-# Test the interactive unlock hook without touching the real user keyring.
+# Test the explicit unlock command without touching the real user keyring.
 cat >"$profile_home/.config/docpunct/wsl-keyring-unlock.py" <<'EOF'
 from pathlib import Path
 import os
@@ -492,12 +492,28 @@ for unlock_case in graphical native ssh headless noninteractive gpg failure; do
   [[ "$unlock_case" != noninteractive ]] || unlock_flags=-ec
   # shellcheck disable=SC2016
   unlock_output="$(env -i "${unlock_vars[@]}" bash --noprofile --norc "$unlock_flags" \
-    '. "$HOME/.config/docpunct/bash-ext.sh"; printf "shell survived\n"' 2>/dev/null)"
+    '. "$HOME/.config/docpunct/bash-ext.sh"
+     test ! -e "$HOME/unlock-called"
+     if declare -F keyring-unlock >/dev/null; then
+         printf "unlock command available\n"
+         if keyring-unlock; then
+             printf "unlock status=0\n"
+         else
+             printf "unlock status=%s\n" "$?"
+         fi
+     fi
+     printf "shell survived\n"' 2>/dev/null)"
   assert_contains "$unlock_output" 'shell survived'
   case "$unlock_case" in
-    graphical|failure) [[ -e "$profile_home/unlock-called" ]] ;;
+    graphical|failure)
+      assert_contains "$unlock_output" 'unlock command available'
+      [[ -e "$profile_home/unlock-called" ]]
+      ;;
     *) [[ ! -e "$profile_home/unlock-called" ]] ;;
-  esac || { printf 'unexpected unlock hook behavior for %s\n' "$unlock_case" >&2; exit 1; }
+  esac || { printf 'unexpected unlock command behavior for %s\n' "$unlock_case" >&2; exit 1; }
+  if [[ "$unlock_case" == failure ]]; then
+    assert_contains "$unlock_output" 'unlock status=1'
+  fi
 done
 
 bash_ext_output="$(

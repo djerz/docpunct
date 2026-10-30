@@ -467,27 +467,32 @@ do not publish display settings.
 
 WSL must have a running user session bus (normally with systemd enabled) and
 a working WSLg display. When docpunct's active GCM backend is `secretservice`,
-interactive Bash startup also requests unlocking the default keyring through
-libsecret. This works around first-access failures observed with GCM 3.0.2
-on Ubuntu 26.04 under WSL2. The provider displays its normal password dialog
-if locked; an already unlocked keyring needs no input. The unlock completes
-before the shell prompt appears and benefits all clients of that keyring.
-Cancelling or an unlock error leaves the shell usable, with a warning.
+interactive Bash provides a `keyring-unlock` command. Run it once from the
+ready terminal before using Git. It requests unlocking the default keyring
+through libsecret, working around first-access failures observed with GCM
+3.0.2 on Ubuntu 26.04 under WSL2. The provider displays its normal password
+dialog if locked; an already unlocked keyring needs no input. Unlocking
+benefits all clients of that keyring. Cancelling or an unlock error reports
+a warning and a nonzero command status.
 Native Linux, SSH, headless, noninteractive, and GPG-backend sessions skip
-this unlock hook. Python 3 and libsecret are required; the helper never reads
+this command setup. Python 3 and libsecret are required; the helper never reads
 or stores credentials, creates a keyring, or starts another daemon.
 
 Apply the new helper link on the WSL installation and open a new terminal:
 
 ```sh
 ./bin/docpunct update dotfiles
+# In the new terminal:
+keyring-unlock
 ```
 
 If first access still fails, record the exact error and inspect
 `journalctl --user -b` for keyring/prompter failures. Already running services
 retain their old environment until restarted; a WSL shutdown and fresh
-terminal can provide a clean verification. The startup unlock is a workaround;
-the underlying GCM/libsecret item-retrieval failure is not yet established.
+terminal can provide a clean verification. Automatic startup unlocking was
+removed because its dialog froze on the affected WSL installation, while
+running the same helper manually worked. The cause of that startup-specific
+freeze and the underlying GCM/libsecret retrieval failure remain unconfirmed.
 
 Both GCM features can be installed. The most recent install or update writes
 the shared managed Git fragment and becomes the active backend. If the selected

@@ -12,8 +12,8 @@ case $- in
     *) return 0 ;;
 esac
 
-# WSL login does not unlock the Linux keyring through PAM. Unlock it before
-# the first credential lookup when docpunct's Secret Service backend is active.
+# WSL startup prompting can freeze the GUI. Offer an explicit command so the
+# user can unlock from a ready terminal before the first credential lookup.
 if [[ -n "${WSL_INTEROP-}${WSL_DISTRO_NAME-}" &&
       -z "${SSH_CONNECTION-}${SSH_TTY-}" &&
       -n "${DISPLAY-}${WAYLAND_DISPLAY-}" &&
@@ -21,7 +21,9 @@ if [[ -n "${WSL_INTEROP-}${WSL_DISTRO_NAME-}" &&
       -r "$HOME/.config/docpunct/git-credential-manager.gitconfig" ]] &&
     [[ "$(git config --file "$HOME/.config/docpunct/git-credential-manager.gitconfig" \
         --get credential.credentialStore)" == secretservice ]]; then
-    python3 "$HOME/.config/docpunct/wsl-keyring-unlock.py" || true
+    keyring-unlock() {
+        python3 "$HOME/.config/docpunct/wsl-keyring-unlock.py"
+    }
 fi
 
 alias g="git"
