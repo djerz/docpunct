@@ -19,6 +19,7 @@
 [pull]
     rebase = true
 [alias]
+    sw = switch
     co = checkout
     cob = checkout -b
     st = status
