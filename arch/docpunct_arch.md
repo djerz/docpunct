@@ -1167,6 +1167,7 @@ keepassxc
 meld
 calibre
 vlc
+ubuntu-restricted-extras
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar

@@ -247,6 +247,7 @@ keepassxc
 meld
 calibre
 vlc
+ubuntu-restricted-extras
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar
@@ -269,6 +270,11 @@ Only leaf applications listed in `removable-packages.txt` are removed by the
 `desktop-file-utils`, icon themes, and development libraries are installed when
 needed but are not removed by docpunct, because removing them can cause APT to
 remove Ubuntu desktop packages that depend on them.
+
+`ubuntu-restricted-extras` adds Ubuntu's commonly used multimedia codecs and
+fonts. It requires the Ubuntu `multiverse` repository component. Its Microsoft
+font installer may prompt for license acceptance during install or update.
+The shared codec packages are preserved on removal.
 
 `desktop-file-utils` is included for Neovide desktop entry validation and
 updates.
