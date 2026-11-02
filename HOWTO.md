@@ -274,6 +274,8 @@ remove Ubuntu desktop packages that depend on them.
 `ubuntu-restricted-extras` adds Ubuntu's commonly used multimedia codecs and
 fonts. It requires the Ubuntu `multiverse` repository component. Its Microsoft
 font installer may prompt for license acceptance during install or update.
+When run from a terminal, GUI package install/update displays APT output and
+license dialogs directly on that terminal.
 The shared codec packages are preserved on removal.
 
 `desktop-file-utils` is included for Neovide desktop entry validation and

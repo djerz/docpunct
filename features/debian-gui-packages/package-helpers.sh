@@ -1,5 +1,16 @@
 #!/usr/bin/env bash
 
+# The runner captures output, but debconf dialogs need a visible terminal.
+run_gui_apt() {
+  if [[ -t 0 ]]; then
+    # Open the caller's terminal as the caller, before sudo starts.
+    # shellcheck disable=SC2024
+    sudo apt-get "$@" >/dev/tty 2>&1
+  else
+    sudo apt-get "$@"
+  fi
+}
+
 read_package_list() {
   local path="$1"
   [[ -f "$path" ]] || return 0

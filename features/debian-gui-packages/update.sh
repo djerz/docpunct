@@ -5,5 +5,5 @@ set -euo pipefail
 . "$DOCPUNCT_FEATURE_DIR/package-helpers.sh"
 
 mapfile -t packages < <(read_package_list "$DOCPUNCT_FEATURE_DIR/packages.txt")
-sudo apt-get update
-sudo apt-get install -y "${packages[@]}"
+run_gui_apt update
+run_gui_apt install -y "${packages[@]}"

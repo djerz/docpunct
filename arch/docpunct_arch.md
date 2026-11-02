@@ -703,6 +703,8 @@ Examples:
 ```
 
 Console output should avoid noise.
+GUI package install/update is an exception: when standard input is a terminal,
+APT output goes directly to `/dev/tty` so debconf license dialogs remain visible.
 
 Example output:
 
