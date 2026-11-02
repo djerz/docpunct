@@ -1166,6 +1166,7 @@ Initial package list:
 keepassxc
 meld
 calibre
+vlc
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar
@@ -1217,6 +1218,7 @@ in a dedicated removable package list. The initial removable list is:
 keepassxc
 meld
 calibre
+vlc
 ```
 
 Shared dependencies such as `desktop-file-utils`, icon themes, Secret Service

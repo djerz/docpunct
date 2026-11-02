@@ -2,6 +2,7 @@
 keepassxc
 meld
 calibre
+vlc
 gnome-icon-theme
 adwaita-icon-theme-full
 gnome-calendar

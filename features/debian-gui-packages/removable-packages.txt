@@ -2,3 +2,4 @@
 keepassxc
 meld
 calibre
+vlc
